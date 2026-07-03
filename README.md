@@ -1,0 +1,84 @@
+# BookFriends
+
+Share EPUB books with your friends: a responsive website with a Wuxiaworld-style dark
+reader, per-paragraph comments (badge + slide-out panel), end-of-chapter comment
+sections, replies and like/dislike votes. Includes light/sepia themes, a font options
+panel, and EPUB download for Send-to-Kindle.
+
+> **About this project:** built end-to-end with AI (Claude Code) — requirements were
+> crystallized through a Socratic deep-interview, the plan was consensus-reviewed by
+> architect/critic agents, and the implementation went through automated QA plus
+> independent security and code review passes.
+
+- **Only the owner uploads books** — everyone else registers to read public books and comment.
+- Each book is **public** (anyone visiting the shelf can read it) or **private** (owner only).
+- Public books are readable without an account; commenting requires login.
+
+## Run locally
+
+```sh
+cp .env.example .env   # set OWNER_EMAIL + SESSION_SECRET
+npm install
+npm start              # http://localhost:3000
+```
+
+Register with the exact `OWNER_EMAIL` address to get the owner account, then use
+**Upload** to add an `.epub`. New books start private; use **Make public** on the shelf
+to share them.
+
+## Tests & lint
+
+```sh
+npm test    # EPUB pipeline tests against pg345-images-3.epub (Dracula)
+npm run lint
+```
+
+## Deploy — Fly.io (recommended)
+
+Data (SQLite DB + extracted book images) lives on a mounted volume at `/data`, so it
+survives deploys.
+
+```sh
+fly launch --no-deploy          # reuses fly.toml; pick an app name
+fly volumes create data --size 1
+fly secrets set OWNER_EMAIL=you@example.com SESSION_SECRET=$(openssl rand -hex 32)
+fly deploy
+```
+
+Open `https://<app>.fly.dev`, register with the owner email, upload, share the URL.
+
+## Deploy — any $5 VPS
+
+```sh
+# on the server
+git clone <this repo> && cd bookfriends
+cp .env.example .env            # set OWNER_EMAIL, SESSION_SECRET, NODE_ENV=production
+npm ci --omit=dev
+node server.js                  # or run under systemd
+```
+
+Put [Caddy](https://caddyserver.com) in front for automatic HTTPS:
+
+```
+example.com {
+    reverse_proxy localhost:3000
+}
+```
+
+## Security notes
+
+- **Register the owner account immediately after deploying.** The first registration
+  using `OWNER_EMAIL` becomes the owner — until you register, anyone who guesses that
+  email could claim it. If registration ever says your owner email is taken, someone
+  squatted it: wipe `DATA_DIR` (or delete that user row) and register again.
+- Known accepted trade-offs for a friends-scale site: no rate limiting on login or
+  comments, registration reveals whether an email exists, and there is no upload
+  decompression-bomb guard (uploads are owner-only).
+
+## Architecture
+
+Single Node process: Express + EJS server-rendered pages, `better-sqlite3` (WAL) for
+data and sessions, vanilla-JS progressive enhancement for the reader. EPUBs are parsed
+at upload (NCX table of contents → chapters, fragment-anchor slicing, sanitized HTML,
+stable `data-p` paragraph anchors); book images are re-served through access-checked
+`/media` routes so private books stay private. Everything mutable lives in `DATA_DIR`.

@@ -1,0 +1,13 @@
+@echo off
+cd /d %~dp0
+echo Stopping BookFriends...
+schtasks /End /TN "BookFriends" >/dev/null 2>&1
+echo Pulling latest code from GitHub...
+git pull
+echo Installing dependencies...
+call npm install --omit=dev
+echo Restarting BookFriends...
+schtasks /Run /TN "BookFriends"
+echo.
+echo Update complete.
+pause

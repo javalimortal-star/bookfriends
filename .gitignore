@@ -1,0 +1,11 @@
+node_modules/
+data/
+.env
+*.epub:Zone.Identifier
+*Zone.Identifier
+*.zip
+# local reference screenshots (not part of the app)
+Captura*.png
+# AI-assistant working files
+.omc/
+.claude/

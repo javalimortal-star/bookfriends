@@ -1,0 +1,35 @@
+<%- include('partials/head') %>
+<h1 class="page-title">Bookshelf</h1>
+<% if (books.length === 0) { %>
+  <p class="empty">No books here yet.<% if (user && user.role === 'owner') { %> <a href="/upload">Upload your first EPUB</a>.<% } %></p>
+<% } %>
+<div class="shelf">
+  <% for (const book of books) { %>
+    <div class="book-card">
+      <a class="book-cover-link" href="/book/<%= book.slug %>/0">
+        <% if (book.cover_path) { %>
+          <img class="book-cover" src="/media/book/<%= book.id %>/cover" alt="Cover of <%= book.title %>">
+        <% } else { %>
+          <div class="book-cover book-cover-placeholder"><%= book.title %></div>
+        <% } %>
+      </a>
+      <div class="book-meta">
+        <a class="book-title" href="/book/<%= book.slug %>/0"><%= book.title %></a>
+        <% if (book.author) { %><div class="book-author"><%= book.author %></div><% } %>
+        <a class="download-link" href="/book/<%= book.slug %>/download" title="Download the EPUB (works with Send to Kindle)">⤓ Download EPUB</a>
+        <% if (user && user.role === 'owner') { %>
+          <div class="book-owner-row">
+            <span class="pill <%= book.visibility === 'public' ? 'pill-public' : 'pill-private' %>"><%= book.visibility %></span>
+            <form method="post" action="/book/<%= book.slug %>/visibility" class="inline-form">
+              <button class="btn btn-small btn-ghost" type="submit">Make <%= book.visibility === 'public' ? 'private' : 'public' %></button>
+            </form>
+            <form method="post" action="/book/<%= book.slug %>/delete" class="inline-form" onsubmit="return confirm('Delete this book and all its comments?')">
+              <button class="btn btn-small btn-danger" type="submit">Delete</button>
+            </form>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

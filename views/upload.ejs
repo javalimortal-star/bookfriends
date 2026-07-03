@@ -1,0 +1,14 @@
+<%- include('partials/head') %>
+<div class="form-card">
+  <h1>Upload a book</h1>
+  <% if (error) { %><p class="form-error"><%= error %></p><% } %>
+  <form method="post" action="/upload" enctype="multipart/form-data">
+    <label class="field">
+      <span>EPUB file</span>
+      <input type="file" name="epub" accept=".epub" required>
+    </label>
+    <button class="btn" type="submit">Upload</button>
+  </form>
+  <p class="hint">New books start <strong>private</strong> — only you can see them until you make them public.</p>
+</div>
+<%- include('partials/footer') %>

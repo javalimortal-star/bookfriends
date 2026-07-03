@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <script>
+    try {
+      var themePref = JSON.parse(localStorage.getItem('bf-reader-settings') || '{}').theme;
+      if (themePref === 'light' || themePref === 'sepia') document.documentElement.className = 'theme-' + themePref;
+    } catch (e) { /* default dark */ }
+  </script>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<nav class="nav">
+  <a class="nav-brand" href="/">📚 BookFriends</a>
+  <div class="nav-right">
+    <% if (user) { %>
+      <% if (user.role === 'owner') { %><a class="btn btn-small" href="/upload">Upload</a><% } %>
+      <span class="nav-user"><%= user.email %></span>
+      <form method="post" action="/logout" class="inline-form"><button class="btn btn-small btn-ghost" type="submit">Log out</button></form>
+    <% } else { %>
+      <a class="btn btn-small btn-ghost" href="/login">Log in</a>
+      <a class="btn btn-small" href="/register">Register</a>
+    <% } %>
+  </div>
+</nav>
+<main class="main">
