@@ -1,12 +1,18 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
+const { requireAuth } = require('./middleware');
 
 const router = express.Router();
 const BCRYPT_COST = 12;
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+// Optional nickname shown on comments; empty means "fall back to email prefix".
+function normalizeDisplayName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 30) || null;
 }
 
 router.get('/register', (req, res) => {
@@ -31,8 +37,8 @@ router.post('/register', (req, res) => {
   const role = email === ownerEmail ? 'owner' : 'reader';
   const hash = bcrypt.hashSync(password, BCRYPT_COST);
   const info = db.prepare(
-    'INSERT INTO users (email, password_hash, role, created_at) VALUES (?, ?, ?, ?)'
-  ).run(email, hash, role, Date.now());
+    'INSERT INTO users (email, password_hash, role, display_name, created_at) VALUES (?, ?, ?, ?, ?)'
+  ).run(email, hash, role, normalizeDisplayName(req.body.display_name), Date.now());
   req.session.regenerate((err) => {
     if (err) return res.status(500).render('error', { title: 'Error', message: 'Session error.' });
     req.session.userId = info.lastInsertRowid;
@@ -61,6 +67,17 @@ router.post('/login', (req, res) => {
 
 router.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
+});
+
+router.get('/settings', requireAuth, (req, res) => {
+  res.render('settings', { title: 'Settings', saved: false });
+});
+
+router.post('/settings', requireAuth, (req, res) => {
+  const displayName = normalizeDisplayName(req.body.display_name);
+  db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(displayName, req.user.id);
+  res.locals.user.display_name = displayName;
+  res.render('settings', { title: 'Settings', saved: true });
 });
 
 module.exports = router;

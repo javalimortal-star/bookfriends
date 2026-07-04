@@ -1,0 +1,14 @@
+<%- include('partials/head') %>
+<div class="form-card">
+  <h1>Settings</h1>
+  <% if (saved) { %><p class="form-ok">Saved!</p><% } %>
+  <p class="hint">Account: <%= user.email %></p>
+  <form method="post" action="/settings">
+    <label class="field"><span>Display name (shown on your comments)</span>
+      <input type="text" name="display_name" maxlength="30" value="<%= user.display_name || '' %>" placeholder="<%= user.email.split('@')[0] %>">
+    </label>
+    <button class="btn" type="submit">Save</button>
+  </form>
+  <p class="hint">Leave it empty to go back to the start of your email (<%= user.email.split('@')[0] %>). Your old comments update too.</p>
+</div>
+<%- include('partials/footer') %>

@@ -5,6 +5,7 @@
   <form method="post" action="/register">
     <label class="field"><span>Email</span><input type="email" name="email" required autofocus></label>
     <label class="field"><span>Password (8+ characters)</span><input type="password" name="password" minlength="8" required></label>
+    <label class="field"><span>Display name (optional — shown on your comments)</span><input type="text" name="display_name" maxlength="30" placeholder="e.g. Bento"></label>
     <button class="btn" type="submit">Create account</button>
   </form>
   <p class="hint">Already registered? <a href="/login">Log in</a></p>

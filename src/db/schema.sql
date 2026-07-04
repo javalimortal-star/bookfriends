@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'reader' CHECK (role IN ('owner', 'reader')),
+  display_name TEXT,
   created_at INTEGER NOT NULL
 );
 

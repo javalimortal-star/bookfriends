@@ -24,7 +24,7 @@ function toJson(row, user, isOwner) {
     paraIndex: row.para_index,
     parentId: row.parent_id,
     userId: row.user_id,
-    userName: displayName(row.email),
+    userName: row.display_name || displayName(row.email),
     body: row.body,
     createdAt: row.created_at,
     edited: !!row.edited,
@@ -44,7 +44,7 @@ function listComments({ chapterId, paraIndex, sort, user, bookOwnerId }) {
   const anchorClause = paraIndex === null ? 'para_index IS NULL' : 'para_index = ?';
   const params = paraIndex === null ? [chapterId] : [chapterId, paraIndex];
   const rows = db.prepare(`
-    SELECT c.*, u.email,
+    SELECT c.*, u.email, u.display_name,
       COALESCE(SUM(v.value), 0) AS score,
       COALESCE(SUM(CASE WHEN v.value = 1 THEN 1 ELSE 0 END), 0) AS likes,
       COALESCE(SUM(CASE WHEN v.value = -1 THEN 1 ELSE 0 END), 0) AS dislikes,
