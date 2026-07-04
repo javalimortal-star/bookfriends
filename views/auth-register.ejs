@@ -8,6 +8,10 @@
     <label class="field"><span>Display name (optional — shown on your comments)</span><input type="text" name="display_name" maxlength="30" placeholder="e.g. Bento"></label>
     <button class="btn" type="submit">Create account</button>
   </form>
+  <% if (googleEnabled) { %>
+    <div class="or-divider">or</div>
+    <a class="google-btn" href="/auth/google">Continue with Google</a>
+  <% } %>
   <p class="hint">Already registered? <a href="/login">Log in</a></p>
 </div>
 <%- include('partials/footer') %>

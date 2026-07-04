@@ -13,6 +13,7 @@ function migrate() {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   db.exec(schema);
   ensureColumn('users', 'display_name', 'display_name TEXT');
+  ensureColumn('users', 'auth_provider', "auth_provider TEXT NOT NULL DEFAULT 'local'");
 }
 
 module.exports = { migrate };

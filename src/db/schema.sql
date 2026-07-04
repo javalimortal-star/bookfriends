@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'reader' CHECK (role IN ('owner', 'reader')),
   display_name TEXT,
+  auth_provider TEXT NOT NULL DEFAULT 'local',
   created_at INTEGER NOT NULL
 );
 

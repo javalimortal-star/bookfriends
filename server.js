@@ -23,6 +23,7 @@ app.use(express.json());
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'DENY');
+  res.locals.googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   next();
 });
 app.use(express.static(path.join(__dirname, 'public')));
@@ -46,6 +47,7 @@ app.use(session({
 app.use(loadUser);
 
 app.use(require('./src/auth/routes'));
+app.use(require('./src/auth/google'));
 app.use(require('./src/media/routes'));
 app.use(require('./src/comments/routes'));
 app.use(require('./src/books/routes'));

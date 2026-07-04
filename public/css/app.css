@@ -86,6 +86,12 @@ a:hover { text-decoration: underline; }
 }
 .form-error { color: var(--danger); }
 .form-ok { color: #22c55e; }
+.or-divider { text-align: center; color: var(--muted); margin: 0.8rem 0; font-size: 0.85rem; }
+.google-btn {
+  display: block; text-align: center; background: #fff; color: #1f1f1f;
+  border: 1px solid var(--border); border-radius: 999px; padding: 0.55rem; font-weight: 600;
+}
+.google-btn:hover { background: #ececec; text-decoration: none; }
 .hint { color: var(--muted); font-size: 0.85rem; }
 .empty { color: var(--muted); }
 .page-title { color: var(--text-strong); }

@@ -65,6 +65,31 @@ example.com {
 }
 ```
 
+## Google login (optional)
+
+The login/register pages show a **Continue with Google** button when Google OAuth
+credentials are configured; without them the button is hidden and email/password
+login works as usual.
+
+1. Go to https://console.cloud.google.com and create (or pick) a project.
+2. **APIs & Services → OAuth consent screen** → External → fill in the app name
+   and your email → publish the app (the basic email/profile scopes need no
+   Google verification).
+3. **APIs & Services → Credentials → Create credentials → OAuth client ID** →
+   Application type **Web application** → under **Authorized redirect URIs** add
+   your site's callback, e.g. `https://your-site.example/auth/google/callback`
+   (also add `http://localhost:3000/auth/google/callback` for local testing).
+4. Add both values to `.env` and restart the server:
+
+   ```
+   GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=xxxxxxxx
+   ```
+
+Google accounts are matched to site accounts by email (a Google sign-in with the
+same address logs into the existing account), and the Google profile name becomes
+the initial display name.
+
 ## Security notes
 
 - **Register the owner account immediately after deploying.** The first registration
