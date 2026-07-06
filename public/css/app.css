@@ -53,7 +53,9 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 0.6rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border);
   position: sticky; top: 0; z-index: 30;
+  transition: transform 0.25s ease;
 }
+.nav.nav-hidden { transform: translateY(-105%); }
 .nav-brand { color: var(--text-strong); font-weight: 700; font-size: 1.05rem; }
 .nav-brand:hover { text-decoration: none; }
 .nav-right { display: flex; align-items: center; gap: 0.5rem; }
