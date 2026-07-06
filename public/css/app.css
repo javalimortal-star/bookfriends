@@ -231,7 +231,9 @@ a:hover { text-decoration: underline; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: flex; align-items: center; justify-content: center; gap: 0.8rem;
   padding: 0.5rem 1rem; background: var(--surface); border-top: 1px solid var(--border);
+  transition: transform 0.25s ease;
 }
+.reader-bottombar.bar-hidden { transform: translateY(105%); }
 .bar-btn {
   background: transparent; border: 0; cursor: pointer; padding: 0.2rem 0.5rem;
   color: var(--muted); font-weight: 700; font-size: 1rem;

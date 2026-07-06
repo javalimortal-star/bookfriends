@@ -401,16 +401,18 @@
     location.href = event.target.value;
   });
 
-  /* ---------- immersive reading: hide top nav while scrolling down ---------- */
+  /* ---------- immersive reading: hide top nav + bottom bar while scrolling down ---------- */
 
   var topNav = document.querySelector('.nav');
-  if (topNav) {
-    var lastScrollY = Math.max(0, window.scrollY);
-    window.addEventListener('scroll', function () {
-      var y = Math.max(0, window.scrollY); // iOS overscroll reports negative values
-      if (Math.abs(y - lastScrollY) < 8) return;
-      topNav.classList.toggle('nav-hidden', y > lastScrollY && y > 80);
-      lastScrollY = y;
-    }, { passive: true });
-  }
+  var bottomBar = document.querySelector('.reader-bottombar');
+  var lastScrollY = Math.max(0, window.scrollY);
+  window.addEventListener('scroll', function () {
+    var y = Math.max(0, window.scrollY); // iOS overscroll reports negative values
+    if (Math.abs(y - lastScrollY) < 8) return;
+    // keep the bars while the font panel is open so it never floats detached
+    var hide = y > lastScrollY && y > 80 && fontPanel.hidden;
+    if (topNav) topNav.classList.toggle('nav-hidden', hide);
+    if (bottomBar) bottomBar.classList.toggle('bar-hidden', hide);
+    lastScrollY = y;
+  }, { passive: true });
 }());
