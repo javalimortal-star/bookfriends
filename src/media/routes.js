@@ -23,6 +23,9 @@ function sendBookFile(req, res, book, filePath) {
     if (err || !stat.isFile()) return res.status(404).end();
     // sandbox CSP: an SVG opened directly can't run script in the app origin
     res.set('Content-Security-Policy', "default-src 'none'; sandbox");
+    // Book media never changes for a given book id (written once at upload);
+    // 'private' because access is permission-checked, so only browsers cache.
+    res.set('Cache-Control', 'private, max-age=2592000, immutable');
     res.set('Content-Type', MIME[nodePath.extname(resolved).toLowerCase()] || 'application/octet-stream');
     fs.createReadStream(resolved).pipe(res);
   });

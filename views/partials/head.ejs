@@ -10,7 +10,13 @@
       if (themePref === 'light' || themePref === 'sepia') document.documentElement.className = 'theme-' + themePref;
     } catch (e) { /* default dark */ }
   </script>
-  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    /* Painted before app.css arrives — no white flash between pages */
+    html { background: #0e0e11; color: #d8d8dc; }
+    html.theme-light { background: #f4f4f6; color: #2c2c31; }
+    html.theme-sepia { background: #f3e9d2; color: #4a3b26; }
+  </style>
+  <link rel="stylesheet" href="/css/app.css?v=<%= assetVersion %>">
 </head>
 <body>
 <nav class="nav">

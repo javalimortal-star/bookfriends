@@ -123,5 +123,5 @@
     user: <%- JSON.stringify(user ? { id: user.id, role: user.role } : null) %>
   };
 </script>
-<script src="/js/reader.js"></script>
+<script src="/js/reader.js?v=<%= assetVersion %>"></script>
 <%- include('partials/footer') %>

@@ -1,4 +1,6 @@
 require('dotenv').config();
+const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
@@ -26,7 +28,13 @@ app.use((req, res, next) => {
   res.locals.googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   next();
 });
-app.use(express.static(path.join(__dirname, 'public')));
+// Templates fingerprint static assets as ?v=<content hash>, so production can
+// cache them long-term and a deploy still busts the cache (new hash, new URL).
+app.locals.assetVersion = crypto.createHash('md5')
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'app.css')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'reader.js')))
+  .digest('hex').slice(0, 10);
+app.use(express.static(path.join(__dirname, 'public'), PROD ? { maxAge: '30d', immutable: true } : {}));
 
 if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET must be set (see .env.example)');
