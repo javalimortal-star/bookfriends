@@ -16,6 +16,18 @@
       <div class="book-meta">
         <a class="book-title" href="/book/<%= book.slug %>/0"><%= book.title %></a>
         <% if (book.author) { %><div class="book-author"><%= book.author %></div><% } %>
+        <% if (book.bookmarkIdx !== undefined) { %>
+          <div class="book-progress">
+            <div class="progress-label">You have read <%= book.bookmarkIdx + 1 %>/<%= book.chapterTotal %></div>
+            <div class="progress-track"><div class="progress-fill" style="width: <%= Math.round(((book.bookmarkIdx + 1) / book.chapterTotal) * 100) %>%"></div></div>
+            <div class="book-progress-row">
+              <a class="btn btn-small" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>">Continue reading</a>
+              <form method="post" action="/book/<%= book.slug %>/bookmark/remove" class="inline-form">
+                <button class="btn btn-small btn-ghost" type="submit" title="Remove bookmark">✕</button>
+              </form>
+            </div>
+          </div>
+        <% } %>
         <a class="download-link" href="/book/<%= book.slug %>/download" title="Download the EPUB (works with Send to Kindle)">⤓ Download EPUB</a>
         <% if (user && user.role === 'owner') { %>
           <div class="book-owner-row">

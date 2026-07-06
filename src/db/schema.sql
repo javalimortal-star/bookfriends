@@ -56,6 +56,14 @@ CREATE TABLE IF NOT EXISTS votes (
   UNIQUE (comment_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS bookmarks (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  chapter_idx INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, book_id)
+);
+
 CREATE TABLE IF NOT EXISTS sessions (
   sid TEXT PRIMARY KEY,
   sess TEXT NOT NULL,

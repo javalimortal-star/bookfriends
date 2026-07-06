@@ -18,6 +18,19 @@
 <article id="chapter-content" class="chapter-content"><%- chapter.content_html %></article>
 
 <div class="chapter-end">
+  <% if (bookmark && bookmark.action === 'advanced') { %>
+    <div id="bm-banner" class="bm-banner">
+      <span class="bm-icon bm-icon-ok">✓</span>
+      <span class="bm-text">Chapter bookmarked!</span>
+      <button type="button" id="bm-undo" class="bm-action">Undo</button>
+    </div>
+  <% } else if (bookmark && bookmark.action === 'older') { %>
+    <div id="bm-banner" class="bm-banner">
+      <span class="bm-icon bm-icon-warn">⚠</span>
+      <span class="bm-text">You are reading an older chapter than the one you have bookmarked.</span>
+      <button type="button" id="bm-set" class="bm-action">Bookmark</button>
+    </div>
+  <% } %>
   <% if (nextIdx !== null) { %>
     <a class="next-chapter-btn" href="/book/<%= book.slug %>/<%= nextIdx %>">NEXT CHAPTER</a>
   <% } %>
@@ -103,6 +116,9 @@
 <script>
   window.__READER__ = {
     chapterId: <%= chapter.id %>,
+    bookId: <%= book.id %>,
+    chapterIdx: <%= chapter.idx %>,
+    bookmark: <%- JSON.stringify(bookmark) %>,
     badgeCounts: <%- JSON.stringify(badgeCounts) %>,
     user: <%- JSON.stringify(user ? { id: user.id, role: user.role } : null) %>
   };

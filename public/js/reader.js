@@ -301,6 +301,43 @@
   });
   chapterCtx().reload();
 
+  /* ---------- bookmark banner: undo auto-bookmark / bookmark older chapter ---------- */
+
+  var bmBanner = document.getElementById('bm-banner');
+  function bmConfirm(text) {
+    bmBanner.textContent = '';
+    bmBanner.appendChild(el('span', 'bm-icon bm-icon-ok', '✓'));
+    bmBanner.appendChild(el('span', 'bm-text', text));
+  }
+  var bmUndo = document.getElementById('bm-undo');
+  if (bmUndo) {
+    bmUndo.addEventListener('click', function () {
+      bmUndo.disabled = true;
+      var prev = R.bookmark.prevIdx;
+      var restore = prev === null
+        ? api('DELETE', '/api/book/' + R.bookId + '/bookmark')
+        : api('PUT', '/api/book/' + R.bookId + '/bookmark', { idx: prev });
+      restore.then(function () {
+        bmConfirm(prev === null ? 'Bookmark removed.' : 'Bookmark restored to where it was.');
+      }).catch(function (err) {
+        bmUndo.disabled = false;
+        window.alert(err.message);
+      });
+    });
+  }
+  var bmSet = document.getElementById('bm-set');
+  if (bmSet) {
+    bmSet.addEventListener('click', function () {
+      bmSet.disabled = true;
+      api('PUT', '/api/book/' + R.bookId + '/bookmark', { idx: R.chapterIdx }).then(function () {
+        bmConfirm('Bookmarked! This is now your current chapter.');
+      }).catch(function (err) {
+        bmSet.disabled = false;
+        window.alert(err.message);
+      });
+    });
+  }
+
   /* ---------- reading settings: P badge toggle + tT font panel ---------- */
 
   var article = document.getElementById('chapter-content');
