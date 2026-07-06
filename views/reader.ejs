@@ -106,7 +106,7 @@
   <button type="button" id="font-toggle" class="bar-btn" aria-expanded="false" title="Font options">tT</button>
   <select id="toc-select" class="sort-select toc-select" aria-label="Table of contents">
     <% for (const item of toc) { %>
-      <option value="/book/<%= book.slug %>/<%= item.idx %>" <%= item.idx === chapter.idx ? 'selected' : '' %>><%= item.title %></option>
+      <option value="/book/<%= book.slug %>/<%= item.idx %>" <%= item.idx === chapter.idx ? 'selected' : '' %>><%= bookmark && item.idx <= bookmark.bmIdx ? '✓ ' : '' %><%= item.title %></option>
     <% } %>
   </select>
   <% if (prevIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= prevIdx %>">‹ Prev</a><% } else { %><span class="chapter-arrow disabled">‹ Prev</span><% } %>

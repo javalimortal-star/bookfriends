@@ -109,11 +109,11 @@ router.get('/book/:slug/:idx', (req, res) => {
     const existing = bookmarks.getBookmark(req.user.id, book.id);
     if (!existing || idx > existing.chapter_idx) {
       bookmarks.setBookmark(req.user.id, book.id, idx);
-      bookmark = { action: 'advanced', prevIdx: existing ? existing.chapter_idx : null };
+      bookmark = { action: 'advanced', prevIdx: existing ? existing.chapter_idx : null, bmIdx: idx };
     } else if (idx < existing.chapter_idx) {
-      bookmark = { action: 'older' };
+      bookmark = { action: 'older', bmIdx: existing.chapter_idx };
     } else {
-      bookmark = { action: 'same' };
+      bookmark = { action: 'same', bmIdx: idx, para: existing.para_index };
     }
   }
 
@@ -149,6 +149,19 @@ router.put('/api/book/:bookId/bookmark', requireAuth, (req, res) => {
   }
   bookmarks.setBookmark(req.user.id, book.id, idx);
   res.json({ ok: true, idx });
+});
+
+// Reading position inside the bookmarked chapter, pushed by the reader while
+// scrolling. updatePosition no-ops unless the bookmark still points at idx.
+router.put('/api/book/:bookId/position', requireAuth, (req, res) => {
+  const book = loadViewableBookById(req, res);
+  if (!book) return;
+  const idx = Number.parseInt(req.body.idx, 10);
+  const para = Number.parseInt(req.body.para, 10);
+  if (!Number.isInteger(idx) || idx < 0 || !Number.isInteger(para) || para < 0 || para > 1000000) {
+    return res.status(400).json({ error: 'bad position' });
+  }
+  res.json({ ok: true, applied: bookmarks.updatePosition(req.user.id, book.id, idx, para) });
 });
 
 router.delete('/api/book/:bookId/bookmark', requireAuth, (req, res) => {

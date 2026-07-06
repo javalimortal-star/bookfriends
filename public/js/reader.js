@@ -309,6 +309,13 @@
     bmBanner.appendChild(el('span', 'bm-icon bm-icon-ok', '✓'));
     bmBanner.appendChild(el('span', 'bm-text', text));
   }
+  function refreshTocMarks(bmIdx) {
+    Array.prototype.forEach.call(document.querySelectorAll('#toc-select option'), function (opt) {
+      var idx = Number(opt.value.split('/').pop());
+      var title = opt.textContent.replace(/^✓ /, '');
+      opt.textContent = (idx <= bmIdx ? '✓ ' : '') + title;
+    });
+  }
   var bmUndo = document.getElementById('bm-undo');
   if (bmUndo) {
     bmUndo.addEventListener('click', function () {
@@ -318,6 +325,8 @@
         ? api('DELETE', '/api/book/' + R.bookId + '/bookmark')
         : api('PUT', '/api/book/' + R.bookId + '/bookmark', { idx: prev });
       restore.then(function () {
+        positionArmed = false;
+        refreshTocMarks(prev === null ? -1 : prev);
         bmConfirm(prev === null ? 'Bookmark removed.' : 'Bookmark restored to where it was.');
       }).catch(function (err) {
         bmUndo.disabled = false;
@@ -330,12 +339,73 @@
     bmSet.addEventListener('click', function () {
       bmSet.disabled = true;
       api('PUT', '/api/book/' + R.bookId + '/bookmark', { idx: R.chapterIdx }).then(function () {
+        positionArmed = true;
+        lastSavedPara = -1;
+        savePosition(false);
+        refreshTocMarks(R.chapterIdx);
         bmConfirm('Bookmarked! This is now your current chapter.');
       }).catch(function (err) {
         bmSet.disabled = false;
         window.alert(err.message);
       });
     });
+  }
+
+  /* ---------- reading position: resume + save topmost paragraph ---------- */
+
+  var paraNodes = Array.prototype.slice.call(document.querySelectorAll('#chapter-content [data-p]'));
+  // Only push positions while the bookmark points at this chapter; the server
+  // re-checks, this just avoids useless requests (e.g. after Undo).
+  var positionArmed = !!(R.user && R.bookmark && R.bookmark.action !== 'older' && paraNodes.length);
+  var lastSavedPara = (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para) || 0;
+
+  function currentPara() {
+    for (var i = 0; i < paraNodes.length; i++) {
+      if (paraNodes[i].getBoundingClientRect().bottom > 10) {
+        return Number(paraNodes[i].getAttribute('data-p'));
+      }
+    }
+    return Number(paraNodes[paraNodes.length - 1].getAttribute('data-p'));
+  }
+
+  function savePosition(unloading) {
+    if (!positionArmed) return;
+    var para = currentPara();
+    if (para === lastSavedPara) return;
+    lastSavedPara = para;
+    fetch('/api/book/' + R.bookId + '/position', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idx: R.chapterIdx, para: para }),
+      keepalive: !!unloading,
+    }).catch(function () {});
+  }
+
+  var saveTimer = null;
+  window.addEventListener('scroll', function () {
+    if (!positionArmed || saveTimer) return;
+    saveTimer = setTimeout(function () { saveTimer = null; savePosition(false); }, 3000);
+  }, { passive: true });
+  window.addEventListener('pagehide', function () { savePosition(true); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') savePosition(true);
+  });
+
+  if (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
+    var resumeTarget = document.querySelector('#chapter-content [data-p="' + R.bookmark.para + '"]');
+    if (resumeTarget) {
+      var resumeInteracted = false;
+      ['wheel', 'touchstart', 'keydown'].forEach(function (evt) {
+        window.addEventListener(evt, function () { resumeInteracted = true; }, { passive: true, once: true });
+      });
+      var jumpToResume = function () {
+        window.scrollTo(0, resumeTarget.getBoundingClientRect().top + window.scrollY - 70);
+      };
+      jumpToResume();
+      // Images above the target can shift the layout as they load; re-align
+      // once everything has loaded, unless the reader already scrolled away.
+      window.addEventListener('load', function () { if (!resumeInteracted) jumpToResume(); });
+    }
   }
 
   /* ---------- reading settings: P badge toggle + tT font panel ---------- */

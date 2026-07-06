@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
   chapter_idx INTEGER NOT NULL,
+  para_index INTEGER,
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, book_id)
 );

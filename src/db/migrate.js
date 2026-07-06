@@ -14,6 +14,7 @@ function migrate() {
   db.exec(schema);
   ensureColumn('users', 'display_name', 'display_name TEXT');
   ensureColumn('users', 'auth_provider', "auth_provider TEXT NOT NULL DEFAULT 'local'");
+  ensureColumn('bookmarks', 'para_index', 'para_index INTEGER');
 }
 
 module.exports = { migrate };
