@@ -104,12 +104,19 @@ router.get('/book/:slug/:idx', (req, res) => {
   // Auto-bookmark like Wuxiaworld: opening a chapter ahead of the bookmark
   // moves it forward (Undo offered client-side); an older chapter never moves
   // it automatically — the reader gets a manual "Bookmark" prompt instead.
+  // ?peek=1 (notification links) never advances: checking a reply far ahead
+  // of where you are reading must not drag your bookmark there.
+  const peek = req.query.peek === '1';
   let bookmark = null;
   if (req.user) {
     const existing = bookmarks.getBookmark(req.user.id, book.id);
     if (!existing || idx > existing.chapter_idx) {
-      bookmarks.setBookmark(req.user.id, book.id, idx);
-      bookmark = { action: 'advanced', prevIdx: existing ? existing.chapter_idx : null, bmIdx: idx };
+      if (peek) {
+        bookmark = { action: 'peek', bmIdx: existing ? existing.chapter_idx : -1 };
+      } else {
+        bookmarks.setBookmark(req.user.id, book.id, idx);
+        bookmark = { action: 'advanced', prevIdx: existing ? existing.chapter_idx : null, bmIdx: idx };
+      }
     } else if (idx < existing.chapter_idx) {
       bookmark = { action: 'older', bmIdx: existing.chapter_idx };
     } else {

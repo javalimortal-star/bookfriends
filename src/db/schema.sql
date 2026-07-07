@@ -65,6 +65,16 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   PRIMARY KEY (user_id, book_id)
 );
 
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  seen INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, seen);
+
 CREATE TABLE IF NOT EXISTS sessions (
   sid TEXT PRIMARY KEY,
   sess TEXT NOT NULL,

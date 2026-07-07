@@ -11,4 +11,24 @@
   </form>
   <p class="hint">Leave it empty to go back to the start of your email (<%= user.email.split('@')[0] %>). Your old comments update too.</p>
 </div>
+<% if (user.auth_provider === 'local') { %>
+<div class="form-card">
+  <h2 class="form-subtitle">Change password</h2>
+  <% if (pwSaved) { %><p class="form-ok">Password changed!</p><% } %>
+  <% if (pwError) { %><p class="form-error"><%= pwError %></p><% } %>
+  <form method="post" action="/settings/password">
+    <label class="field"><span>Current password</span>
+      <input type="password" name="current_password" autocomplete="current-password" required>
+    </label>
+    <label class="field"><span>New password (at least 8 characters)</span>
+      <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
+    </label>
+    <button class="btn" type="submit">Change password</button>
+  </form>
+</div>
+<% } else { %>
+<div class="form-card">
+  <p class="hint">You sign in with Google, so there is no password to change here.</p>
+</div>
+<% } %>
 <%- include('partials/footer') %>

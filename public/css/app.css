@@ -61,6 +61,14 @@ a:hover { text-decoration: underline; }
 .nav-right { display: flex; align-items: center; gap: 0.5rem; }
 .nav-user { color: var(--muted); font-size: 0.85rem; }
 .inline-form { display: inline; }
+.nav-bell { position: relative; padding: 0 0.25rem; font-size: 1rem; }
+.nav-bell:hover { text-decoration: none; }
+.bell-badge {
+  position: absolute; top: -0.35rem; right: -0.5rem;
+  min-width: 1.05rem; height: 1.05rem; padding: 0 0.25rem; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--danger); color: #fff; font-size: 0.66rem; font-weight: 700;
+}
 
 /* ---------- buttons & forms ---------- */
 .btn {
@@ -322,6 +330,35 @@ body.badges-off .chapter-content [data-p] { padding-right: 0; }
 body.high-contrast .chapter-content { color: #fff; }
 html.theme-light body.high-contrast .chapter-content,
 html.theme-sepia body.high-contrast .chapter-content { color: #000; }
+
+/* ---------- notifications ---------- */
+.notif-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.notif {
+  display: block; padding: 0.7rem 0.9rem; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+}
+.notif:hover { border-color: var(--accent); text-decoration: none; }
+.notif.unseen { border-left: 3px solid var(--accent); }
+.notif-title { color: var(--text-strong); }
+.notif-meta { color: var(--muted); font-size: 0.8rem; margin: 0.15rem 0 0.3rem; }
+.notif-excerpt { color: var(--muted); font-size: 0.9rem; }
+
+/* ---------- users admin ---------- */
+.reset-banner {
+  margin-bottom: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid #22c55e; font-size: 0.9rem;
+}
+.reset-banner code {
+  background: var(--surface-2); padding: 0.1rem 0.45rem; border-radius: 6px;
+  font-size: 1rem; color: var(--text-strong);
+}
+.table-wrap { overflow-x: auto; }
+.users-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.users-table th, .users-table td {
+  text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border);
+}
+.users-table th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+.form-subtitle { color: var(--text-strong); font-size: 1.05rem; margin-bottom: 0.8rem; }
 
 /* ---------- mobile ---------- */
 @media (max-width: 640px) {

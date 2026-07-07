@@ -1,7 +1,8 @@
+const crypto = require('crypto');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
-const { requireAuth } = require('./middleware');
+const { requireAuth, requireOwner } = require('./middleware');
 
 const router = express.Router();
 const BCRYPT_COST = 12;
@@ -69,15 +70,62 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
 });
 
+function renderSettings(res, extra = {}) {
+  res.render('settings', {
+    title: 'Settings', saved: false, pwSaved: false, pwError: null, ...extra,
+  });
+}
+
 router.get('/settings', requireAuth, (req, res) => {
-  res.render('settings', { title: 'Settings', saved: false });
+  renderSettings(res);
 });
 
 router.post('/settings', requireAuth, (req, res) => {
   const displayName = normalizeDisplayName(req.body.display_name);
   db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(displayName, req.user.id);
   res.locals.user.display_name = displayName;
-  res.render('settings', { title: 'Settings', saved: true });
+  renderSettings(res, { saved: true });
+});
+
+router.post('/settings/password', requireAuth, (req, res) => {
+  if (req.user.auth_provider !== 'local') {
+    return res.status(400).render('error', { title: 'Not available', message: 'You sign in with Google — there is no password to change.' });
+  }
+  const current = String(req.body.current_password || '');
+  const next = String(req.body.new_password || '');
+  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+  if (!bcrypt.compareSync(current, row.password_hash)) {
+    res.status(400);
+    return renderSettings(res, { pwError: 'Current password is wrong.' });
+  }
+  if (next.length < 8) {
+    res.status(400);
+    return renderSettings(res, { pwError: 'New password must be at least 8 characters.' });
+  }
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(next, BCRYPT_COST), req.user.id);
+  renderSettings(res, { pwSaved: true });
+});
+
+// ---------- owner user admin: list users, reset a friend's lost password ----------
+
+function listUsers() {
+  return db.prepare('SELECT id, email, display_name, role, auth_provider, created_at FROM users ORDER BY created_at').all();
+}
+
+router.get('/users', requireOwner, (req, res) => {
+  res.render('users', { title: 'Users', users: listUsers(), resetInfo: null, error: null });
+});
+
+router.post('/users/:id/reset-password', requireOwner, (req, res) => {
+  const target = db.prepare('SELECT id, email, auth_provider FROM users WHERE id = ?').get(Number(req.params.id));
+  // Google accounts can't be locked out (Google is their login) and the owner
+  // changes their own password in Settings, so neither is resettable here.
+  if (!target || target.auth_provider !== 'local' || target.id === req.user.id) {
+    return res.status(400).render('users', { title: 'Users', users: listUsers(), resetInfo: null, error: 'That account cannot be reset here.' });
+  }
+  const temp = crypto.randomBytes(4).toString('hex');
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(temp, BCRYPT_COST), target.id);
+  res.render('users', { title: 'Users', users: listUsers(), resetInfo: { email: target.email, temp }, error: null });
 });
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const { db } = require('../db');
 
-const userStmt = () => db.prepare('SELECT id, email, role, display_name FROM users WHERE id = ?');
+const userStmt = () => db.prepare('SELECT id, email, role, display_name, auth_provider FROM users WHERE id = ?');
 
 function loadUser(req, res, next) {
   res.locals.user = null;

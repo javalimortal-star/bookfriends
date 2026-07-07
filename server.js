@@ -53,6 +53,12 @@ app.use(session({
 }));
 
 app.use(loadUser);
+// Unread-reply count for the nav bell on every rendered page.
+const notifications = require('./src/comments/notifications');
+app.use((req, res, next) => {
+  res.locals.unseenNotifs = req.user ? notifications.unseenCount(req.user.id) : 0;
+  next();
+});
 
 app.use(require('./src/auth/routes'));
 app.use(require('./src/auth/google'));

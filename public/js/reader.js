@@ -355,8 +355,10 @@
 
   var paraNodes = Array.prototype.slice.call(document.querySelectorAll('#chapter-content [data-p]'));
   // Only push positions while the bookmark points at this chapter; the server
-  // re-checks, this just avoids useless requests (e.g. after Undo).
-  var positionArmed = !!(R.user && R.bookmark && R.bookmark.action !== 'older' && paraNodes.length);
+  // re-checks, this just avoids useless requests (e.g. after Undo or in
+  // ?peek=1 pages opened from notifications).
+  var positionArmed = !!(R.user && R.bookmark
+    && (R.bookmark.action === 'advanced' || R.bookmark.action === 'same') && paraNodes.length);
   var lastSavedPara = (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para) || 0;
 
   function currentPara() {
@@ -391,7 +393,17 @@
     if (document.visibilityState === 'hidden') savePosition(true);
   });
 
-  if (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
+  // Deep link from a notification: open the right paragraph's comment panel.
+  var panelParam = new URLSearchParams(location.search).get('panel');
+  if (panelParam !== null && Number.isInteger(Number(panelParam)) && Number(panelParam) >= 0) {
+    var panelBlock = document.querySelector('#chapter-content [data-p="' + Number(panelParam) + '"]');
+    if (panelBlock) panelBlock.scrollIntoView();
+    openPanel(Number(panelParam));
+  }
+
+  // Deep links (comment panel or #comments anchor) win over position resume.
+  if (panelParam === null && !location.hash
+      && R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
     var resumeTarget = document.querySelector('#chapter-content [data-p="' + R.bookmark.para + '"]');
     if (resumeTarget) {
       var resumeInteracted = false;

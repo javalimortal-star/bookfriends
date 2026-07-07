@@ -4,8 +4,10 @@ data/
 *.epub:Zone.Identifier
 *Zone.Identifier
 *.zip
-# local reference screenshots (not part of the app)
+# local reference screenshots and icon sources in the repo root (not part of the app)
 Captura*.png
+/*.png
+/favicon/
 # AI-assistant working files
 .omc/
 .claude/

@@ -1,0 +1,15 @@
+<%- include('partials/head') %>
+<h1 class="page-title">Notifications</h1>
+<% if (items.length === 0) { %>
+  <p class="empty">Nothing here yet — when a friend replies to one of your comments, it shows up here.</p>
+<% } %>
+<div class="notif-list">
+  <% for (const n of items) { %>
+    <a class="notif<%= n.seen ? '' : ' unseen' %>" href="<%= n.link %>">
+      <div class="notif-title"><strong><%= n.replierName %></strong> replied to your comment</div>
+      <div class="notif-meta"><%= n.book_title %> — <%= n.chapter_title %><%= n.para_index === null ? '' : ` · paragraph ${n.para_index + 1}` %> · <%= n.when %></div>
+      <div class="notif-excerpt"><%= n.excerpt %></div>
+    </a>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

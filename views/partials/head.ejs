@@ -17,13 +17,22 @@
     html.theme-sepia { background: #f3e9d2; color: #4a3b26; }
   </style>
   <link rel="stylesheet" href="/css/app.css?v=<%= assetVersion %>">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#17171c">
 </head>
 <body>
 <nav class="nav">
   <a class="nav-brand" href="/">📚 BookFriends</a>
   <div class="nav-right">
     <% if (user) { %>
-      <% if (user.role === 'owner') { %><a class="btn btn-small" href="/upload">Upload</a><% } %>
+      <% if (user.role === 'owner') { %>
+        <a class="btn btn-small" href="/upload">Upload</a>
+        <a class="btn btn-small btn-ghost" href="/users">Users</a>
+      <% } %>
+      <a class="nav-bell" href="/notifications" title="Notifications">🔔<% if (unseenNotifs > 0) { %><span class="bell-badge"><%= unseenNotifs > 9 ? '9+' : unseenNotifs %></span><% } %></a>
       <a class="nav-user" href="/settings" title="Settings"><%= user.display_name || user.email %></a>
       <form method="post" action="/logout" class="inline-form"><button class="btn btn-small btn-ghost" type="submit">Log out</button></form>
     <% } else { %>

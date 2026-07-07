@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth, canViewBook } = require('../auth/middleware');
 const comments = require('./service');
+const notifications = require('./notifications');
 const books = require('../books/service');
 
 const router = express.Router();
@@ -52,10 +53,12 @@ router.post('/api/chapter/:chapterId/comments', requireAuth, (req, res) => {
   }
 
   let parentId = null;
+  let parentAuthorId = null;
   if (req.body.parent_id) {
     const parent = comments.getComment(Number(req.body.parent_id));
     if (!parent || parent.chapter_id !== ctx.chapter.id) return res.status(400).json({ error: 'bad parent_id' });
     parentId = parent.id;
+    parentAuthorId = parent.user_id;
     paraIndex = parent.para_index; // replies inherit the parent's anchor
   }
 
@@ -67,7 +70,36 @@ router.post('/api/chapter/:chapterId/comments', requireAuth, (req, res) => {
     userId: req.user.id,
     body,
   });
+  if (parentAuthorId !== null && parentAuthorId !== req.user.id) {
+    notifications.notifyReply(parentAuthorId, created.id);
+  }
   res.status(201).json({ id: created.id });
+});
+
+function relTime(ts) {
+  const mins = Math.floor((Date.now() - ts) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
+  return new Date(ts).toLocaleDateString('en-GB');
+}
+
+router.get('/notifications', requireAuth, (req, res) => {
+  const items = notifications.listForUser(req.user.id).map((n) => {
+    const base = `/book/${n.book_slug}/${n.chapter_idx}?peek=1`;
+    return Object.assign(n, {
+      link: n.para_index === null ? `${base}#comments` : `${base}&panel=${n.para_index}`,
+      replierName: n.replier_name || n.replier_email.split('@')[0],
+      excerpt: n.body.length > 140 ? `${n.body.slice(0, 140)}…` : n.body,
+      when: relTime(n.created_at),
+    });
+  });
+  notifications.markAllSeen(req.user.id);
+  res.locals.unseenNotifs = 0; // the bell clears as this page renders
+  res.render('notifications', { title: 'Notifications', items });
 });
 
 function loadEditableComment(req, res, { ownerMayDelete = false } = {}) {

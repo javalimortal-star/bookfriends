@@ -1,0 +1,36 @@
+<%- include('partials/head') %>
+<h1 class="page-title">Users</h1>
+<% if (resetInfo) { %>
+  <div class="reset-banner">
+    Temporary password for <strong><%= resetInfo.email %></strong>: <code><%= resetInfo.temp %></code><br>
+    Send it to them — they log in with it and can change it in Settings. It is shown only this once.
+  </div>
+<% } %>
+<% if (error) { %><p class="form-error"><%= error %></p><% } %>
+<div class="table-wrap">
+  <table class="users-table">
+    <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Login</th><th>Joined</th><th></th></tr></thead>
+    <tbody>
+      <% for (const u of users) { %>
+        <tr>
+          <td><%= u.email %></td>
+          <td><%= u.display_name || '—' %></td>
+          <td><%= u.role %></td>
+          <td><%= u.auth_provider %></td>
+          <td><%= new Date(u.created_at).toLocaleDateString('en-GB') %></td>
+          <td>
+            <% if (u.auth_provider === 'local' && u.id !== user.id) { %>
+              <form method="post" action="/users/<%= u.id %>/reset-password" class="inline-form" onsubmit="return confirm('Reset the password for <%= u.email %>? Their current password stops working.')">
+                <button class="btn btn-small btn-ghost" type="submit">Reset password</button>
+              </form>
+            <% } else if (u.auth_provider !== 'local') { %>
+              <span class="hint">Google login</span>
+            <% } %>
+          </td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<p class="hint">If a friend forgets their password, reset it here and send them the temporary one.</p>
+<%- include('partials/footer') %>

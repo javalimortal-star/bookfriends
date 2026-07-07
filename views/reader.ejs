@@ -34,7 +34,7 @@
   <% if (nextIdx !== null) { %>
     <a class="next-chapter-btn" href="/book/<%= book.slug %>/<%= nextIdx %>">NEXT CHAPTER</a>
   <% } %>
-  <section class="chapter-comments">
+  <section id="comments" class="chapter-comments">
     <div class="comments-header">
       <h2 id="chapter-comments-title"><%= chapterCommentCount %> Comments</h2>
       <select id="chapter-sort" class="sort-select" aria-label="Sort comments">
