@@ -67,11 +67,19 @@ function deleteBook(bookId) {
   fs.rmSync(bookDir(bookId), { recursive: true, force: true });
 }
 
-function getShelf(user) {
+// Whitelisted ORDER BY clauses; unknown keys fall back to newest-first.
+const SHELF_ORDER = {
+  added: 'created_at DESC',
+  title: 'title COLLATE NOCASE, created_at DESC',
+  author: 'author IS NULL, author COLLATE NOCASE, title COLLATE NOCASE',
+};
+
+function getShelf(user, sort) {
+  const order = SHELF_ORDER[sort] || SHELF_ORDER.added;
   if (user && user.role === 'owner') {
-    return db.prepare('SELECT * FROM books ORDER BY created_at DESC').all();
+    return db.prepare(`SELECT * FROM books ORDER BY ${order}`).all();
   }
-  return db.prepare("SELECT * FROM books WHERE visibility = 'public' ORDER BY created_at DESC").all();
+  return db.prepare(`SELECT * FROM books WHERE visibility = 'public' ORDER BY ${order}`).all();
 }
 
 function getBookBySlug(slug) {

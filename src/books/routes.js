@@ -20,7 +20,8 @@ const upload = multer({
 });
 
 router.get('/', (req, res) => {
-  const shelf = books.getShelf(req.user);
+  const sort = ['added', 'title', 'author'].includes(req.query.sort) ? req.query.sort : 'added';
+  const shelf = books.getShelf(req.user, sort);
   if (req.user) {
     for (const book of shelf) {
       const mark = bookmarks.getBookmark(req.user.id, book.id);
@@ -30,7 +31,7 @@ router.get('/', (req, res) => {
       }
     }
   }
-  res.render('shelf', { title: 'BookFriends', books: shelf });
+  res.render('shelf', { title: 'BookFriends', books: shelf, sort });
 });
 
 router.get('/upload', requireOwner, (req, res) => {

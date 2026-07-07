@@ -1,5 +1,14 @@
 <%- include('partials/head') %>
-<h1 class="page-title">Bookshelf</h1>
+<div class="shelf-header">
+  <h1 class="page-title">Bookshelf</h1>
+  <% if (books.length > 1) { %>
+    <select class="sort-select" aria-label="Sort books" onchange="location.href=this.value">
+      <option value="/?sort=added" <%= sort === 'added' ? 'selected' : '' %>>Date added</option>
+      <option value="/?sort=title" <%= sort === 'title' ? 'selected' : '' %>>Name A–Z</option>
+      <option value="/?sort=author" <%= sort === 'author' ? 'selected' : '' %>>Author</option>
+    </select>
+  <% } %>
+</div>
 <% if (books.length === 0) { %>
   <p class="empty">No books here yet.<% if (user && user.role === 'owner') { %> <a href="/upload">Upload your first EPUB</a>.<% } %></p>
 <% } %>
