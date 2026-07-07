@@ -534,4 +534,33 @@
     if (bottomBar) bottomBar.classList.toggle('bar-hidden', hide);
     lastScrollY = y;
   }, { passive: true });
+
+  // Some mobile browsers (Samsung Internet's toolbar, Chrome's bottom address
+  // bar) overlay their UI on the page without reporting it via safe-area
+  // insets. The visualViewport API exposes how much of the layout viewport is
+  // actually visible, so lift the bottom bar by exactly the covered height.
+  if (bottomBar && window.visualViewport) {
+    var vv = window.visualViewport;
+    var vvRaf = null;
+    var applyViewportGap = function () {
+      vvRaf = null;
+      // While pinch-zoomed the visual viewport is a magnified slice; pinning
+      // to its bottom would fling the bar around, so fall back to bottom: 0.
+      var covered = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
+      // Browsers that report the overlay via safe-area-inset-bottom already
+      // lift the bar through its CSS padding (0.5rem base + inset); subtract
+      // that so the bar is never lifted twice.
+      var rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      var envInset = Math.max(0, (parseFloat(getComputedStyle(bottomBar).paddingBottom) || 0) - 0.5 * rootFont);
+      var gap = Math.max(0, covered - envInset);
+      bottomBar.style.bottom = gap + 'px';
+      fontPanel.style.bottom = 'calc(3.6rem + ' + gap + 'px + env(safe-area-inset-bottom, 0px))';
+    };
+    var queueViewportGap = function () {
+      if (vvRaf === null) vvRaf = window.requestAnimationFrame(applyViewportGap);
+    };
+    vv.addEventListener('resize', queueViewportGap);
+    vv.addEventListener('scroll', queueViewportGap);
+    queueViewportGap();
+  }
 }());
