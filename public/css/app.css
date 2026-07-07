@@ -56,8 +56,12 @@ a:hover { text-decoration: underline; }
   transition: transform 0.25s ease;
 }
 .nav.nav-hidden { transform: translateY(-105%); }
-.nav-brand { color: var(--text-strong); font-weight: 700; font-size: 1.05rem; }
+.nav-brand {
+  color: var(--text-strong); font-weight: 700; font-size: 1.05rem;
+  display: inline-flex; align-items: center; gap: 0.45rem;
+}
 .nav-brand:hover { text-decoration: none; }
+.nav-logo { height: 1.6rem; width: 1.6rem; }
 .nav-right { display: flex; align-items: center; gap: 0.5rem; }
 .nav-user { color: var(--muted); font-size: 0.85rem; }
 .inline-form { display: inline; }
