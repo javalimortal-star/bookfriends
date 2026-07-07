@@ -252,6 +252,7 @@ a:hover { text-decoration: underline; }
   position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw;
   background: var(--surface); border-left: 1px solid var(--border); z-index: 50;
   padding: 1rem; overflow-y: auto;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 .panel-header { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.6rem; }
 .panel-header #panel-title { flex: 1; color: var(--text-strong); font-weight: 700; }
@@ -265,6 +266,8 @@ a:hover { text-decoration: underline; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   display: flex; align-items: center; justify-content: center; gap: 0.8rem;
   padding: 0.5rem 1rem; background: var(--surface); border-top: 1px solid var(--border);
+  /* stay above Android's overlaying bottom address bar / gesture area */
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
   transition: transform 0.25s ease;
 }
 .reader-bottombar.bar-hidden { transform: translateY(105%); }
@@ -278,6 +281,7 @@ a:hover { text-decoration: underline; }
 /* ---------- font options panel (tT) ---------- */
 .font-panel {
   position: fixed; bottom: 3.6rem; left: 50%; transform: translateX(-50%);
+  bottom: calc(3.6rem + env(safe-area-inset-bottom, 0px));
   width: 340px; max-width: calc(100vw - 1.6rem); z-index: 60;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
