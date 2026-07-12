@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
 const { requireAuth, requireOwner } = require('./middleware');
+const { loginLimiter, passwordLimiter, registerLimiter } = require('../rate-limit');
 
 const router = express.Router();
 const BCRYPT_COST = 12;
@@ -21,7 +22,7 @@ router.get('/register', (req, res) => {
   res.render('auth-register', { title: 'Register', error: null });
 });
 
-router.post('/register', (req, res) => {
+router.post('/register', registerLimiter, (req, res) => {
   const email = normalizeEmail(req.body.email);
   const password = String(req.body.password || '');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -52,7 +53,7 @@ router.get('/login', (req, res) => {
   res.render('auth-login', { title: 'Log in', error: null });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
   const email = normalizeEmail(req.body.email);
   const password = String(req.body.password || '');
   const user = db.prepare('SELECT id, password_hash FROM users WHERE email = ?').get(email);
@@ -87,7 +88,7 @@ router.post('/settings', requireAuth, (req, res) => {
   renderSettings(res, { saved: true });
 });
 
-router.post('/settings/password', requireAuth, (req, res) => {
+router.post('/settings/password', requireAuth, passwordLimiter, (req, res) => {
   if (req.user.auth_provider !== 'local') {
     return res.status(400).render('error', { title: 'Not available', message: 'You sign in with Google — there is no password to change.' });
   }

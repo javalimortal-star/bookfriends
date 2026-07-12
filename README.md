@@ -90,15 +90,36 @@ Google accounts are matched to site accounts by email (a Google sign-in with the
 same address logs into the existing account), and the Google profile name becomes
 the initial display name.
 
+## Backups
+
+`scripts/backup.js` writes a SQLite-safe snapshot of the database (via
+`better-sqlite3`'s backup API — never raw-copy a live WAL database) plus the
+extracted book media to `backups/bookfriends-YYYY-MM-DD.tar.gz`, keeping the
+newest 7. Schedule it nightly on the server:
+
+```cron
+30 3 * * * cd /path/to/bookfriends && /usr/bin/node scripts/backup.js >> ~/backup.log 2>&1
+```
+
+Off-site copy: set `BACKUP_TOKEN` in `.env` and another machine can download the
+newest archive from `/backup/download?token=...` over HTTPS.
+`backup-bookfriends.cmd` does exactly that as a Windows Scheduled Task and keeps
+30 days of downloads.
+
+Restore: stop the server, then extract into a fresh data dir:
+`tar -xzf bookfriends-YYYY-MM-DD.tar.gz -C data`.
+
 ## Security notes
 
 - **Register the owner account immediately after deploying.** The first registration
   using `OWNER_EMAIL` becomes the owner — until you register, anyone who guesses that
   email could claim it. If registration ever says your owner email is taken, someone
   squatted it: wipe `DATA_DIR` (or delete that user row) and register again.
-- Known accepted trade-offs for a friends-scale site: no rate limiting on login or
-  comments, registration reveals whether an email exists, and there is no upload
-  decompression-bomb guard (uploads are owner-only).
+- Login, registration, password changes and comment posting are rate-limited per
+  IP (`src/rate-limit.js`); successful logins don't count against the limit.
+- Known accepted trade-offs for a friends-scale site: registration reveals whether
+  an email exists, and there is no upload decompression-bomb guard (uploads are
+  owner-only).
 
 ## Architecture
 

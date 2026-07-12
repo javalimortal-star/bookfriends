@@ -1,5 +1,6 @@
 const express = require('express');
 const { requireAuth, canViewBook } = require('../auth/middleware');
+const { commentLimiter } = require('../rate-limit');
 const comments = require('./service');
 const notifications = require('./notifications');
 const books = require('../books/service');
@@ -40,7 +41,7 @@ router.get('/api/chapter/:chapterId/comments', (req, res) => {
   });
 });
 
-router.post('/api/chapter/:chapterId/comments', requireAuth, (req, res) => {
+router.post('/api/chapter/:chapterId/comments', requireAuth, commentLimiter, (req, res) => {
   const ctx = loadViewableChapter(req, res);
   if (!ctx) return;
   const body = String(req.body.body || '').trim();

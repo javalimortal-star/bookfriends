@@ -62,6 +62,7 @@ app.use((req, res, next) => {
 
 app.use(require('./src/auth/routes'));
 app.use(require('./src/auth/google'));
+app.use(require('./src/backup/routes'));
 app.use(require('./src/media/routes'));
 app.use(require('./src/comments/routes'));
 app.use(require('./src/books/routes'));
