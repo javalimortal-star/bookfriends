@@ -273,7 +273,16 @@
   document.getElementById('panel-close').addEventListener('click', closePanel);
   backdrop.addEventListener('click', closePanel);
   document.addEventListener('keydown', function (event) {
-    if (event.key === 'Escape' && !panel.hidden) closePanel();
+    if (event.key === 'Escape' && !panel.hidden) return closePanel();
+    // ← / → jump to the previous/next chapter — but not while typing in a
+    // form field, holding a modifier (Alt+← is browser history), or reading
+    // the comment panel (navigating would silently discard it).
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    var url = event.key === 'ArrowLeft' ? R.prevUrl : event.key === 'ArrowRight' ? R.nextUrl : null;
+    if (!url || !panel.hidden) return;
+    var target = event.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) return;
+    window.location.href = url;
   });
   document.getElementById('panel-sort').addEventListener('change', function (event) {
     panelState.sort = event.target.value;

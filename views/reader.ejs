@@ -118,6 +118,8 @@
     chapterId: <%= chapter.id %>,
     bookId: <%= book.id %>,
     chapterIdx: <%= chapter.idx %>,
+    prevUrl: <%- JSON.stringify(prevIdx !== null ? '/book/' + book.slug + '/' + prevIdx : null) %>,
+    nextUrl: <%- JSON.stringify(nextIdx !== null ? '/book/' + book.slug + '/' + nextIdx : null) %>,
     bookmark: <%- JSON.stringify(bookmark) %>,
     badgeCounts: <%- JSON.stringify(badgeCounts) %>,
     user: <%- JSON.stringify(user ? { id: user.id, role: user.role } : null) %>
