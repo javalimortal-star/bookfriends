@@ -48,4 +48,9 @@ module.exports = {
     limit: 20,
     message: (t) => t('You are commenting too fast. Wait a few minutes and try again.'),
   }),
+  bookRequestLimiter: makeLimiter({
+    windowMs: 60 * 60 * 1000,
+    limit: 10,
+    message: (t) => t('That is a lot of book requests at once. Try again in an hour.'),
+  }),
 };

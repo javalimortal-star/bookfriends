@@ -72,8 +72,9 @@ router.post('/logout', (req, res) => {
 });
 
 function renderSettings(res, extra = {}) {
+  const shareProgress = db.prepare('SELECT share_progress FROM users WHERE id = ?').get(res.locals.user.id).share_progress === 1;
   res.render('settings', {
-    title: res.locals.t('Settings'), saved: false, pwSaved: false, pwError: null, ...extra,
+    title: res.locals.t('Settings'), saved: false, pwSaved: false, pwError: null, privacySaved: false, shareProgress, ...extra,
   });
 }
 
@@ -86,6 +87,13 @@ router.post('/settings', requireAuth, (req, res) => {
   db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(displayName, req.user.id);
   res.locals.user.display_name = displayName;
   renderSettings(res, { saved: true });
+});
+
+// Off = your bookmarks no longer show up in friends' shelves and readers.
+router.post('/settings/privacy', requireAuth, (req, res) => {
+  const share = req.body.share_progress === '1' ? 1 : 0;
+  db.prepare('UPDATE users SET share_progress = ? WHERE id = ?').run(share, req.user.id);
+  renderSettings(res, { privacySaved: true });
 });
 
 router.post('/settings/password', requireAuth, passwordLimiter, (req, res) => {

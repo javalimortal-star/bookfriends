@@ -42,6 +42,7 @@
         <div class="nav-menu-list">
           <div class="nav-menu-head"><strong><%= navName %></strong><span><%= user.email %></span></div>
           <a class="nav-menu-item" href="/settings"><%= t('Settings') %></a>
+          <a class="nav-menu-item" href="/requests"><%= t('Book requests') %><% if (typeof openRequests !== 'undefined' && openRequests > 0) { %> <span class="menu-badge" title="<%= t.n('{count} open request', '{count} open requests', openRequests) %>"><%= openRequests %></span><% } %></a>
           <% if (user.role === 'owner') { %>
             <a class="nav-menu-item nav-narrow" href="/upload"><%= t('Upload a book') %></a>
             <a class="nav-menu-item nav-narrow" href="/users"><%= t('Users') %></a>

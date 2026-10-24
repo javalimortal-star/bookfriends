@@ -65,6 +65,12 @@ app.use((req, res, next) => {
   res.locals.unseenNotifs = req.user ? notifications.unseenCount(req.user.id) : 0;
   next();
 });
+// Open book requests: a count on the owner's "Book requests" menu item.
+const bookRequests = require('./src/requests/service');
+app.use((req, res, next) => {
+  res.locals.openRequests = req.user && req.user.role === 'owner' ? bookRequests.openCount() : 0;
+  next();
+});
 
 app.use(require('./src/i18n/routes'));
 app.use(require('./src/auth/routes'));
@@ -72,6 +78,7 @@ app.use(require('./src/auth/google'));
 app.use(require('./src/backup/routes'));
 app.use(require('./src/media/routes'));
 app.use(require('./src/comments/routes'));
+app.use(require('./src/requests/routes'));
 app.use(require('./src/books/routes'));
 
 app.use((req, res) => {

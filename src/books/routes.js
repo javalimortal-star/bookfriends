@@ -7,6 +7,8 @@ const { requireAuth, requireOwner, canViewBook } = require('../auth/middleware')
 const books = require('./service');
 const bookmarks = require('./bookmarks');
 const commentsService = require('../comments/service');
+const friends = require('../friends/service');
+const { LANGS } = require('../i18n');
 
 const router = express.Router();
 
@@ -48,7 +50,12 @@ router.get('/', (req, res) => {
     }
   }
   const currentChapter = current ? books.chapterTitle(current.id, current.bookmarkIdx) : null;
-  res.render('shelf', { title: 'BookFriends', books: shelf, sort, current, currentChapter });
+  // Friends' bookmarks for every card in one query, grouped per book.
+  const friendsByBook = friends.groupByBook(friends.friendsProgress(req.user, { lang: req.lang }));
+  const currentFriend = current ? friends.closestFriend(current.bookmarkIdx, friendsByBook.get(current.id)) : null;
+  res.render('shelf', {
+    title: 'BookFriends', books: shelf, sort, current, currentChapter, friendsByBook, currentFriend,
+  });
 });
 
 router.get('/upload', requireOwner, (req, res) => {
@@ -152,8 +159,21 @@ router.get('/book/:slug/:idx', (req, res) => {
     chapterCommentCount: commentsService.chapterCommentCount(chapter.id),
     toc: books.chapterList(book.id),
     bookmark,
+    ...readerFriends(req, book, idx),
   });
 });
+
+// The "Friends reading this book" strip above the chapter comments; friends
+// on this very chapter come first and get a sentence of their own.
+function readerFriends(req, book, idx) {
+  const list = friends.friendsProgress(req.user, { bookId: book.id, lang: req.lang });
+  const here = list.filter((f) => f.chapterIdx === idx);
+  const others = list.filter((f) => f.chapterIdx !== idx);
+  const names = here.length
+    ? new Intl.ListFormat(LANGS[req.lang].locale, { type: 'conjunction' }).format(here.map((f) => f.name))
+    : '';
+  return { friends: here.concat(others), friendsHere: here.length, friendsHereNames: names };
+}
 
 function loadViewableBookById(req, res) {
   const book = books.getBookById(Number(req.params.bookId));

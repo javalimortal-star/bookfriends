@@ -84,3 +84,26 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+
+-- Friends ask the owner to upload a book; others add a "me too" vote.
+-- book_id links a fulfilled request to the uploaded book.
+CREATE TABLE IF NOT EXISTS book_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  author TEXT,
+  note TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done', 'declined')),
+  book_id INTEGER REFERENCES books(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_requests_status ON book_requests(status);
+
+CREATE TABLE IF NOT EXISTS book_request_votes (
+  request_id INTEGER NOT NULL REFERENCES book_requests(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (request_id, user_id)
+);

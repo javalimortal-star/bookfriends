@@ -17,6 +17,8 @@ function migrate() {
   ensureColumn('bookmarks', 'para_index', 'para_index INTEGER');
   ensureColumn('comments', 'spoiler', 'spoiler INTEGER NOT NULL DEFAULT 0');
   ensureColumn('notifications', 'kind', "kind TEXT NOT NULL DEFAULT 'reply'");
+  // 0 hides the user's bookmarks from the friends' progress on shelf and reader
+  ensureColumn('users', 'share_progress', 'share_progress INTEGER NOT NULL DEFAULT 1');
 }
 
 module.exports = { migrate };
