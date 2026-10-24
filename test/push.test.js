@@ -151,3 +151,17 @@ test('subscriptions: upsert by endpoint, reassigned to whoever subscribes, cappe
   db.prepare('DELETE FROM users WHERE id = ?').run(ana);
   assert.strictEqual(rows(ana).length, 0);
 });
+
+test('production accepts only real push services on the default port', () => {
+  const { parseSubscription } = require('../src/push/subscription');
+  const keys = { p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString('base64url'), auth: Buffer.alloc(16, 9).toString('base64url') };
+  const ok = (endpoint) => parseSubscription({ endpoint, keys }) !== null;
+  assert.ok(ok('https://fcm.googleapis.com/fcm/send/abc'));
+  assert.ok(ok('https://updates.push.services.mozilla.com/wpush/v2/abc'));
+  assert.ok(ok('https://web.push.apple.com/abc'));
+  assert.ok(ok('https://wns2-par02p.notify.windows.com/w/?token=abc'));
+  for (const bad of ['https://localhost./x', 'https://127.0.0.1.nip.io/x', 'https://169.254.169.254.nip.io:8443/x',
+    'https://fcm.googleapis.com:22/x', 'https://evil.example.com/x', 'https://fcm.googleapis.com.evil.com/x', 'http://fcm.googleapis.com/x']) {
+    assert.ok(!ok(bad), `accepted ${bad}`);
+  }
+});
