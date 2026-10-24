@@ -26,12 +26,15 @@
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 }
 
-/* Light and sepia reading themes override the dark defaults above */
+/* Light and sepia reading themes override the dark defaults above.
+   Light uses pure greys (R = G = B): Samsung Internet shows pages in the
+   wider DCI-P3 colour space where Chrome uses sRGB, which pushes any tint
+   further, so the old cream white looked yellow there. Grey can't shift. */
 html.theme-light {
-  --bg: #f7f5f0;
+  --bg: #f9f9f9;
   --surface: #ffffff;
-  --surface-2: #efebe3;
-  --border: #e0d9cc;
+  --surface-2: #efefef;
+  --border: #e0e0e0;
   --text: #2b3040;
   --text-strong: #141a2a;
   --muted: #6a7082;
@@ -43,8 +46,8 @@ html.theme-light {
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.08);
   --nav-bg: rgba(255, 255, 255, 0.86);
-  --shadow: 0 12px 32px rgba(40, 32, 20, 0.14);
-  --cover-shadow: 0 6px 16px rgba(40, 32, 20, 0.22);
+  --shadow: 0 12px 32px rgba(20, 20, 20, 0.12);
+  --cover-shadow: 0 6px 16px rgba(20, 20, 20, 0.2);
   --glow-1: rgba(242, 140, 79, 0.16);
   --glow-2: rgba(47, 143, 128, 0.12);
 }
