@@ -66,4 +66,13 @@ jobs:
           echo "offsite: $offsite, backups: $backups"
           failed=0
           case "$offsite" in
-            stale|never
+            stale|never)
+              echo "::error title=Off-site backup is old::The mini PC has not downloaded a backup in the last 36 hours (offsite: $offsite). Open the Users page on the site: its Backups box says what to check."
+              failed=1 ;;
+          esac
+          case "$backups" in
+            stale|missing)
+              echo "::error title=Server backup stopped::The server has no backup from the last 36 hours (backups: $backups). See docs/MONITORING.md."
+              failed=1 ;;
+          esac
+          exit $failed
