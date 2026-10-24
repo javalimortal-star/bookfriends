@@ -15,6 +15,8 @@ function migrate() {
   ensureColumn('users', 'display_name', 'display_name TEXT');
   ensureColumn('users', 'auth_provider', "auth_provider TEXT NOT NULL DEFAULT 'local'");
   ensureColumn('bookmarks', 'para_index', 'para_index INTEGER');
+  ensureColumn('comments', 'spoiler', 'spoiler INTEGER NOT NULL DEFAULT 0');
+  ensureColumn('notifications', 'kind', "kind TEXT NOT NULL DEFAULT 'reply'");
 }
 
 module.exports = { migrate };

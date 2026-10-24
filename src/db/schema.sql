@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS comments (
   body TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   updated_at INTEGER,
-  edited INTEGER NOT NULL DEFAULT 0
+  edited INTEGER NOT NULL DEFAULT 0,
+  spoiler INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_anchor ON comments(chapter_id, para_index);
@@ -69,6 +70,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'reply',
   created_at INTEGER NOT NULL,
   seen INTEGER NOT NULL DEFAULT 0
 );
