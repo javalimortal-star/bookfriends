@@ -31,16 +31,24 @@ const upload = multer({
 router.get('/', (req, res) => {
   const sort = ['added', 'title', 'author'].includes(req.query.sort) ? req.query.sort : 'added';
   const shelf = books.getShelf(req.user, sort);
+  // The most recently read book gets a "Continue reading" card above the shelf
+  let current = null;
+  let currentAt = 0;
   if (req.user) {
     for (const book of shelf) {
       const mark = bookmarks.getBookmark(req.user.id, book.id);
       if (mark) {
         book.bookmarkIdx = mark.chapter_idx;
         book.chapterTotal = books.chapterCount(book.id);
+        if (mark.updated_at > currentAt) {
+          current = book;
+          currentAt = mark.updated_at;
+        }
       }
     }
   }
-  res.render('shelf', { title: 'BookFriends', books: shelf, sort });
+  const currentChapter = current ? books.chapterTitle(current.id, current.bookmarkIdx) : null;
+  res.render('shelf', { title: 'BookFriends', books: shelf, sort, current, currentChapter });
 });
 
 router.get('/upload', requireOwner, (req, res) => {

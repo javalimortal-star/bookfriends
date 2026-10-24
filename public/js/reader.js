@@ -100,7 +100,9 @@
 
   function renderComment(comment, ctx) {
     var card = el('div', 'comment');
-    var avatar = el('div', 'comment-avatar', comment.userName.charAt(0).toUpperCase());
+    var tone = 0; // same name, same avatar colour
+    for (var i = 0; i < comment.userName.length; i++) tone = (tone * 31 + comment.userName.charCodeAt(i)) % 5;
+    var avatar = el('div', 'comment-avatar avatar-' + tone, comment.userName.charAt(0).toUpperCase());
     var main = el('div', 'comment-main');
 
     var head = el('div', 'comment-head');

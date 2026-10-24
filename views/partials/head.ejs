@@ -12,29 +12,43 @@
   </script>
   <style>
     /* Painted before app.css arrives — no white flash between pages */
-    html { background: #0e0e11; color: #d8d8dc; }
-    html.theme-light { background: #f4f4f6; color: #2c2c31; }
+    html { background: #0f131c; color: #d9dde6; }
+    html.theme-light { background: #f7f5f0; color: #2b3040; }
     html.theme-sepia { background: #f3e9d2; color: #4a3b26; }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/app.css?v=<%= assetVersion %>">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=<%= assetVersion %>">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=<%= assetVersion %>">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=<%= assetVersion %>">
   <link rel="manifest" href="/site.webmanifest">
-  <meta name="theme-color" content="#17171c">
+  <meta name="theme-color" content="#161b27">
 </head>
-<body>
+<body<% if (typeof bodyClass !== 'undefined') { %> class="<%= bodyClass %>"<% } %>>
+<% const navName = user ? (user.display_name || user.email.split('@')[0]) : ''; %>
 <nav class="nav">
-  <a class="nav-brand" href="/"><img class="nav-logo" src="/android-chrome-192x192.png" alt="">BookFriends</a>
+  <a class="nav-brand" href="/"><img class="nav-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">BookFriends</a>
   <div class="nav-right">
     <% if (user) { %>
       <% if (user.role === 'owner') { %>
-        <a class="btn btn-small" href="/upload">Upload</a>
-        <a class="btn btn-small btn-ghost" href="/users">Users</a>
+        <a class="btn btn-small nav-wide" href="/upload">Upload</a>
+        <a class="btn btn-small btn-ghost nav-wide" href="/users">Users</a>
       <% } %>
-      <a class="nav-bell" href="/notifications" title="Notifications">🔔<% if (unseenNotifs > 0) { %><span class="bell-badge"><%= unseenNotifs > 9 ? '9+' : unseenNotifs %></span><% } %></a>
-      <a class="nav-user" href="/settings" title="Settings"><%= user.display_name || user.email %></a>
-      <form method="post" action="/logout" class="inline-form"><button class="btn btn-small btn-ghost" type="submit">Log out</button></form>
+      <a class="nav-bell" href="/notifications" title="Notifications" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><% if (unseenNotifs > 0) { %><span class="bell-badge"><%= unseenNotifs > 9 ? '9+' : unseenNotifs %></span><% } %></a>
+      <details class="nav-menu">
+        <summary class="nav-avatar" title="<%= navName %>" aria-label="Account menu"><%= navName.charAt(0).toUpperCase() %></summary>
+        <div class="nav-menu-list">
+          <div class="nav-menu-head"><strong><%= navName %></strong><span><%= user.email %></span></div>
+          <a class="nav-menu-item" href="/settings">Settings</a>
+          <% if (user.role === 'owner') { %>
+            <a class="nav-menu-item nav-narrow" href="/upload">Upload a book</a>
+            <a class="nav-menu-item nav-narrow" href="/users">Users</a>
+          <% } %>
+          <form method="post" action="/logout"><button class="nav-menu-item" type="submit">Log out</button></form>
+        </div>
+      </details>
     <% } else { %>
       <a class="btn btn-small btn-ghost" href="/login">Log in</a>
       <a class="btn btn-small" href="/register">Register</a>

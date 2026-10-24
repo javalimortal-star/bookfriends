@@ -1,6 +1,46 @@
 <%- include('partials/head') %>
+<% const firstName = user ? (user.display_name || user.email.split('@')[0]) : ''; %>
+<section class="hero">
+  <div class="hero-main">
+    <% if (user && current) { %>
+      <p class="hero-kicker">Welcome back, <%= firstName %></p>
+      <h1 class="hero-title">Pick up where you left off</h1>
+      <a class="continue-card" href="/book/<%= current.slug %>/<%= current.bookmarkIdx %>">
+        <% if (current.cover_path) { %>
+          <img class="continue-cover" src="/media/book/<%= current.id %>/cover" alt="">
+        <% } else { %>
+          <div class="continue-cover book-cover-placeholder"><%= current.title %></div>
+        <% } %>
+        <div class="continue-info">
+          <span class="continue-label">Continue reading</span>
+          <span class="continue-title"><%= current.title %></span>
+          <span class="continue-chapter"><%= currentChapter || `Chapter ${current.bookmarkIdx + 1}` %></span>
+          <span class="continue-progress">
+            <span class="progress-track"><span class="progress-fill" style="width: <%= Math.round(((current.bookmarkIdx + 1) / current.chapterTotal) * 100) %>%"></span></span>
+            <span class="continue-count"><%= current.bookmarkIdx + 1 %>/<%= current.chapterTotal %></span>
+          </span>
+        </div>
+        <span class="continue-go" aria-hidden="true">→</span>
+      </a>
+    <% } else if (user) { %>
+      <p class="hero-kicker">Welcome, <%= firstName %></p>
+      <h1 class="hero-title">What will you read next?</h1>
+      <p class="hero-text">Pick a book below. Your place is saved as you read, and your friends' comments show up right next to the paragraphs.</p>
+    <% } else { %>
+      <p class="hero-kicker">A little library for friends</p>
+      <h1 class="hero-title">Read together.</h1>
+      <p class="hero-text">Read the same books as your friends and talk about them right in the margins, paragraph by paragraph.</p>
+      <div class="hero-actions">
+        <a class="btn" href="/register">Join BookFriends</a>
+        <a class="btn btn-ghost" href="/login">Log in</a>
+      </div>
+    <% } %>
+  </div>
+  <img class="hero-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
+</section>
+
 <div class="shelf-header">
-  <h1 class="page-title">Bookshelf</h1>
+  <h2 class="section-title">Bookshelf<% if (books.length > 0) { %> <span class="section-count"><%= books.length %> <%= books.length === 1 ? 'book' : 'books' %></span><% } %></h2>
   <% if (books.length > 1) { %>
     <select class="sort-select" aria-label="Sort books" onchange="location.href=this.value">
       <option value="/?sort=added" <%= sort === 'added' ? 'selected' : '' %>>Date added</option>
@@ -10,14 +50,18 @@
   <% } %>
 </div>
 <% if (books.length === 0) { %>
-  <p class="empty">No books here yet.<% if (user && user.role === 'owner') { %> <a href="/upload">Upload your first EPUB</a>.<% } %></p>
+  <div class="empty-shelf">
+    <img src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
+    <p>No books here yet.<% if (user && user.role === 'owner') { %> <a href="/upload">Upload your first EPUB</a>.<% } %></p>
+  </div>
 <% } %>
 <div class="shelf">
   <% for (const book of books) { %>
-    <div class="book-card">
+    <article class="book-card">
       <a class="book-cover-link" href="/book/<%= book.slug %>/0">
+        <% if (user && user.role === 'owner' && book.visibility !== 'public') { %><span class="cover-badge">Private</span><% } %>
         <% if (book.cover_path) { %>
-          <img class="book-cover" src="/media/book/<%= book.id %>/cover" alt="Cover of <%= book.title %>">
+          <img class="book-cover" src="/media/book/<%= book.id %>/cover" alt="Cover of <%= book.title %>" loading="lazy">
         <% } else { %>
           <div class="book-cover book-cover-placeholder"><%= book.title %></div>
         <% } %>
@@ -27,30 +71,32 @@
         <% if (book.author) { %><div class="book-author"><%= book.author %></div><% } %>
         <% if (book.bookmarkIdx !== undefined) { %>
           <div class="book-progress">
-            <div class="progress-label">You have read <%= book.bookmarkIdx + 1 %>/<%= book.chapterTotal %></div>
-            <div class="progress-track"><div class="progress-fill" style="width: <%= Math.round(((book.bookmarkIdx + 1) / book.chapterTotal) * 100) %>%"></div></div>
-            <div class="book-progress-row">
-              <a class="btn btn-small" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>">Continue reading</a>
+            <div class="progress-top">
+              <span class="progress-label">You have read <%= book.bookmarkIdx + 1 %>/<%= book.chapterTotal %></span>
               <form method="post" action="/book/<%= book.slug %>/bookmark/remove" class="inline-form">
-                <button class="btn btn-small btn-ghost" type="submit" title="Remove bookmark">✕</button>
+                <button class="progress-remove" type="submit" title="Remove bookmark" aria-label="Remove bookmark">✕</button>
               </form>
             </div>
+            <div class="progress-track"><div class="progress-fill" style="width: <%= Math.round(((book.bookmarkIdx + 1) / book.chapterTotal) * 100) %>%"></div></div>
+            <a class="btn btn-small" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>">Continue reading</a>
           </div>
         <% } %>
         <a class="download-link" href="/book/<%= book.slug %>/download" title="Download the EPUB (works with Send to Kindle)">⤓ Download EPUB</a>
         <% if (user && user.role === 'owner') { %>
-          <div class="book-owner-row">
-            <span class="pill <%= book.visibility === 'public' ? 'pill-public' : 'pill-private' %>"><%= book.visibility %></span>
-            <form method="post" action="/book/<%= book.slug %>/visibility" class="inline-form">
-              <button class="btn btn-small btn-ghost" type="submit">Make <%= book.visibility === 'public' ? 'private' : 'public' %></button>
-            </form>
-            <form method="post" action="/book/<%= book.slug %>/delete" class="inline-form" onsubmit="return confirm('Delete this book and all its comments?')">
-              <button class="btn btn-small btn-danger" type="submit">Delete</button>
-            </form>
-          </div>
+          <details class="book-manage">
+            <summary>Manage</summary>
+            <div class="book-manage-body">
+              <form method="post" action="/book/<%= book.slug %>/visibility" class="inline-form">
+                <button class="btn btn-small btn-ghost" type="submit">Make <%= book.visibility === 'public' ? 'private' : 'public' %></button>
+              </form>
+              <form method="post" action="/book/<%= book.slug %>/delete" class="inline-form" onsubmit="return confirm('Delete this book and all its comments?')">
+                <button class="btn btn-small btn-danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </details>
         <% } %>
       </div>
-    </div>
+    </article>
   <% } %>
 </div>
 <%- include('partials/footer') %>

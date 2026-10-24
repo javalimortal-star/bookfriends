@@ -106,7 +106,12 @@ function chapterList(bookId) {
   return db.prepare('SELECT idx, title FROM chapters WHERE book_id = ? ORDER BY idx').all(bookId);
 }
 
+function chapterTitle(bookId, idx) {
+  const row = db.prepare('SELECT title FROM chapters WHERE book_id = ? AND idx = ?').get(bookId, idx);
+  return row ? row.title : null;
+}
+
 module.exports = {
   createBookFromEpub, deleteBook, getShelf, getBookBySlug, getBookById,
-  getChapter, getChapterById, chapterCount, chapterList, bookDir,
+  getChapter, getChapterById, chapterCount, chapterList, chapterTitle, bookDir,
 };

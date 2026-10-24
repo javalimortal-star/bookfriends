@@ -1,16 +1,15 @@
 <%- include('partials/head') %>
-<div class="form-card">
-  <h1>Log in</h1>
+<div class="form-card auth-card">
+  <img class="auth-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
+  <h1>Welcome back</h1>
+  <p class="auth-sub">Log in to keep reading with your friends.</p>
   <% if (error) { %><p class="form-error"><%= error %></p><% } %>
+  <%- include('partials/google-btn') %>
   <form method="post" action="/login">
     <label class="field"><span>Email</span><input type="email" name="email" required autofocus></label>
     <label class="field"><span>Password</span><input type="password" name="password" required></label>
     <button class="btn" type="submit">Log in</button>
   </form>
-  <% if (googleEnabled) { %>
-    <div class="or-divider">or</div>
-    <a class="google-btn" href="/auth/google">Continue with Google</a>
-  <% } %>
   <p class="hint">No account? <a href="/register">Register</a></p>
 </div>
 <%- include('partials/footer') %>
