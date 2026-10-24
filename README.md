@@ -102,9 +102,22 @@ newest 7. Schedule it nightly on the server:
 ```
 
 Off-site copy: set `BACKUP_TOKEN` in `.env` and another machine can download the
-newest archive from `/backup/download?token=...` over HTTPS.
-`backup-bookfriends.cmd` does exactly that as a Windows Scheduled Task and keeps
-30 days of downloads.
+newest archive from `/backup/download?token=...` over HTTPS. For a Windows PC,
+open the site's **Users** page on that PC and follow "Set up the off-site copy on
+your mini PC" in the Backups box: it gives you a ready-made PowerShell command
+(with your token in it) that writes `C:\bookfriends-backups\download-backup.ps1`,
+registers a "BookFriends backup" scheduled task (daily 04:00, as SYSTEM, runs
+later if the PC was off) and downloads the first copy right away. It keeps 30
+days of downloads and logs each run to `C:\bookfriends-backups\backup.log`. Any
+other machine can use curl:
+`curl -fsS -o bookfriends-$(date +%F).tar.gz "https://your-site/backup/download?token=..."`.
+
+Every finished download is recorded (a `backup_downloads` row and a
+`backup downloaded:` line in the server log), so the owner-only Backups box on the
+Users page shows when the off-site copy last happened: OK under 36 hours, Warning
+up to 72, Problem after that (plus a red dot on the owner's avatar).
+`/healthz` reports the same as coarse states for the uptime check in
+`.github/workflows/uptime.yml`; see [docs/MONITORING.md](docs/MONITORING.md).
 
 Restore: stop the server, then extract into a fresh data dir:
 `tar -xzf bookfriends-YYYY-MM-DD.tar.gz -C data`.

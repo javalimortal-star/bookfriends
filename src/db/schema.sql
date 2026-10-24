@@ -107,3 +107,13 @@ CREATE TABLE IF NOT EXISTS book_request_votes (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (request_id, user_id)
 );
+
+-- One row per finished /backup/download (the off-site copy), so the owner can
+-- see whether the nightly download still happens. Trimmed to the newest 100.
+CREATE TABLE IF NOT EXISTS backup_downloads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_name TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  ip TEXT,
+  created_at INTEGER NOT NULL
+);

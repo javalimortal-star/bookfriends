@@ -942,3 +942,58 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 @media (max-width: 400px) {
   .request { padding: 0.8rem 0.85rem; }
 }
+
+/* ---------- backups status (owner only: /users box, avatar warning dot) ---------- */
+.nav-avatar { position: relative; }
+.avatar-dot {
+  position: absolute; top: -0.1rem; right: -0.1rem; width: 0.7rem; height: 0.7rem; border-radius: 50%;
+  background: var(--danger); box-shadow: 0 0 0 2px var(--surface);
+}
+.nav-menu-alert { color: var(--danger); font-weight: 700; }
+.nav-menu-alert::before {
+  content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; margin-right: 0.45rem;
+  border-radius: 50%; background: var(--danger); vertical-align: 0.05rem;
+}
+
+.backup-box {
+  margin-bottom: 1.5rem; padding: 1rem 1.1rem; scroll-margin-top: 4.5rem;
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--muted);
+  border-radius: var(--radius);
+}
+.backup-ok { border-left-color: var(--teal); }
+.backup-warning { border-left-color: var(--accent); }
+.backup-problem { border-left-color: var(--danger); }
+.backup-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.backup-title { margin: 0; color: var(--text-strong); font-family: var(--font-display); font-size: 1.25rem; }
+.backup-pill {
+  flex: 0 0 auto; padding: 0.15rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 800;
+  background: var(--surface-2); color: var(--muted);
+}
+.backup-ok .backup-pill { background: var(--teal-soft); color: var(--teal); }
+.backup-warning .backup-pill { background: var(--accent-soft); color: var(--link); }
+.backup-problem .backup-pill { background: var(--danger-soft); color: var(--danger); }
+.backup-lead { margin: 0.5rem 0 0; }
+.backup-box > .hint { margin: 0.2rem 0 0; }
+.backup-facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.75rem; margin: 0.9rem 0 0;
+}
+.backup-fact { min-width: 0; padding: 0.7rem 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+.backup-fact dt { color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.backup-fact dd { margin: 0; }
+.backup-when { color: var(--text-strong); font-size: 1.1rem; font-weight: 700; }
+.backup-detail { color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+.backup-help { margin-top: 0.9rem; font-size: 0.92rem; }
+.backup-help p { margin: 0 0 0.5rem; }
+.backup-help ol, .backup-setup ol { margin: 0 0 0.6rem; padding-left: 1.3rem; }
+.backup-help li, .backup-setup li { margin-bottom: 0.3rem; }
+.backup-setup { margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--border); font-size: 0.92rem; }
+.backup-setup summary { cursor: pointer; color: var(--text-strong); font-weight: 700; }
+.backup-setup p { margin: 0.5rem 0; }
+.backup-setup .hint { margin: 0.4rem 0 0; }
+.backup-cmd-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.8rem; margin: 0.4rem 0; }
+.backup-cmd {
+  margin: 0; max-height: 9rem; overflow: auto; padding: 0.6rem 0.75rem;
+  white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem; line-height: 1.5; color: var(--text);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+}

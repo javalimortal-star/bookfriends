@@ -7,6 +7,7 @@
   </div>
 <% } %>
 <% if (error) { %><p class="form-error"><%= error %></p><% } %>
+<%- include('partials/backup-status') %>
 <div class="table-wrap">
   <table class="users-table">
     <thead><tr><th><%= t('Email') %></th><th><%= t('Name') %></th><th><%= t('Role') %></th><th><%= t('Login') %></th><th><%= t('Joined') %></th><th></th></tr></thead>

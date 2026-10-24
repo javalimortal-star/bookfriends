@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const { db } = require('../db');
 const { requireAuth, requireOwner } = require('./middleware');
 const { loginLimiter, passwordLimiter, registerLimiter } = require('../rate-limit');
+const backups = require('../backup');
 
 const router = express.Router();
 const BCRYPT_COST = 12;
@@ -121,8 +122,15 @@ function listUsers() {
   return db.prepare('SELECT id, email, display_name, role, auth_provider, created_at FROM users ORDER BY created_at').all();
 }
 
+// The page opens with the backups box (views/partials/backup-status.ejs). It
+// can hold the backup token and shows temporary passwords: never cache it.
+function renderUsers(req, res, { status = 200, resetInfo = null, error = null } = {}) {
+  res.set('Cache-Control', 'no-store');
+  res.status(status).render('users', { title: req.t('Users'), users: listUsers(), backup: backups.ownerView(req), resetInfo, error });
+}
+
 router.get('/users', requireOwner, (req, res) => {
-  res.render('users', { title: req.t('Users'), users: listUsers(), resetInfo: null, error: null });
+  renderUsers(req, res);
 });
 
 router.post('/users/:id/reset-password', requireOwner, (req, res) => {
@@ -130,11 +138,11 @@ router.post('/users/:id/reset-password', requireOwner, (req, res) => {
   // Google accounts can't be locked out (Google is their login) and the owner
   // changes their own password in Settings, so neither is resettable here.
   if (!target || target.auth_provider !== 'local' || target.id === req.user.id) {
-    return res.status(400).render('users', { title: req.t('Users'), users: listUsers(), resetInfo: null, error: req.t('That account cannot be reset here.') });
+    return renderUsers(req, res, { status: 400, error: req.t('That account cannot be reset here.') });
   }
   const temp = crypto.randomBytes(4).toString('hex');
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(temp, BCRYPT_COST), target.id);
-  res.render('users', { title: req.t('Users'), users: listUsers(), resetInfo: { email: target.email, temp }, error: null });
+  renderUsers(req, res, { resetInfo: { email: target.email, temp } });
 });
 
 module.exports = router;
