@@ -106,4 +106,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`BookFriends listening on http://localhost:${PORT}`);
+  // Index books uploaded before search existed, in small background batches
+  // (src/books/search.js), once the server is already answering requests.
+  require('./src/books/search').startBackfill();
 });

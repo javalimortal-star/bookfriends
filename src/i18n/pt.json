@@ -269,5 +269,19 @@
   "Copied!": "Copiado!",
   "It contains your secret backup key: do not share it.": "Ele contém sua chave secreta de backup: não compartilhe.",
   "It creates {folder}, adds the “BookFriends backup” task (every day at 04:00, even when nobody is logged in) and downloads the first copy right away. Running it again is safe.": "Ele cria {folder}, adiciona a tarefa “BookFriends backup” (todo dia às 04:00, mesmo sem ninguém conectado) e já baixa a primeira cópia. Pode rodar de novo sem problema.",
-  "When it says “Backup downloaded”, refresh this page: the box should turn green.": "Quando aparecer “Backup downloaded”, atualize esta página: o quadro deve ficar verde."
+  "When it says “Backup downloaded”, refresh this page: the box should turn green.": "Quando aparecer “Backup downloaded”, atualize esta página: o quadro deve ficar verde.",
+  "Too many searches. Wait a minute and try again.": "Buscas demais. Espere um minuto e tente de novo.",
+  "Search in {book}": "Buscar em {book}",
+  "Back to the book": "Voltar para o livro",
+  "Search in this book": "Buscar neste livro",
+  "Words or names…": "Palavras ou nomes…",
+  "Search": "Buscar",
+  "This book is still being prepared for search ({percent}% done), so some matches may be missing. Try again in a minute.": "Este livro ainda está sendo preparado para a busca ({percent}% pronto), então alguns resultados podem faltar. Tente de novo daqui a um minuto.",
+  "Type at least 2 letters.": "Digite pelo menos 2 letras.",
+  "That is too long: a search can have up to 100 characters.": "Muito longo: a busca pode ter até 100 caracteres.",
+  "Nothing found for “{q}”. Try fewer words or another spelling.": "Nada encontrado para “{q}”. Tente menos palavras ou outra grafia.",
+  "Showing the first {shown} of {count} matching paragraphs.": "Mostrando os primeiros {shown} de {count} parágrafos encontrados.",
+  "{count} matching paragraph": "{count} parágrafo encontrado",
+  "{count} matching paragraphs": "{count} parágrafos encontrados",
+  "Chapter {n} of {total}": "Capítulo {n} de {total}"
 }

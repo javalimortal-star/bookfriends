@@ -8,6 +8,7 @@
     <div class="titlebar-chapter"><%= chapter.title %></div>
   </div>
   <div class="titlebar-nav">
+    <a class="chapter-arrow titlebar-search" href="/book/<%= book.slug %>/search?from=<%= chapter.idx %>" title="<%= t('Search in this book') %>" aria-label="<%= t('Search in this book') %>"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg></a>
     <% if (prevIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= prevIdx %>" title="<%= t('Previous chapter') %>">‹</a><% } else { %><span class="chapter-arrow disabled">‹</span><% } %>
     <% if (nextIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= nextIdx %>" title="<%= t('Next chapter') %>">›</a><% } else { %><span class="chapter-arrow disabled">›</span><% } %>
   </div>
@@ -90,7 +91,7 @@
     <span class="font-panel-label"><%= t('Text size') %></span>
     <div class="stepper">
       <button type="button" id="size-minus" class="stepper-btn" aria-label="<%= t('Smaller text') %>">−</button>
-      <span id="size-value" class="stepper-value">18</span>
+      <span id="size-value" class="stepper-value">20</span>
       <button type="button" id="size-plus" class="stepper-btn" aria-label="<%= t('Larger text') %>">+</button>
     </div>
   </div>
@@ -98,7 +99,7 @@
     <span class="font-panel-label"><%= t('Line height') %></span>
     <div class="stepper">
       <button type="button" id="lh-minus" class="stepper-btn" aria-label="<%= t('Tighter lines') %>">−</button>
-      <span id="lh-value" class="stepper-value">30</span>
+      <span id="lh-value" class="stepper-value">24</span>
       <button type="button" id="lh-plus" class="stepper-btn" aria-label="<%= t('Looser lines') %>">+</button>
     </div>
   </div>

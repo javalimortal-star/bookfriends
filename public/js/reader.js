@@ -739,8 +739,9 @@
     openPanel(Number(panelParam));
   }
 
-  // Deep links (comment panel or #comments anchor) win over position resume.
-  if (panelParam === null && !location.hash
+  // Deep links (comment panel, #comments anchor, a search result's ?p=)
+  // win over position resume.
+  if (panelParam === null && !location.hash && !new URLSearchParams(location.search).has('p')
       && R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
     var resumeTarget = document.querySelector('#chapter-content [data-p="' + R.bookmark.para + '"]');
     if (resumeTarget) {
@@ -774,7 +775,13 @@
     lato: '"Lato", ' + SYSTEM_SANS,
     montserrat: '"Montserrat", ' + SYSTEM_SANS,
   };
-  var DEFAULTS = { font: 'opensans', size: 18, lh: 30, contrast: 'normal', badges: true, theme: 'dark' };
+  // Text size and line height match Wuxiaworld's reader as the owner uses
+  // it: 20 px text on 24 px lines (measured from a phone screenshot). `v`
+  // marks settings saved since then; see loadSettings.
+  var SETTINGS_VERSION = 2;
+  var DEFAULTS = { font: 'opensans', size: 20, lh: 24, contrast: 'normal', badges: true, theme: 'dark', v: SETTINGS_VERSION };
+  var OLD_DEFAULT_SIZE = 18;
+  var OLD_DEFAULT_LH = 30;
 
   function loadSettings() {
     var stored = {};
@@ -785,6 +792,17 @@
     });
     var legacySize = Number(localStorage.getItem('bf-font-size'));
     if (stored.size === undefined && legacySize) merged.size = legacySize;
+    // Saved before the Wuxiaworld defaults: every visit stored the settings,
+    // so exactly the old 18/30 means "never changed" and gets the new
+    // defaults; any other pair was chosen by hand and stays as it was.
+    if (stored.v === undefined) {
+      var oldSize = stored.size !== undefined ? stored.size : (legacySize || OLD_DEFAULT_SIZE);
+      var oldLh = stored.lh !== undefined ? stored.lh : OLD_DEFAULT_LH;
+      var untouched = oldSize === OLD_DEFAULT_SIZE && oldLh === OLD_DEFAULT_LH;
+      merged.size = untouched ? DEFAULTS.size : oldSize;
+      merged.lh = untouched ? DEFAULTS.lh : oldLh;
+      merged.v = SETTINGS_VERSION;
+    }
     return merged;
   }
 
@@ -919,5 +937,167 @@
     if (topBarQuery.addEventListener) topBarQuery.addEventListener('change', queueViewportGap);
     else if (topBarQuery.addListener) topBarQuery.addListener(queueViewportGap);
     queueViewportGap();
+  }
+
+  /* ---------- search result links: ?p=<paragraph>&q=<words> ---------- */
+
+  // Opened from the book's search page: put that paragraph just under the
+  // bars (like the resume jump above, which ?p= overrides), flash it, and
+  // mark the searched words in it. Runs after the reading settings are
+  // applied, so the jump measures the final text size.
+  var searchParams = new URLSearchParams(location.search);
+  var searchPara = searchParams.get('p');
+  var searchBlock = searchPara !== null && /^\d+$/.test(searchPara)
+    ? document.querySelector('#chapter-content [data-p="' + Number(searchPara) + '"]') : null;
+  if (searchBlock) {
+    // a look at a search result is not reading progress (?peek=1 already
+    // keeps the bookmark's chapter; this keeps its paragraph too)
+    positionArmed = false;
+    markSearchTerms(searchBlock, searchParams.get('q') || '');
+    var searchInteracted = false;
+    ['wheel', 'touchstart', 'keydown'].forEach(function (evt) {
+      window.addEventListener(evt, function () { searchInteracted = true; }, { passive: true, once: true });
+    });
+    var jumpToSearchHit = function () {
+      window.scrollTo(0, searchBlock.getBoundingClientRect().top + window.scrollY - coveredTop() - 8);
+      lastScrollY = Math.max(0, window.scrollY); // not a reader scroll: keep the bars
+    };
+    jumpToSearchHit();
+    window.addEventListener('load', function () { if (!searchInteracted) jumpToSearchHit(); });
+    searchBlock.classList.add('search-target');
+  }
+
+  // Lower-case and drop accents, so "joao" marks "João" as the search
+  // found it (SQLite's remove_diacritics). Per character, for offsets.
+  function foldChar(ch) {
+    return ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  // Wraps the searched words in <mark>, touching only text nodes (never
+  // the comment-count button): whole words, plus words starting with the
+  // last search word, as the search itself matched them.
+  function markSearchTerms(block, query) {
+    var words = (query.match(/[\p{L}\p{N}]+/gu) || []).map(function (w) {
+      return Array.prototype.map.call(w, foldChar).join('');
+    });
+    if (!words.length) return;
+    var lastIsPrefix = words[words.length - 1].length >= 3 && !/"\s*$/.test(query);
+    var walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    var textNodes = [];
+    while (walker.nextNode()) {
+      if (!walker.currentNode.parentNode.closest('.para-badge')) textNodes.push(walker.currentNode);
+    }
+    textNodes.forEach(function (node) {
+      var text = node.nodeValue;
+      var folded = '';
+      var starts = [];
+      var ends = [];
+      for (var i = 0; i < text.length; i++) {
+        var width = text.codePointAt(i) > 0xffff ? 2 : 1;
+        var f = foldChar(text.substr(i, width));
+        for (var k = 0; k < f.length; k++) { folded += f[k]; starts.push(i); ends.push(i + width); }
+        i += width - 1;
+      }
+      var hits = [];
+      var wordRe = /[\p{L}\p{N}]+/gu;
+      var m;
+      while ((m = wordRe.exec(folded))) {
+        var found = m[0];
+        var hit = words.some(function (w, n) {
+          return found === w || (lastIsPrefix && n === words.length - 1 && found.indexOf(w) === 0);
+        });
+        if (hit) hits.push([starts[m.index], ends[m.index + found.length - 1]]);
+      }
+      // from the end, so the earlier offsets in `node` stay valid
+      for (var h = hits.length - 1; h >= 0; h--) {
+        var range = document.createRange();
+        range.setStart(node, hits[h][0]);
+        range.setEnd(node, hits[h][1]);
+        range.surroundContents(el('mark', 'search-term'));
+      }
+    });
+  }
+
+  /* ---------- swipe left/right on touch screens: next/previous chapter ---------- */
+
+  // A clear horizontal flick turns the page, like an e-reader. Anything that
+  // could mean something else is left alone: listeners are passive (vertical
+  // scrolling is never blocked), and the gesture is ignored when it starts
+  // at a screen edge (Android's back gesture), on a link/button/form field/
+  // comment badge/the bars, inside something that scrolls sideways, while
+  // pinch-zoomed or selecting text, or with the comment or font panel open.
+  var SWIPE_MIN_X = 90;
+  var SWIPE_RATIO = 2;
+  var SWIPE_MAX_MS = 700;
+  var SWIPE_EDGE = 30;
+  var swipe = null;
+  var swipeHint = null;
+
+  function swipeAllowedNow() {
+    var zoomed = window.visualViewport && window.visualViewport.scale > 1.01;
+    var selecting = window.getSelection && String(window.getSelection()).length > 0;
+    return !zoomed && !selecting && panel.hidden && fontPanel.hidden;
+  }
+
+  function swipeStartsOnControl(target) {
+    if (!target || !target.closest) return true;
+    // a[href]: EPUB anchors without href wrap whole paragraphs, and are text
+    if (target.closest('a[href], button, input, textarea, select, label, summary, [contenteditable], .para-badge, .reader-bottombar, .nav, .font-panel, .comment-panel')) return true;
+    for (var node = target; node && node !== document.body; node = node.parentElement) {
+      var overflowX = getComputedStyle(node).overflowX;
+      if ((overflowX === 'auto' || overflowX === 'scroll') && node.scrollWidth > node.clientWidth + 1) return true;
+    }
+    return false;
+  }
+
+  // The chapter this gesture leads to, or null while it is no clear swipe.
+  function swipeTarget(dx, dy) {
+    if (Math.abs(dx) < SWIPE_MIN_X || Math.abs(dx) < SWIPE_RATIO * Math.abs(dy)) return null;
+    return dx < 0 ? R.nextUrl : R.prevUrl;
+  }
+
+  function showSwipeHint(url, next) {
+    if (!url) {
+      if (swipeHint) swipeHint.classList.remove('show');
+      return;
+    }
+    if (!swipeHint) {
+      swipeHint = el('div', 'swipe-hint');
+      swipeHint.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(swipeHint);
+    }
+    swipeHint.textContent = next ? t('Next chapter') + ' ›' : '‹ ' + t('Previous chapter');
+    swipeHint.classList.toggle('swipe-next', next);
+    swipeHint.classList.toggle('swipe-prev', !next);
+    swipeHint.classList.add('show');
+  }
+
+  if (R.prevUrl || R.nextUrl) {
+    document.addEventListener('touchstart', function (event) {
+      swipe = null;
+      showSwipeHint(null);
+      if (event.touches.length !== 1 || !swipeAllowedNow() || swipeStartsOnControl(event.target)) return;
+      var touch = event.touches[0];
+      if (touch.clientX < SWIPE_EDGE || touch.clientX > window.innerWidth - SWIPE_EDGE) return;
+      swipe = { x: touch.clientX, y: touch.clientY, at: event.timeStamp };
+    }, { passive: true });
+    document.addEventListener('touchmove', function (event) {
+      if (!swipe) return;
+      if (event.touches.length !== 1) { swipe = null; showSwipeHint(null); return; }
+      var dx = event.touches[0].clientX - swipe.x;
+      showSwipeHint(swipeTarget(dx, event.touches[0].clientY - swipe.y), dx < 0);
+    }, { passive: true });
+    document.addEventListener('touchend', function (event) {
+      if (!swipe) return;
+      var start = swipe;
+      swipe = null;
+      showSwipeHint(null);
+      var touch = event.changedTouches[0];
+      var url = swipeTarget(touch.clientX - start.x, touch.clientY - start.y);
+      if (url && event.touches.length === 0 && event.timeStamp - start.at <= SWIPE_MAX_MS && swipeAllowedNow()) {
+        window.location.href = url;
+      }
+    }, { passive: true });
+    document.addEventListener('touchcancel', function () { swipe = null; showSwipeHint(null); }, { passive: true });
   }
 }());

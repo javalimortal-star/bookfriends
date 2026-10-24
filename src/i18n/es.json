@@ -269,5 +269,19 @@
   "Copied!": "¡Copiado!",
   "It contains your secret backup key: do not share it.": "Contiene tu clave secreta de copia de seguridad: no la compartas.",
   "It creates {folder}, adds the “BookFriends backup” task (every day at 04:00, even when nobody is logged in) and downloads the first copy right away. Running it again is safe.": "Crea {folder}, añade la tarea “BookFriends backup” (cada día a las 04:00, aunque nadie haya iniciado sesión) y descarga la primera copia enseguida. Puedes volver a ejecutarlo sin problema.",
-  "When it says “Backup downloaded”, refresh this page: the box should turn green.": "Cuando diga “Backup downloaded”, recarga esta página: el recuadro debería ponerse verde."
+  "When it says “Backup downloaded”, refresh this page: the box should turn green.": "Cuando diga “Backup downloaded”, recarga esta página: el recuadro debería ponerse verde.",
+  "Too many searches. Wait a minute and try again.": "Demasiadas búsquedas. Espera un minuto y vuelve a intentarlo.",
+  "Search in {book}": "Buscar en {book}",
+  "Back to the book": "Volver al libro",
+  "Search in this book": "Buscar en este libro",
+  "Words or names…": "Palabras o nombres…",
+  "Search": "Buscar",
+  "This book is still being prepared for search ({percent}% done), so some matches may be missing. Try again in a minute.": "Este libro todavía se está preparando para la búsqueda ({percent}% listo), así que pueden faltar algunos resultados. Vuelve a intentarlo en un minuto.",
+  "Type at least 2 letters.": "Escribe al menos 2 letras.",
+  "That is too long: a search can have up to 100 characters.": "Demasiado largo: la búsqueda puede tener hasta 100 caracteres.",
+  "Nothing found for “{q}”. Try fewer words or another spelling.": "No se encontró nada para «{q}». Prueba con menos palabras u otra ortografía.",
+  "Showing the first {shown} of {count} matching paragraphs.": "Mostrando los primeros {shown} de {count} párrafos encontrados.",
+  "{count} matching paragraph": "{count} párrafo encontrado",
+  "{count} matching paragraphs": "{count} párrafos encontrados",
+  "Chapter {n} of {total}": "Capítulo {n} de {total}"
 }
