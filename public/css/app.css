@@ -353,17 +353,19 @@ a:hover { text-decoration: underline; }
 .chapter-content { font-size: 18px; }
 .chapter-content h1, .chapter-content h2, .chapter-content h3 { color: var(--text-strong); }
 .chapter-content img { max-width: 100%; height: auto; border-radius: 6px; }
-.chapter-content [data-p] { position: relative; padding-right: 2.6rem; }
 /* EPUB position-marker anchors (no href) must read as normal text, including
    paragraphs a browser re-wraps when the source had an unclosed <a> */
 .chapter-content a:not([href]) { color: inherit; cursor: inherit; }
 .chapter-content a:not([href]):hover { text-decoration: none; }
 .chapter-content .blockquot { margin-left: 1.5rem; color: var(--muted); }
 
+/* the comment count sits after the paragraph's last word (Wuxiaworld-style),
+   so the text can use the full width instead of leaving a column for it */
 .para-badge {
-  position: absolute; right: 0; top: 0.15rem;
-  min-width: 1.5rem; height: 1.5rem; padding: 0 0.35rem;
-  border-radius: 999px; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle; position: relative; top: -0.08em; margin-left: 0.45em;
+  min-width: 1.45rem; height: 1.3rem; padding: 0 0.4rem; line-height: 1;
+  border-radius: 999px; border: 0; cursor: pointer; user-select: none; -webkit-user-select: none;
   background: var(--surface-2); color: var(--muted); font-size: 0.72rem; font-weight: 700;
   opacity: 0.7; transition: opacity 0.15s ease, background 0.15s ease;
 }
@@ -568,7 +570,6 @@ a:hover { text-decoration: underline; }
 
 /* settings effects */
 body.badges-off .para-badge { display: none; }
-body.badges-off .chapter-content [data-p] { padding-right: 0; }
 body.high-contrast .chapter-content { color: #fff; }
 html.theme-light body.high-contrast .chapter-content,
 html.theme-sepia body.high-contrast .chapter-content { color: #000; }
@@ -640,7 +641,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 @media (max-width: 640px) {
   .comment-panel { width: 100vw; border-left: 0; }
   body.panel-open { overflow: hidden; }
-  .chapter-content [data-p] { padding-right: 2.2rem; }
   .toc-select { max-width: 30vw; }
   .nav { padding: 0.5rem 0.85rem; }
   .nav-wide { display: none; }
