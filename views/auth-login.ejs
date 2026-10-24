@@ -1,15 +1,15 @@
 <%- include('partials/head') %>
 <div class="form-card auth-card">
   <img class="auth-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
-  <h1>Welcome back</h1>
-  <p class="auth-sub">Log in to keep reading with your friends.</p>
+  <h1><%= t('Welcome back') %></h1>
+  <p class="auth-sub"><%= t('Log in to keep reading with your friends.') %></p>
   <% if (error) { %><p class="form-error"><%= error %></p><% } %>
   <%- include('partials/google-btn') %>
   <form method="post" action="/login">
-    <label class="field"><span>Email</span><input type="email" name="email" required autofocus></label>
-    <label class="field"><span>Password</span><input type="password" name="password" required></label>
-    <button class="btn" type="submit">Log in</button>
+    <label class="field"><span><%= t('Email') %></span><input type="email" name="email" required autofocus></label>
+    <label class="field"><span><%= t('Password') %></span><input type="password" name="password" required></label>
+    <button class="btn" type="submit"><%= t('Log in') %></button>
   </form>
-  <p class="hint">No account? <a href="/register">Register</a></p>
+  <p class="hint"><%= t('No account?') %> <a href="/register"><%= t('Register') %></a></p>
 </div>
 <%- include('partials/footer') %>

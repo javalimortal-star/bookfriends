@@ -1,4 +1,12 @@
 </main>
+<footer class="site-footer">
+  <nav class="lang-switch" aria-label="<%= t('Language') %>">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <% for (const l of languages) { %>
+      <% if (l.code === lang) { %><span class="lang-current" aria-current="true"><%= l.name %></span><% } else { %><a href="/lang/<%= l.code %>?next=<%= encodeURIComponent(currentUrl) %>" hreflang="<%= l.code %>" lang="<%= l.code %>"><%= l.name %></a><% } %>
+    <% } %>
+  </nav>
+</footer>
 <script>
   // The account menu is a <details>: also close it on outside clicks and Escape
   (function () {

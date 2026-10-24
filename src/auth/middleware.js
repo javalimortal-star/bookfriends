@@ -24,7 +24,7 @@ function requireAuth(req, res, next) {
 function requireOwner(req, res, next) {
   if (req.user && req.user.role === 'owner') return next();
   if (wantsJson(req)) return res.status(403).json({ error: 'owner only' });
-  return res.status(403).render('error', { title: 'Forbidden', message: 'Only the site owner can do that.' });
+  return res.status(403).render('error', { title: req.t('Forbidden'), message: req.t('Only the site owner can do that.') });
 }
 
 // Visibility rule: public books are readable by anyone (login not required);

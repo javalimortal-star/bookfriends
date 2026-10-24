@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<%= htmlLang %>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -33,25 +33,25 @@
   <div class="nav-right">
     <% if (user) { %>
       <% if (user.role === 'owner') { %>
-        <a class="btn btn-small nav-wide" href="/upload">Upload</a>
-        <a class="btn btn-small btn-ghost nav-wide" href="/users">Users</a>
+        <a class="btn btn-small nav-wide" href="/upload"><%= t('Upload') %></a>
+        <a class="btn btn-small btn-ghost nav-wide" href="/users"><%= t('Users') %></a>
       <% } %>
-      <a class="nav-bell" href="/notifications" title="Notifications" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><% if (unseenNotifs > 0) { %><span class="bell-badge"><%= unseenNotifs > 9 ? '9+' : unseenNotifs %></span><% } %></a>
+      <a class="nav-bell" href="/notifications" title="<%= t('Notifications') %>" aria-label="<%= t('Notifications') %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><% if (unseenNotifs > 0) { %><span class="bell-badge"><%= unseenNotifs > 9 ? '9+' : unseenNotifs %></span><% } %></a>
       <details class="nav-menu">
-        <summary class="nav-avatar" title="<%= navName %>" aria-label="Account menu"><%= navName.charAt(0).toUpperCase() %></summary>
+        <summary class="nav-avatar" title="<%= navName %>" aria-label="<%= t('Account menu') %>"><%= navName.charAt(0).toUpperCase() %></summary>
         <div class="nav-menu-list">
           <div class="nav-menu-head"><strong><%= navName %></strong><span><%= user.email %></span></div>
-          <a class="nav-menu-item" href="/settings">Settings</a>
+          <a class="nav-menu-item" href="/settings"><%= t('Settings') %></a>
           <% if (user.role === 'owner') { %>
-            <a class="nav-menu-item nav-narrow" href="/upload">Upload a book</a>
-            <a class="nav-menu-item nav-narrow" href="/users">Users</a>
+            <a class="nav-menu-item nav-narrow" href="/upload"><%= t('Upload a book') %></a>
+            <a class="nav-menu-item nav-narrow" href="/users"><%= t('Users') %></a>
           <% } %>
-          <form method="post" action="/logout"><button class="nav-menu-item" type="submit">Log out</button></form>
+          <form method="post" action="/logout"><button class="nav-menu-item" type="submit"><%= t('Log out') %></button></form>
         </div>
       </details>
     <% } else { %>
-      <a class="btn btn-small btn-ghost" href="/login">Log in</a>
-      <a class="btn btn-small" href="/register">Register</a>
+      <a class="btn btn-small btn-ghost" href="/login"><%= t('Log in') %></a>
+      <a class="btn btn-small" href="/register"><%= t('Register') %></a>
     <% } %>
   </div>
 </nav>

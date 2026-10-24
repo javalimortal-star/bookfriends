@@ -4,6 +4,7 @@ const { commentLimiter } = require('../rate-limit');
 const comments = require('./service');
 const notifications = require('./notifications');
 const books = require('../books/service');
+const { relTime } = require('../i18n');
 
 const router = express.Router();
 
@@ -77,17 +78,6 @@ router.post('/api/chapter/:chapterId/comments', requireAuth, commentLimiter, (re
   res.status(201).json({ id: created.id });
 });
 
-function relTime(ts) {
-  const mins = Math.floor((Date.now() - ts) / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days} day${days === 1 ? '' : 's'} ago`;
-  return new Date(ts).toLocaleDateString('en-GB');
-}
-
 router.get('/notifications', requireAuth, (req, res) => {
   const items = notifications.listForUser(req.user.id).map((n) => {
     const base = `/book/${n.book_slug}/${n.chapter_idx}?peek=1`;
@@ -95,12 +85,12 @@ router.get('/notifications', requireAuth, (req, res) => {
       link: n.para_index === null ? `${base}#comments` : `${base}&panel=${n.para_index}`,
       replierName: n.replier_name || n.replier_email.split('@')[0],
       excerpt: n.body.length > 140 ? `${n.body.slice(0, 140)}…` : n.body,
-      when: relTime(n.created_at),
+      when: relTime(n.created_at, req.lang),
     });
   });
   notifications.markAllSeen(req.user.id);
   res.locals.unseenNotifs = 0; // the bell clears as this page renders
-  res.render('notifications', { title: 'Notifications', items });
+  res.render('notifications', { title: req.t('Notifications'), items });
 });
 
 function loadEditableComment(req, res, { ownerMayDelete = false } = {}) {

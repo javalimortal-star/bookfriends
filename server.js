@@ -30,6 +30,8 @@ app.use((req, res, next) => {
   res.locals.googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   next();
 });
+// Language before the body parsers too: their errors render the error page.
+app.use(require('./src/i18n').middleware);
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 // Templates fingerprint static assets as ?v=<content hash>, so production can
@@ -64,6 +66,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(require('./src/i18n/routes'));
 app.use(require('./src/auth/routes'));
 app.use(require('./src/auth/google'));
 app.use(require('./src/backup/routes'));
@@ -72,7 +75,7 @@ app.use(require('./src/comments/routes'));
 app.use(require('./src/books/routes'));
 
 app.use((req, res) => {
-  res.status(404).render('error', { title: 'Not found', message: 'Page not found.' });
+  res.status(404).render('error', { title: req.t('Not found'), message: req.t('Page not found.') });
 });
 
 // eslint-disable-next-line no-unused-vars
@@ -83,7 +86,7 @@ app.use((err, req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return res.status(status).json({ error: status >= 500 ? 'server error' : 'bad request' });
   }
-  res.status(status).render('error', { title: 'Error', message: 'Something went wrong.' });
+  res.status(status).render('error', { title: req.t('Error'), message: req.t('Something went wrong.') });
 });
 
 app.listen(PORT, () => {

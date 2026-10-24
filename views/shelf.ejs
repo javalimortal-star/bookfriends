@@ -3,8 +3,8 @@
 <section class="hero">
   <div class="hero-main">
     <% if (user && current) { %>
-      <p class="hero-kicker">Welcome back, <%= firstName %></p>
-      <h1 class="hero-title">Pick up where you left off</h1>
+      <p class="hero-kicker"><%= t('Welcome back, {name}', { name: firstName }) %></p>
+      <h1 class="hero-title"><%= t('Pick up where you left off') %></h1>
       <a class="continue-card" href="/book/<%= current.slug %>/<%= current.bookmarkIdx %>">
         <% if (current.cover_path) { %>
           <img class="continue-cover" src="/media/book/<%= current.id %>/cover" alt="">
@@ -12,9 +12,9 @@
           <div class="continue-cover book-cover-placeholder"><%= current.title %></div>
         <% } %>
         <div class="continue-info">
-          <span class="continue-label">Continue reading</span>
+          <span class="continue-label"><%= t('Continue reading') %></span>
           <span class="continue-title"><%= current.title %></span>
-          <span class="continue-chapter"><%= currentChapter || `Chapter ${current.bookmarkIdx + 1}` %></span>
+          <span class="continue-chapter"><%= currentChapter || t('Chapter {n}', { n: current.bookmarkIdx + 1 }) %></span>
           <span class="continue-progress">
             <span class="progress-track"><span class="progress-fill" style="width: <%= Math.round(((current.bookmarkIdx + 1) / current.chapterTotal) * 100) %>%"></span></span>
             <span class="continue-count"><%= current.bookmarkIdx + 1 %>/<%= current.chapterTotal %></span>
@@ -23,16 +23,16 @@
         <span class="continue-go" aria-hidden="true">→</span>
       </a>
     <% } else if (user) { %>
-      <p class="hero-kicker">Welcome, <%= firstName %></p>
-      <h1 class="hero-title">What will you read next?</h1>
-      <p class="hero-text">Pick a book below. Your place is saved as you read, and your friends' comments show up right next to the paragraphs.</p>
+      <p class="hero-kicker"><%= t('Welcome, {name}', { name: firstName }) %></p>
+      <h1 class="hero-title"><%= t('What will you read next?') %></h1>
+      <p class="hero-text"><%= t("Pick a book below. Your place is saved as you read, and your friends' comments show up right next to the paragraphs.") %></p>
     <% } else { %>
-      <p class="hero-kicker">A little library for friends</p>
-      <h1 class="hero-title">Read together.</h1>
-      <p class="hero-text">Read the same books as your friends and talk about them right in the margins, paragraph by paragraph.</p>
+      <p class="hero-kicker"><%= t('A little library for friends') %></p>
+      <h1 class="hero-title"><%= t('Read together.') %></h1>
+      <p class="hero-text"><%= t('Read the same books as your friends and talk about them right in the margins, paragraph by paragraph.') %></p>
       <div class="hero-actions">
-        <a class="btn" href="/register">Join BookFriends</a>
-        <a class="btn btn-ghost" href="/login">Log in</a>
+        <a class="btn" href="/register"><%= t('Join BookFriends') %></a>
+        <a class="btn btn-ghost" href="/login"><%= t('Log in') %></a>
       </div>
     <% } %>
   </div>
@@ -40,28 +40,28 @@
 </section>
 
 <div class="shelf-header">
-  <h2 class="section-title">Bookshelf<% if (books.length > 0) { %> <span class="section-count"><%= books.length %> <%= books.length === 1 ? 'book' : 'books' %></span><% } %></h2>
+  <h2 class="section-title"><%= t('Bookshelf') %><% if (books.length > 0) { %> <span class="section-count"><%= t.n('{count} book', '{count} books', books.length) %></span><% } %></h2>
   <% if (books.length > 1) { %>
-    <select class="sort-select" aria-label="Sort books" onchange="location.href=this.value">
-      <option value="/?sort=added" <%= sort === 'added' ? 'selected' : '' %>>Date added</option>
-      <option value="/?sort=title" <%= sort === 'title' ? 'selected' : '' %>>Name A–Z</option>
-      <option value="/?sort=author" <%= sort === 'author' ? 'selected' : '' %>>Author</option>
+    <select class="sort-select" aria-label="<%= t('Sort books') %>" onchange="location.href=this.value">
+      <option value="/?sort=added" <%= sort === 'added' ? 'selected' : '' %>><%= t('Date added') %></option>
+      <option value="/?sort=title" <%= sort === 'title' ? 'selected' : '' %>><%= t('Name A–Z') %></option>
+      <option value="/?sort=author" <%= sort === 'author' ? 'selected' : '' %>><%= t('Author') %></option>
     </select>
   <% } %>
 </div>
 <% if (books.length === 0) { %>
   <div class="empty-shelf">
     <img src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
-    <p>No books here yet.<% if (user && user.role === 'owner') { %> <a href="/upload">Upload your first EPUB</a>.<% } %></p>
+    <p><%= t('No books here yet.') %><% if (user && user.role === 'owner') { %> <a href="/upload"><%= t('Upload your first EPUB') %></a><% } %></p>
   </div>
 <% } %>
 <div class="shelf">
   <% for (const book of books) { %>
     <article class="book-card">
       <a class="book-cover-link" href="/book/<%= book.slug %>/0">
-        <% if (user && user.role === 'owner' && book.visibility !== 'public') { %><span class="cover-badge">Private</span><% } %>
+        <% if (user && user.role === 'owner' && book.visibility !== 'public') { %><span class="cover-badge"><%= t('Private') %></span><% } %>
         <% if (book.cover_path) { %>
-          <img class="book-cover" src="/media/book/<%= book.id %>/cover" alt="Cover of <%= book.title %>" loading="lazy">
+          <img class="book-cover" src="/media/book/<%= book.id %>/cover" alt="<%= t('Cover of {title}', { title: book.title }) %>" loading="lazy">
         <% } else { %>
           <div class="book-cover book-cover-placeholder"><%= book.title %></div>
         <% } %>
@@ -72,25 +72,25 @@
         <% if (book.bookmarkIdx !== undefined) { %>
           <div class="book-progress">
             <div class="progress-top">
-              <span class="progress-label">You have read <%= book.bookmarkIdx + 1 %>/<%= book.chapterTotal %></span>
+              <span class="progress-label"><%= t('You have read {done}/{total}', { done: book.bookmarkIdx + 1, total: book.chapterTotal }) %></span>
               <form method="post" action="/book/<%= book.slug %>/bookmark/remove" class="inline-form">
-                <button class="progress-remove" type="submit" title="Remove bookmark" aria-label="Remove bookmark">✕</button>
+                <button class="progress-remove" type="submit" title="<%= t('Remove bookmark') %>" aria-label="<%= t('Remove bookmark') %>">✕</button>
               </form>
             </div>
             <div class="progress-track"><div class="progress-fill" style="width: <%= Math.round(((book.bookmarkIdx + 1) / book.chapterTotal) * 100) %>%"></div></div>
-            <a class="btn btn-small" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>">Continue reading</a>
+            <a class="btn btn-small" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>"><%= t('Continue reading') %></a>
           </div>
         <% } %>
-        <a class="download-link" href="/book/<%= book.slug %>/download" title="Download the EPUB (works with Send to Kindle)">⤓ Download EPUB</a>
+        <a class="download-link" href="/book/<%= book.slug %>/download" title="<%= t('Download the EPUB (works with Send to Kindle)') %>">⤓ <%= t('Download EPUB') %></a>
         <% if (user && user.role === 'owner') { %>
           <details class="book-manage">
-            <summary>Manage</summary>
+            <summary><%= t('Manage') %></summary>
             <div class="book-manage-body">
               <form method="post" action="/book/<%= book.slug %>/visibility" class="inline-form">
-                <button class="btn btn-small btn-ghost" type="submit">Make <%= book.visibility === 'public' ? 'private' : 'public' %></button>
+                <button class="btn btn-small btn-ghost" type="submit"><%= book.visibility === 'public' ? t('Make private') : t('Make public') %></button>
               </form>
-              <form method="post" action="/book/<%= book.slug %>/delete" class="inline-form" onsubmit="return confirm('Delete this book and all its comments?')">
-                <button class="btn btn-small btn-danger" type="submit">Delete</button>
+              <form method="post" action="/book/<%= book.slug %>/delete" class="inline-form" onsubmit="return confirm(<%= JSON.stringify(t('Delete this book and all its comments?')) %>)">
+                <button class="btn btn-small btn-danger" type="submit"><%= t('Delete') %></button>
               </form>
             </div>
           </details>

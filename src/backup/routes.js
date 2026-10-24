@@ -26,7 +26,7 @@ function tokenOk(given) {
 // the downloader's script; a wrong token gets the same 404 as a random URL.
 router.get('/backup/download', (req, res) => {
   if (!tokenOk(req.query.token)) {
-    return res.status(404).render('error', { title: 'Not found', message: 'Page not found.' });
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Page not found.') });
   }
   const latest = fs.existsSync(BACKUP_DIR)
     ? fs.readdirSync(BACKUP_DIR).filter((f) => NAME_RE.test(f)).sort().pop()

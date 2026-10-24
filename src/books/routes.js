@@ -52,7 +52,7 @@ router.get('/', (req, res) => {
 });
 
 router.get('/upload', requireOwner, (req, res) => {
-  res.render('upload', { title: 'Upload a book', error: null });
+  res.render('upload', { title: req.t('Upload a book'), error: null });
 });
 
 router.post('/upload', requireOwner, (req, res) => {
@@ -61,18 +61,18 @@ router.post('/upload', requireOwner, (req, res) => {
   upload.single('epub')(req, res, (uploadErr) => {
     if (uploadErr) {
       const message = uploadErr.code === 'LIMIT_FILE_SIZE'
-        ? `That file is too large — the limit is ${MAX_EPUB_MB} MB (MAX_EPUB_MB in .env changes it).`
-        : `Upload failed: ${uploadErr.message}`;
-      return res.status(400).render('upload', { title: 'Upload a book', error: message });
+        ? req.t('That file is too large — the limit is {mb} MB (MAX_EPUB_MB in .env changes it).', { mb: MAX_EPUB_MB })
+        : req.t('Upload failed: {error}', { error: uploadErr.message });
+      return res.status(400).render('upload', { title: req.t('Upload a book'), error: message });
     }
     if (!req.file) {
-      return res.status(400).render('upload', { title: 'Upload a book', error: 'Choose a .epub file.' });
+      return res.status(400).render('upload', { title: req.t('Upload a book'), error: req.t('Choose a .epub file.') });
     }
     try {
       const book = books.createBookFromEpub(req.file.path, req.user.id);
       res.redirect(`/book/${book.slug}/0`);
     } catch (err) {
-      res.status(400).render('upload', { title: 'Upload a book', error: `Could not parse that EPUB: ${err.message}` });
+      res.status(400).render('upload', { title: req.t('Upload a book'), error: req.t('Could not parse that EPUB: {error}', { error: err.message }) });
     } finally {
       fs.rmSync(req.file.path, { force: true });
     }
@@ -81,7 +81,7 @@ router.post('/upload', requireOwner, (req, res) => {
 
 router.post('/book/:slug/visibility', requireOwner, (req, res) => {
   const book = books.getBookBySlug(req.params.slug);
-  if (!book) return res.status(404).render('error', { title: 'Not found', message: 'No such book.' });
+  if (!book) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
   const next = book.visibility === 'public' ? 'private' : 'public';
   require('../db').db.prepare('UPDATE books SET visibility = ? WHERE id = ?').run(next, book.id);
   res.redirect('/');
@@ -89,7 +89,7 @@ router.post('/book/:slug/visibility', requireOwner, (req, res) => {
 
 router.post('/book/:slug/delete', requireOwner, (req, res) => {
   const book = books.getBookBySlug(req.params.slug);
-  if (!book) return res.status(404).render('error', { title: 'Not found', message: 'No such book.' });
+  if (!book) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
   books.deleteBook(book.id);
   res.redirect('/');
 });
@@ -97,11 +97,11 @@ router.post('/book/:slug/delete', requireOwner, (req, res) => {
 router.get('/book/:slug/download', (req, res) => {
   const book = books.getBookBySlug(req.params.slug);
   if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: 'Not found', message: 'No such book.' });
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
   }
   const file = nodePath.join(books.bookDir(book.id), 'book.epub');
   if (!fs.existsSync(file)) {
-    return res.status(404).render('error', { title: 'Not found', message: 'No EPUB stored for this book.' });
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No EPUB stored for this book.') });
   }
   res.download(file, `${book.slug}.epub`);
 });
@@ -109,14 +109,14 @@ router.get('/book/:slug/download', (req, res) => {
 router.get('/book/:slug/:idx', (req, res) => {
   const book = books.getBookBySlug(req.params.slug);
   if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: 'Not found', message: 'No such book.' });
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
   }
   const idx = Number.parseInt(req.params.idx, 10);
   if (!Number.isInteger(idx) || idx < 0) {
-    return res.status(404).render('error', { title: 'Not found', message: 'No such chapter.' });
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such chapter.') });
   }
   const chapter = books.getChapter(book.id, idx);
-  if (!chapter) return res.status(404).render('error', { title: 'Not found', message: 'No such chapter.' });
+  if (!chapter) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such chapter.') });
   const total = books.chapterCount(book.id);
 
   // Auto-bookmark like Wuxiaworld: opening a chapter ahead of the bookmark
@@ -200,7 +200,7 @@ router.delete('/api/book/:bookId/bookmark', requireAuth, (req, res) => {
 router.post('/book/:slug/bookmark/remove', requireAuth, (req, res) => {
   const book = books.getBookBySlug(req.params.slug);
   if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: 'Not found', message: 'No such book.' });
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
   }
   bookmarks.removeBookmark(req.user.id, book.id);
   res.redirect('/');

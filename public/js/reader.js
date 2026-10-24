@@ -2,6 +2,25 @@
   'use strict';
 
   var R = window.__READER__;
+
+  /* ---------- translations (English text is the key; reader.ejs embeds the rest) ---------- */
+
+  var I18N = window.__I18N__ || { lang: 'en', strings: {} };
+  function t(key, vars) {
+    var text = I18N.strings[key] || key;
+    if (!vars) return text;
+    return text.replace(/\{(\w+)\}/g, function (match, name) { return name in vars ? String(vars[name]) : match; });
+  }
+  t.n = function (one, other, count) { return t(count === 1 ? one : other, { count: count }); };
+  // A translated sentence with {placeholders} filled by DOM nodes (e.g. links).
+  function tNodes(key, nodes) {
+    var frag = document.createDocumentFragment();
+    t(key).split(/(\{\w+\})/).forEach(function (part) {
+      var name = /^\{(\w+)\}$/.exec(part);
+      frag.appendChild(name && nodes[name[1]] ? nodes[name[1]] : document.createTextNode(part));
+    });
+    return frag;
+  }
   var panel = document.getElementById('comment-panel');
   var backdrop = document.getElementById('panel-backdrop');
   var panelState = { para: null, sort: 'top' };
@@ -21,6 +40,15 @@
     if (topNav) rootStyle.setProperty('--nav-h', topNav.offsetHeight + 'px');
     if (bottomBar) rootStyle.setProperty('--bar-h', bottomBar.offsetHeight + 'px');
   };
+  // Some languages' "Prev"/"Next" don't fit a narrow phone's bar: show just
+  // the arrows then (app.css hides .bar-label in .bar-compact).
+  var fitBar = function () {
+    if (!bottomBar) return;
+    bottomBar.classList.remove('bar-compact');
+    if (bottomBar.scrollWidth > bottomBar.clientWidth) bottomBar.classList.add('bar-compact');
+  };
+  fitBar();
+  window.addEventListener('resize', fitBar);
   measureBars();
   if (window.ResizeObserver) {
     var barObserver = new ResizeObserver(measureBars);
@@ -40,18 +68,19 @@
   }
 
   function relTime(ts) {
+    if (!window.Intl || !Intl.RelativeTimeFormat) return new Date(ts).toLocaleDateString(I18N.lang);
+    var rtf = new Intl.RelativeTimeFormat(I18N.lang, { numeric: 'auto' });
     var s = Math.floor((Date.now() - ts) / 1000);
-    if (s < 60) return 'just now';
+    if (s < 60) return rtf.format(0, 'second');
     var m = Math.floor(s / 60);
-    if (m < 60) return m + ' minute' + (m === 1 ? '' : 's') + ' ago';
+    if (m < 60) return rtf.format(-m, 'minute');
     var h = Math.floor(m / 60);
-    if (h < 24) return h + ' hour' + (h === 1 ? '' : 's') + ' ago';
+    if (h < 24) return rtf.format(-h, 'hour');
     var d = Math.floor(h / 24);
-    if (d < 30) return d + ' day' + (d === 1 ? '' : 's') + ' ago';
+    if (d < 30) return rtf.format(-d, 'day');
     var mo = Math.floor(d / 30);
-    if (mo < 12) return mo + ' month' + (mo === 1 ? '' : 's') + ' ago';
-    var y = Math.floor(mo / 12);
-    return y + ' year' + (y === 1 ? '' : 's') + ' ago';
+    if (mo < 12) return rtf.format(-mo, 'month');
+    return rtf.format(-Math.floor(mo / 12), 'year');
   }
 
   function api(method, url, body) {
@@ -78,7 +107,7 @@
     var badge = el('button', 'para-badge' + (count > 0 ? ' has-comments' : ''), String(count));
     badge.type = 'button';
     badge.setAttribute('data-badge-for', paraIndex);
-    badge.setAttribute('aria-label', count + ' comments on this paragraph');
+    badge.setAttribute('aria-label', t.n('{count} comment on this paragraph', '{count} comments on this paragraph', count));
     badge.addEventListener('click', function () { openPanel(paraIndex); });
     return badge;
   }
@@ -107,7 +136,7 @@
 
     var head = el('div', 'comment-head');
     head.appendChild(el('span', 'comment-user', comment.userName));
-    head.appendChild(el('span', 'comment-time', relTime(comment.createdAt) + (comment.edited ? ' · edited' : '')));
+    head.appendChild(el('span', 'comment-time', relTime(comment.createdAt) + (comment.edited ? ' · ' + t('edited') : '')));
     main.appendChild(head);
 
     var body = el('div', 'comment-body', comment.body);
@@ -129,14 +158,14 @@
     actions.appendChild(dislike);
 
     if (R.user) {
-      var reply = el('button', 'link-btn', 'Reply');
+      var reply = el('button', 'link-btn', t('Reply'));
       reply.type = 'button';
       reply.addEventListener('click', function () {
         var existing = main.querySelector('.reply-form');
         if (existing) { existing.remove(); return; }
         main.appendChild(buildForm({
-          placeholder: 'Write a reply…',
-          submitLabel: 'Reply',
+          placeholder: t('Write a reply…'),
+          submitLabel: t('Reply'),
           className: 'reply-form',
           onSubmit: function (text) {
             return postComment(text, ctx.para, comment.id).then(function () { ctx.reload(); });
@@ -146,13 +175,13 @@
       actions.appendChild(reply);
     }
     if (comment.canEdit) {
-      var edit = el('button', 'link-btn', 'Edit');
+      var edit = el('button', 'link-btn', t('Edit'));
       edit.type = 'button';
       edit.addEventListener('click', function () {
         var existing = main.querySelector('.edit-form');
         if (existing) { existing.remove(); return; }
         main.appendChild(buildForm({
-          placeholder: '', initial: comment.body, submitLabel: 'Save', className: 'edit-form',
+          placeholder: '', initial: comment.body, submitLabel: t('Save'), className: 'edit-form',
           onSubmit: function (text) {
             return api('PATCH', '/api/comments/' + comment.id, { body: text }).then(function () { ctx.reload(); });
           },
@@ -161,10 +190,10 @@
       actions.appendChild(edit);
     }
     if (comment.canDelete) {
-      var del = el('button', 'link-btn danger', 'Delete');
+      var del = el('button', 'link-btn danger', t('Delete'));
       del.type = 'button';
       del.addEventListener('click', function () {
-        if (!window.confirm('Delete this comment?')) return;
+        if (!window.confirm(t('Delete this comment?'))) return;
         api('DELETE', '/api/comments/' + comment.id).then(function () { ctx.reload(); });
       });
       actions.appendChild(del);
@@ -172,14 +201,15 @@
     main.appendChild(actions);
 
     if (comment.replies.length > 0) {
-      var toggle = el('button', 'link-btn view-replies', 'View replies (' + comment.replies.length + ') ▾');
+      var replyCount = { count: comment.replies.length };
+      var toggle = el('button', 'link-btn view-replies', t('View replies ({count})', replyCount) + ' ▾');
       toggle.type = 'button';
       var repliesBox = el('div', 'comment-replies');
       repliesBox.hidden = true;
       comment.replies.forEach(function (child) { repliesBox.appendChild(renderComment(child, ctx)); });
       toggle.addEventListener('click', function () {
         repliesBox.hidden = !repliesBox.hidden;
-        toggle.textContent = (repliesBox.hidden ? 'View replies (' : 'Hide replies (') + comment.replies.length + ')' + (repliesBox.hidden ? ' ▾' : ' ▴');
+        toggle.textContent = repliesBox.hidden ? t('View replies ({count})', replyCount) + ' ▾' : t('Hide replies ({count})', replyCount) + ' ▴';
       });
       main.appendChild(toggle);
       main.appendChild(repliesBox);
@@ -202,10 +232,10 @@
   function buildForm(opts) {
     var form = el('form', 'comment-form ' + (opts.className || ''));
     var textarea = el('textarea');
-    textarea.placeholder = opts.placeholder || 'Add a comment';
+    textarea.placeholder = opts.placeholder || t('Add a comment');
     textarea.required = true;
     if (opts.initial) textarea.value = opts.initial;
-    var submit = el('button', 'btn', opts.submitLabel || 'Submit');
+    var submit = el('button', 'btn', opts.submitLabel || t('Submit'));
     submit.type = 'submit';
     form.appendChild(textarea);
     form.appendChild(submit);
@@ -227,14 +257,11 @@
 
   function loginPrompt() {
     var box = el('p', 'login-prompt');
-    var link = el('a', null, 'Log in');
+    var link = el('a', null, t('Log in'));
     link.href = '/login';
-    box.appendChild(link);
-    box.appendChild(document.createTextNode(' or '));
-    var reg = el('a', null, 'register');
+    var reg = el('a', null, t('register'));
     reg.href = '/register';
-    box.appendChild(reg);
-    box.appendChild(document.createTextNode(' to join the discussion.'));
+    box.appendChild(tNodes('{login} or {register} to join the discussion.', { login: link, register: reg }));
     return box;
   }
 
@@ -250,12 +277,12 @@
   }
 
   function loadInto(listNode, para, sort, ctx) {
-    listNode.textContent = 'Loading…';
+    listNode.textContent = t('Loading…');
     api('GET', '/api/chapter/' + R.chapterId + '/comments?para=' + anchorQuery(para) + '&sort=' + sort)
       .then(function (res) {
         listNode.textContent = '';
         if (res.comments.length === 0) {
-          listNode.appendChild(el('p', 'empty', 'No comments yet. Be the first!'));
+          listNode.appendChild(el('p', 'empty', t('No comments yet. Be the first!')));
         }
         res.comments.forEach(function (comment) {
           listNode.appendChild(renderComment(comment, ctx));
@@ -275,12 +302,12 @@
 
   function openPanel(paraIndex) {
     panelState.para = paraIndex;
-    document.getElementById('panel-title').textContent = 'Paragraph ' + (paraIndex + 1);
+    document.getElementById('panel-title').textContent = t('Paragraph {n}', { n: paraIndex + 1 });
     var formBox = document.getElementById('panel-form');
     formBox.textContent = '';
     formBox.appendChild(R.user ? buildForm({
-      placeholder: 'Add a comment',
-      submitLabel: 'Submit',
+      placeholder: t('Add a comment'),
+      submitLabel: t('Submit'),
       onSubmit: function (text) { return postComment(text, panelState.para, null).then(panelCtx().reload); },
     }) : loginPrompt());
     panel.hidden = false;
@@ -325,8 +352,8 @@
 
   var chapterFormBox = document.getElementById('chapter-comment-form');
   chapterFormBox.appendChild(R.user ? buildForm({
-    placeholder: 'Add a comment',
-    submitLabel: 'Submit',
+    placeholder: t('Add a comment'),
+    submitLabel: t('Submit'),
     onSubmit: function (text) { return postComment(text, null, null).then(chapterCtx().reload); },
   }) : loginPrompt());
   document.getElementById('chapter-sort').addEventListener('change', function (event) {
@@ -361,7 +388,7 @@
       restore.then(function () {
         positionArmed = false;
         refreshTocMarks(prev === null ? -1 : prev);
-        bmConfirm(prev === null ? 'Bookmark removed.' : 'Bookmark restored to where it was.');
+        bmConfirm(prev === null ? t('Bookmark removed.') : t('Bookmark restored to where it was.'));
       }).catch(function (err) {
         bmUndo.disabled = false;
         window.alert(err.message);
@@ -377,7 +404,7 @@
         lastSavedPara = -1;
         savePosition(false);
         refreshTocMarks(R.chapterIdx);
-        bmConfirm('Bookmarked! This is now your current chapter.');
+        bmConfirm(t('Bookmarked! This is now your current chapter.'));
       }).catch(function (err) {
         bmSet.disabled = false;
         window.alert(err.message);
@@ -395,9 +422,23 @@
     && (R.bookmark.action === 'advanced' || R.bookmark.action === 'same') && paraNodes.length);
   var lastSavedPara = (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para) || 0;
 
+  // How far down the screen the bars reach right now: the nav, plus the
+  // reader bar when it sits on top. A bar slid out of view covers nothing.
+  function coveredTop() {
+    var edge = topNav ? topNav.getBoundingClientRect().bottom : 0;
+    if (topBarQuery.matches && bottomBar) edge = Math.max(edge, bottomBar.getBoundingClientRect().bottom);
+    return Math.max(0, edge);
+  }
+
+  // The topmost paragraph with at least READ_LINE px showing below the bars.
+  // A resumed paragraph is placed just under the bars, so the end of the one
+  // above still peeks out (hidden behind them, or in the gap); counting that
+  // one moved the saved position back a paragraph on every resume-and-leave.
+  var READ_LINE = 24;
   function currentPara() {
+    var line = coveredTop() + READ_LINE;
     for (var i = 0; i < paraNodes.length; i++) {
-      if (paraNodes[i].getBoundingClientRect().bottom > 10) {
+      if (paraNodes[i].getBoundingClientRect().bottom > line) {
         return Number(paraNodes[i].getAttribute('data-p'));
       }
     }
@@ -445,9 +486,10 @@
         window.addEventListener(evt, function () { resumeInteracted = true; }, { passive: true, once: true });
       });
       var jumpToResume = function () {
-        // Clear the sticky nav, and the reader bar too when it sits on top.
-        var cover = 70 + (topBarQuery.matches && bottomBar ? bottomBar.offsetHeight : 0);
-        window.scrollTo(0, resumeTarget.getBoundingClientRect().top + window.scrollY - cover);
+        window.scrollTo(0, resumeTarget.getBoundingClientRect().top + window.scrollY - coveredTop() - 8);
+        // Not a reader scroll: keep the bars shown, so coveredTop() still
+        // matches what was measured here when the position is saved.
+        lastScrollY = Math.max(0, window.scrollY);
       };
       jumpToResume();
       // Images above the target can shift the layout as they load; re-align

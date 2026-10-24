@@ -1,34 +1,34 @@
 <%- include('partials/head') %>
 <div class="form-card">
-  <h1>Settings</h1>
-  <% if (saved) { %><p class="form-ok">Saved!</p><% } %>
-  <p class="hint">Account: <%= user.email %></p>
+  <h1><%= t('Settings') %></h1>
+  <% if (saved) { %><p class="form-ok"><%= t('Saved!') %></p><% } %>
+  <p class="hint"><%= t('Account: {email}', { email: user.email }) %></p>
   <form method="post" action="/settings">
-    <label class="field"><span>Display name (shown on your comments)</span>
+    <label class="field"><span><%= t('Display name (shown on your comments)') %></span>
       <input type="text" name="display_name" maxlength="30" value="<%= user.display_name || '' %>" placeholder="<%= user.email.split('@')[0] %>">
     </label>
-    <button class="btn" type="submit">Save</button>
+    <button class="btn" type="submit"><%= t('Save') %></button>
   </form>
-  <p class="hint">Leave it empty to go back to the start of your email (<%= user.email.split('@')[0] %>). Your old comments update too.</p>
+  <p class="hint"><%= t('Leave it empty to go back to the start of your email ({prefix}). Your old comments update too.', { prefix: user.email.split('@')[0] }) %></p>
 </div>
 <% if (user.auth_provider === 'local') { %>
 <div class="form-card">
-  <h2 class="form-subtitle">Change password</h2>
-  <% if (pwSaved) { %><p class="form-ok">Password changed!</p><% } %>
+  <h2 class="form-subtitle"><%= t('Change password') %></h2>
+  <% if (pwSaved) { %><p class="form-ok"><%= t('Password changed!') %></p><% } %>
   <% if (pwError) { %><p class="form-error"><%= pwError %></p><% } %>
   <form method="post" action="/settings/password">
-    <label class="field"><span>Current password</span>
+    <label class="field"><span><%= t('Current password') %></span>
       <input type="password" name="current_password" autocomplete="current-password" required>
     </label>
-    <label class="field"><span>New password (at least 8 characters)</span>
+    <label class="field"><span><%= t('New password (at least 8 characters)') %></span>
       <input type="password" name="new_password" autocomplete="new-password" minlength="8" required>
     </label>
-    <button class="btn" type="submit">Change password</button>
+    <button class="btn" type="submit"><%= t('Change password') %></button>
   </form>
 </div>
 <% } else { %>
 <div class="form-card">
-  <p class="hint">You sign in with Google, so there is no password to change here.</p>
+  <p class="hint"><%= t('You sign in with Google, so there is no password to change here.') %></p>
 </div>
 <% } %>
 <%- include('partials/footer') %>

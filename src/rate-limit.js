@@ -3,10 +3,12 @@ const { rateLimit } = require('express-rate-limit');
 // Per-IP limits on the endpoints an anonymous internet can abuse. In
 // production `trust proxy` is 1 (server.js), so req.ip is the real client
 // address behind Caddy, not the proxy's.
+// `message` gets the request's translator, so the text is in the reader's language.
 function tooMany(message) {
   return (req, res) => {
-    if (req.path.startsWith('/api/')) return res.status(429).json({ error: message });
-    res.status(429).render('error', { title: 'Slow down', message });
+    const text = message(req.t);
+    if (req.path.startsWith('/api/')) return res.status(429).json({ error: text });
+    res.status(429).render('error', { title: req.t('Slow down'), message: text });
   };
 }
 
@@ -28,22 +30,22 @@ module.exports = {
     windowMs: 15 * 60 * 1000,
     limit: 10,
     onlyFailures: true,
-    message: 'Too many login attempts. Wait 15 minutes and try again.',
+    message: (t) => t('Too many login attempts. Wait 15 minutes and try again.'),
   }),
   passwordLimiter: makeLimiter({
     windowMs: 15 * 60 * 1000,
     limit: 10,
     onlyFailures: true,
-    message: 'Too many password attempts. Wait 15 minutes and try again.',
+    message: (t) => t('Too many password attempts. Wait 15 minutes and try again.'),
   }),
   registerLimiter: makeLimiter({
     windowMs: 60 * 60 * 1000,
     limit: 5,
-    message: 'Too many new accounts from your network. Try again in an hour.',
+    message: (t) => t('Too many new accounts from your network. Try again in an hour.'),
   }),
   commentLimiter: makeLimiter({
     windowMs: 5 * 60 * 1000,
     limit: 20,
-    message: 'You are commenting too fast. Wait a few minutes and try again.',
+    message: (t) => t('You are commenting too fast. Wait a few minutes and try again.'),
   }),
 };

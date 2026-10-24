@@ -1,15 +1,15 @@
 <%- include('partials/head', { bodyClass: 'reader-page' }) %>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Source+Serif+4:wght@400;600&family=Inter:wght@400;600&family=Merriweather:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
 <div class="reader-titlebar">
-  <a class="titlebar-back" href="/" title="Back to shelf">‹</a>
+  <a class="titlebar-back" href="/" title="<%= t('Back to shelf') %>">‹</a>
   <% if (book.cover_path) { %><img class="titlebar-cover" src="/media/book/<%= book.id %>/cover" alt=""><% } %>
   <div class="titlebar-text">
     <div class="titlebar-book"><%= book.title %></div>
     <div class="titlebar-chapter"><%= chapter.title %></div>
   </div>
   <div class="titlebar-nav">
-    <% if (prevIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= prevIdx %>" title="Previous chapter">‹</a><% } else { %><span class="chapter-arrow disabled">‹</span><% } %>
-    <% if (nextIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= nextIdx %>" title="Next chapter">›</a><% } else { %><span class="chapter-arrow disabled">›</span><% } %>
+    <% if (prevIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= prevIdx %>" title="<%= t('Previous chapter') %>">‹</a><% } else { %><span class="chapter-arrow disabled">‹</span><% } %>
+    <% if (nextIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= nextIdx %>" title="<%= t('Next chapter') %>">›</a><% } else { %><span class="chapter-arrow disabled">›</span><% } %>
   </div>
 </div>
 
@@ -19,25 +19,25 @@
   <% if (bookmark && bookmark.action === 'advanced') { %>
     <div id="bm-banner" class="bm-banner">
       <span class="bm-icon bm-icon-ok">✓</span>
-      <span class="bm-text">Chapter bookmarked!</span>
-      <button type="button" id="bm-undo" class="bm-action">Undo</button>
+      <span class="bm-text"><%= t('Chapter bookmarked!') %></span>
+      <button type="button" id="bm-undo" class="bm-action"><%= t('Undo') %></button>
     </div>
   <% } else if (bookmark && bookmark.action === 'older') { %>
     <div id="bm-banner" class="bm-banner">
       <span class="bm-icon bm-icon-warn">⚠</span>
-      <span class="bm-text">You are reading an older chapter than the one you have bookmarked.</span>
-      <button type="button" id="bm-set" class="bm-action">Bookmark</button>
+      <span class="bm-text"><%= t('You are reading an older chapter than the one you have bookmarked.') %></span>
+      <button type="button" id="bm-set" class="bm-action"><%= t('Bookmark') %></button>
     </div>
   <% } %>
   <% if (nextIdx !== null) { %>
-    <a class="next-chapter-btn" href="/book/<%= book.slug %>/<%= nextIdx %>">NEXT CHAPTER</a>
+    <a class="next-chapter-btn" href="/book/<%= book.slug %>/<%= nextIdx %>"><%= t('NEXT CHAPTER') %></a>
   <% } %>
   <section id="comments" class="chapter-comments">
     <div class="comments-header">
-      <h2 id="chapter-comments-title"><%= chapterCommentCount %> Comments</h2>
-      <select id="chapter-sort" class="sort-select" aria-label="Sort comments">
-        <option value="top">Top</option>
-        <option value="new">Newest</option>
+      <h2 id="chapter-comments-title"><%= t.n('{count} comment', '{count} comments', chapterCommentCount) %></h2>
+      <select id="chapter-sort" class="sort-select" aria-label="<%= t('Sort comments') %>">
+        <option value="top"><%= t('Top') %></option>
+        <option value="new"><%= t('Newest') %></option>
       </select>
     </div>
     <div id="chapter-comment-form"></div>
@@ -46,21 +46,21 @@
 </div>
 
 <div id="panel-backdrop" class="panel-backdrop" hidden></div>
-<aside id="comment-panel" class="comment-panel" hidden aria-label="Paragraph comments">
+<aside id="comment-panel" class="comment-panel" hidden aria-label="<%= t('Paragraph comments') %>">
   <div class="panel-header">
-    <span id="panel-title">Comments</span>
-    <select id="panel-sort" class="sort-select" aria-label="Sort comments">
-      <option value="top">Top</option>
-      <option value="new">Newest</option>
+    <span id="panel-title"><%= t('Comments') %></span>
+    <select id="panel-sort" class="sort-select" aria-label="<%= t('Sort comments') %>">
+      <option value="top"><%= t('Top') %></option>
+      <option value="new"><%= t('Newest') %></option>
     </select>
-    <button id="panel-close" class="panel-close" aria-label="Close">×</button>
+    <button id="panel-close" class="panel-close" aria-label="<%= t('Close') %>">×</button>
   </div>
   <div id="panel-form"></div>
   <div id="panel-list" class="comment-list"></div>
 </aside>
 
 <div id="font-panel" class="font-panel" hidden>
-  <div class="font-panel-label">Font</div>
+  <div class="font-panel-label"><%= t('Font') %></div>
   <div class="font-grid">
     <button type="button" class="font-choice" data-font="opensans">Opensans</button>
     <button type="button" class="font-choice" data-font="sourceserif">Source serif</button>
@@ -70,48 +70,49 @@
     <button type="button" class="font-choice" data-font="montserrat">Montserrat</button>
   </div>
   <div class="font-panel-row">
-    <span class="font-panel-label">Text size</span>
+    <span class="font-panel-label"><%= t('Text size') %></span>
     <div class="stepper">
-      <button type="button" id="size-minus" class="stepper-btn" aria-label="Smaller text">−</button>
+      <button type="button" id="size-minus" class="stepper-btn" aria-label="<%= t('Smaller text') %>">−</button>
       <span id="size-value" class="stepper-value">18</span>
-      <button type="button" id="size-plus" class="stepper-btn" aria-label="Larger text">+</button>
+      <button type="button" id="size-plus" class="stepper-btn" aria-label="<%= t('Larger text') %>">+</button>
     </div>
   </div>
   <div class="font-panel-row">
-    <span class="font-panel-label">Line height</span>
+    <span class="font-panel-label"><%= t('Line height') %></span>
     <div class="stepper">
-      <button type="button" id="lh-minus" class="stepper-btn" aria-label="Tighter lines">−</button>
+      <button type="button" id="lh-minus" class="stepper-btn" aria-label="<%= t('Tighter lines') %>">−</button>
       <span id="lh-value" class="stepper-value">30</span>
-      <button type="button" id="lh-plus" class="stepper-btn" aria-label="Looser lines">+</button>
+      <button type="button" id="lh-plus" class="stepper-btn" aria-label="<%= t('Looser lines') %>">+</button>
     </div>
   </div>
-  <div class="font-panel-label">Contrast</div>
+  <div class="font-panel-label"><%= t('Contrast') %></div>
   <div class="contrast-row">
-    <button type="button" id="contrast-normal" class="contrast-btn" aria-label="Normal contrast">✓</button>
-    <button type="button" id="contrast-high" class="contrast-btn contrast-a" aria-label="High contrast">A</button>
+    <button type="button" id="contrast-normal" class="contrast-btn" aria-label="<%= t('Normal contrast') %>">✓</button>
+    <button type="button" id="contrast-high" class="contrast-btn contrast-a" aria-label="<%= t('High contrast') %>">A</button>
   </div>
-  <div class="font-panel-label">Color</div>
+  <div class="font-panel-label"><%= t('Color') %></div>
   <div class="theme-row">
-    <button type="button" class="theme-btn" data-theme="dark">Dark</button>
-    <button type="button" class="theme-btn" data-theme="light">Light</button>
-    <button type="button" class="theme-btn" data-theme="sepia">Sepia</button>
+    <button type="button" class="theme-btn" data-theme="dark"><%= t('Dark') %></button>
+    <button type="button" class="theme-btn" data-theme="light"><%= t('Light') %></button>
+    <button type="button" class="theme-btn" data-theme="sepia"><%= t('Sepia') %></button>
   </div>
-  <button type="button" id="font-reset" class="font-reset">RESET</button>
+  <button type="button" id="font-reset" class="font-reset"><%= t('RESET') %></button>
 </div>
 
 <div class="reader-bottombar">
-  <button type="button" id="badges-toggle" class="bar-btn" aria-pressed="true" title="Show/hide paragraph comments">P</button>
-  <button type="button" id="font-toggle" class="bar-btn" aria-expanded="false" title="Font options">tT</button>
-  <select id="toc-select" class="sort-select toc-select" aria-label="Table of contents">
+  <button type="button" id="badges-toggle" class="bar-btn" aria-pressed="true" title="<%= t('Show/hide paragraph comments') %>">P</button>
+  <button type="button" id="font-toggle" class="bar-btn" aria-expanded="false" title="<%= t('Font options') %>">tT</button>
+  <select id="toc-select" class="sort-select toc-select" aria-label="<%= t('Table of contents') %>">
     <% for (const item of toc) { %>
       <option value="/book/<%= book.slug %>/<%= item.idx %>" <%= item.idx === chapter.idx ? 'selected' : '' %>><%= bookmark && item.idx <= bookmark.bmIdx ? '✓ ' : '' %><%= item.title %></option>
     <% } %>
   </select>
-  <% if (prevIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= prevIdx %>">‹ Prev</a><% } else { %><span class="chapter-arrow disabled">‹ Prev</span><% } %>
-  <% if (nextIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= nextIdx %>">Next ›</a><% } else { %><span class="chapter-arrow disabled">Next ›</span><% } %>
+  <% if (prevIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= prevIdx %>" title="<%= t('Previous chapter') %>">‹<span class="bar-label"><%= t('Prev') %></span></a><% } else { %><span class="chapter-arrow disabled">‹<span class="bar-label"><%= t('Prev') %></span></span><% } %>
+  <% if (nextIdx !== null) { %><a class="chapter-arrow" href="/book/<%= book.slug %>/<%= nextIdx %>" title="<%= t('Next chapter') %>"><span class="bar-label"><%= t('Next') %></span>›</a><% } else { %><span class="chapter-arrow disabled"><span class="bar-label"><%= t('Next') %></span>›</span><% } %>
 </div>
 
 <script>
+  window.__I18N__ = <%- clientI18n %>;
   window.__READER__ = {
     chapterId: <%= chapter.id %>,
     bookId: <%= book.id %>,

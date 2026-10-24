@@ -1,16 +1,16 @@
 <%- include('partials/head') %>
 <div class="form-card auth-card">
   <img class="auth-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
-  <h1>Join BookFriends</h1>
-  <p class="auth-sub">Read along with friends and chat in the margins.</p>
+  <h1><%= t('Join BookFriends') %></h1>
+  <p class="auth-sub"><%= t('Read along with friends and chat in the margins.') %></p>
   <% if (error) { %><p class="form-error"><%= error %></p><% } %>
   <%- include('partials/google-btn') %>
   <form method="post" action="/register">
-    <label class="field"><span>Email</span><input type="email" name="email" required autofocus></label>
-    <label class="field"><span>Password (8+ characters)</span><input type="password" name="password" minlength="8" required></label>
-    <label class="field"><span>Display name (optional — shown on your comments)</span><input type="text" name="display_name" maxlength="30" placeholder="e.g. Bento"></label>
-    <button class="btn" type="submit">Create account</button>
+    <label class="field"><span><%= t('Email') %></span><input type="email" name="email" required autofocus></label>
+    <label class="field"><span><%= t('Password (8+ characters)') %></span><input type="password" name="password" minlength="8" required></label>
+    <label class="field"><span><%= t('Display name (optional — shown on your comments)') %></span><input type="text" name="display_name" maxlength="30" placeholder="<%= t('e.g. Bento') %>"></label>
+    <button class="btn" type="submit"><%= t('Create account') %></button>
   </form>
-  <p class="hint">Already registered? <a href="/login">Log in</a></p>
+  <p class="hint"><%= t('Already registered?') %> <a href="/login"><%= t('Log in') %></a></p>
 </div>
 <%- include('partials/footer') %>

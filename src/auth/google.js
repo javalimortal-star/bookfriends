@@ -20,7 +20,7 @@ function normalizeDisplayName(value) {
 }
 
 router.get('/auth/google', (req, res) => {
-  if (!configured()) return res.status(404).render('error', { title: 'Not found', message: 'Google login is not enabled.' });
+  if (!configured()) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Google login is not enabled.') });
   const state = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
   const params = new URLSearchParams({
@@ -35,7 +35,7 @@ router.get('/auth/google', (req, res) => {
 });
 
 router.get('/auth/google/callback', async (req, res) => {
-  if (!configured()) return res.status(404).render('error', { title: 'Not found', message: 'Google login is not enabled.' });
+  if (!configured()) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Google login is not enabled.') });
   try {
     const { code, state } = req.query;
     if (!code || !state || state !== req.session.oauthState) throw new Error('OAuth state mismatch');
@@ -76,13 +76,13 @@ router.get('/auth/google/callback', async (req, res) => {
     }
 
     req.session.regenerate((err) => {
-      if (err) return res.status(500).render('error', { title: 'Error', message: 'Session error.' });
+      if (err) return res.status(500).render('error', { title: req.t('Error'), message: req.t('Session error.') });
       req.session.userId = user.id;
       res.redirect('/');
     });
   } catch (err) {
     console.error('google auth:', err.message);
-    res.status(400).render('error', { title: 'Login failed', message: 'Google sign-in did not complete. Try again, or log in with email and password.' });
+    res.status(400).render('error', { title: req.t('Login failed'), message: req.t('Google sign-in did not complete. Try again, or log in with email and password.') });
   }
 });
 
