@@ -770,6 +770,7 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 }
 @media (prefers-reduced-motion: reduce) {
   .spoiler-pill { transition: none; }
+}
 
 /* ---------- friends: where they are in each book ---------- */
 /* Small initial circles; the colour comes from .avatar-0 … .avatar-4 (same
@@ -999,6 +1000,7 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
   white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.75rem; line-height: 1.5; color: var(--text);
   background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+}
 
 /* ---------- reader: search inside a book, swipe between chapters ---------- */
 .titlebar-search { padding: 0; }
