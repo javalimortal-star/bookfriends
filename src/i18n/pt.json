@@ -15,7 +15,7 @@
   "Already registered?": "Já tem conta?",
   "Back to the shelf": "Voltar para a estante",
   "Notifications": "Notificações",
-  "Nothing here yet — when a friend replies to one of your comments, it shows up here.": "Nada por aqui ainda — quando um amigo responder a um dos seus comentários, vai aparecer aqui.",
+  "Nothing here yet — when a friend replies to one of your comments or mentions you, it shows up here.": "Nada por aqui ainda — quando um amigo responder a um dos seus comentários ou mencionar você, vai aparecer aqui.",
   "replied to your comment": "respondeu ao seu comentário",
   "paragraph {n}": "parágrafo {n}",
   "Language": "Idioma",
@@ -166,5 +166,13 @@
   "Bookmarked! This is now your current chapter.": "Marcado! Este agora é o seu capítulo atual.",
   "{count} comment on this paragraph": "{count} comentário neste parágrafo",
   "{count} comments on this paragraph": "{count} comentários neste parágrafo",
-  "{login} or {register} to join the discussion.": "{login} ou {register} para participar da conversa."
+  "{login} or {register} to join the discussion.": "{login} ou {register} para participar da conversa.",
+  "mentioned you": "mencionou você",
+  "left a comment": "deixou um comentário",
+  "Spoiler — open it to read": "Spoiler — abra para ler",
+  "Spoiler": "Spoiler",
+  "Blur this comment until someone chooses to read it": "Desfoca o comentário até alguém escolher ler",
+  "Spoiler — tap to show": "Spoiler — toque para ver",
+  "Spoiler — click to show": "Spoiler — clique para ver",
+  "People to mention": "Pessoas para mencionar"
 }

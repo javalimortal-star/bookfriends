@@ -100,6 +100,86 @@
     return para === null ? 'chapter' : String(para);
   }
 
+  // same name, same avatar colour (comments and the @ suggestions)
+  function avatarTone(name) {
+    var tone = 0;
+    for (var i = 0; i < name.length; i++) tone = (tone * 31 + name.charCodeAt(i)) % 5;
+    return tone;
+  }
+
+  /* ---------- comment text: @mention highlights + spoiler blur ---------- */
+
+  // As in src/comments/mentions.js: a letter, digit or _ touching the "@" or
+  // the end of the name glues it into a word (an email, a longer name).
+  var WORD_CHAR = /[\p{L}\p{N}_]/u;
+  function isWordChar(ch) { return ch !== '' && WORD_CHAR.test(ch); }
+
+  // The body as text nodes, each @Name the server matched (`mentions`, as
+  // written) in a span.mention. Text nodes only: never HTML from a comment.
+  function bodyNodes(text, mentions) {
+    var frag = document.createDocumentFragment();
+    var names = (mentions || []).slice().sort(function (a, b) { return b.length - a.length; });
+    var start = 0;
+    var at = names.length ? text.indexOf('@') : -1;
+    while (at !== -1) {
+      var next = at + 1;
+      if (!isWordChar(text.charAt(at - 1))) {
+        for (var i = 0; i < names.length; i++) {
+          var end = at + 1 + names[i].length;
+          if (text.slice(at + 1, end).toLowerCase() === names[i].toLowerCase() && !isWordChar(text.charAt(end))) {
+            if (at > start) frag.appendChild(document.createTextNode(text.slice(start, at)));
+            frag.appendChild(el('span', 'mention', text.slice(at, end)));
+            start = next = end;
+            break;
+          }
+        }
+      }
+      at = text.indexOf('@', next);
+    }
+    if (start < text.length) frag.appendChild(document.createTextNode(text.slice(start)));
+    return frag;
+  }
+
+  // What sits under a spoiler's blur: the same word shapes in other letters.
+  // Blur alone can be read back on short texts, and the real words would
+  // still be in the page for copy-paste and find-in-page.
+  var SPOILER_PREVIEW = 280;
+  function scramble(text) {
+    var letters = 'etaoinshrdlucmfwyp';
+    var shown = text.slice(0, SPOILER_PREVIEW);
+    var out = '';
+    for (var i = 0; i < shown.length; i++) {
+      var ch = shown.charAt(i);
+      out += /\s/.test(ch) ? ch : letters.charAt((i * 7 + shown.charCodeAt(i)) % letters.length);
+    }
+    return out;
+  }
+
+  // Revealed spoilers stay revealed when a list reloads (after a reply...).
+  var revealedSpoilers = {};
+
+  function fillBody(body, comment) {
+    body.textContent = '';
+    if (!comment.spoiler || revealedSpoilers[comment.id]) {
+      body.classList.remove('is-spoiler');
+      body.appendChild(bodyNodes(comment.body, comment.mentions));
+      return;
+    }
+    body.classList.add('is-spoiler');
+    var hidden = el('span', 'spoiler-text', scramble(comment.body));
+    hidden.setAttribute('aria-hidden', 'true');
+    var reveal = el('button', 'spoiler-reveal');
+    reveal.type = 'button';
+    reveal.appendChild(el('span', 'spoiler-label', topBarQuery.matches ? t('Spoiler — click to show') : t('Spoiler — tap to show')));
+    reveal.addEventListener('click', function () {
+      revealedSpoilers[comment.id] = true;
+      fillBody(body, comment);
+      body.focus({ preventScroll: true }); // the button is gone: keep keyboard focus here
+    });
+    body.appendChild(hidden);
+    body.appendChild(reveal);
+  }
+
   /* ---------- badges ---------- */
 
   function makeBadge(paraIndex) {
@@ -129,17 +209,18 @@
 
   function renderComment(comment, ctx) {
     var card = el('div', 'comment');
-    var tone = 0; // same name, same avatar colour
-    for (var i = 0; i < comment.userName.length; i++) tone = (tone * 31 + comment.userName.charCodeAt(i)) % 5;
-    var avatar = el('div', 'comment-avatar avatar-' + tone, comment.userName.charAt(0).toUpperCase());
+    var avatar = el('div', 'comment-avatar avatar-' + avatarTone(comment.userName), comment.userName.charAt(0).toUpperCase());
     var main = el('div', 'comment-main');
 
     var head = el('div', 'comment-head');
     head.appendChild(el('span', 'comment-user', comment.userName));
     head.appendChild(el('span', 'comment-time', relTime(comment.createdAt) + (comment.edited ? ' · ' + t('edited') : '')));
+    if (comment.spoiler) head.appendChild(el('span', 'spoiler-tag', t('Spoiler')));
     main.appendChild(head);
 
-    var body = el('div', 'comment-body', comment.body);
+    var body = el('div', 'comment-body');
+    if (comment.spoiler) body.tabIndex = -1;
+    fillBody(body, comment);
     main.appendChild(body);
 
     var actions = el('div', 'comment-actions');
@@ -167,8 +248,8 @@
           placeholder: t('Write a reply…'),
           submitLabel: t('Reply'),
           className: 'reply-form',
-          onSubmit: function (text) {
-            return postComment(text, ctx.para, comment.id).then(function () { ctx.reload(); });
+          onSubmit: function (text, spoiler) {
+            return postComment(text, ctx.para, comment.id, spoiler).then(function () { ctx.reload(); });
           },
         }));
       });
@@ -181,9 +262,9 @@
         var existing = main.querySelector('.edit-form');
         if (existing) { existing.remove(); return; }
         main.appendChild(buildForm({
-          placeholder: '', initial: comment.body, submitLabel: t('Save'), className: 'edit-form',
-          onSubmit: function (text) {
-            return api('PATCH', '/api/comments/' + comment.id, { body: text }).then(function () { ctx.reload(); });
+          placeholder: '', initial: comment.body, spoiler: comment.spoiler, submitLabel: t('Save'), className: 'edit-form',
+          onSubmit: function (text, spoiler) {
+            return api('PATCH', '/api/comments/' + comment.id, { body: text, spoiler: spoiler }).then(function () { ctx.reload(); });
           },
         }));
       });
@@ -237,15 +318,28 @@
     if (opts.initial) textarea.value = opts.initial;
     var submit = el('button', 'btn', opts.submitLabel || t('Submit'));
     submit.type = 'submit';
+    // a real checkbox (keyboard, screen readers), drawn as a pill by app.css
+    var spoilerToggle = el('label', 'spoiler-toggle');
+    spoilerToggle.title = t('Blur this comment until someone chooses to read it');
+    var spoilerCheck = el('input', 'spoiler-check');
+    spoilerCheck.type = 'checkbox';
+    spoilerCheck.checked = !!opts.spoiler;
+    spoilerToggle.appendChild(spoilerCheck);
+    spoilerToggle.appendChild(el('span', 'spoiler-pill', t('Spoiler')));
+    var row = el('div', 'comment-form-row');
+    row.appendChild(submit);
+    row.appendChild(spoilerToggle);
     form.appendChild(textarea);
-    form.appendChild(submit);
+    form.appendChild(row);
+    attachMentions(textarea, form);
     form.addEventListener('submit', function (event) {
       event.preventDefault();
       var text = textarea.value.trim();
       if (!text) return;
       submit.disabled = true;
-      opts.onSubmit(text).then(function () {
+      opts.onSubmit(text, spoilerCheck.checked).then(function () {
         textarea.value = '';
+        spoilerCheck.checked = false;
         submit.disabled = false;
       }).catch(function (err) {
         submit.disabled = false;
@@ -253,6 +347,174 @@
       });
     });
     return form;
+  }
+
+  /* ---------- @mention suggestions while typing ---------- */
+
+  var mentionCache = {}; // query -> [{ id, name }], for this page view
+  var mentionLists = 0;
+  var openMention = null; // the form whose list is showing, to re-place it
+
+  // The "@query" the caret is in, if any: { at, caret, q }. Names may have
+  // spaces, so the query can too; it ends at a line break, and the list
+  // closes by itself once nobody's name contains what was typed.
+  function mentionQuery(textarea) {
+    var caret = textarea.selectionStart;
+    if (caret !== textarea.selectionEnd) return null;
+    var before = textarea.value.slice(0, caret);
+    var at = before.lastIndexOf('@');
+    if (at === -1 || caret - at > 32 || isWordChar(before.charAt(at - 1))) return null;
+    var q = before.slice(at + 1);
+    if (/^\s|\n/.test(q)) return null;
+    return { at: at, caret: caret, q: q };
+  }
+
+  function attachMentions(textarea, form) {
+    var list = el('ul', 'mention-list');
+    list.id = 'mention-list-' + (++mentionLists);
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-label', t('People to mention'));
+    list.hidden = true;
+    // keep the focus, and the phone's keyboard, in the textarea
+    list.addEventListener('mousedown', function (event) { event.preventDefault(); });
+    form.appendChild(list);
+    textarea.setAttribute('aria-autocomplete', 'list');
+    textarea.setAttribute('aria-controls', list.id);
+    textarea.setAttribute('aria-expanded', 'false');
+
+    var people = [];
+    var active = 0;
+    var current = null;
+    var timer = null;
+    // after a pick or Escape, this "@" stays quiet: { at, name } (name '' = Escape)
+    var quiet = null;
+    var handle = { place: place };
+
+    function close() {
+      clearTimeout(timer);
+      list.hidden = true;
+      current = null;
+      if (openMention === handle) openMention = null;
+      textarea.setAttribute('aria-expanded', 'false');
+      textarea.removeAttribute('aria-activedescendant');
+    }
+
+    function setActive(index) {
+      active = index;
+      Array.prototype.forEach.call(list.children, function (item, i) {
+        item.classList.toggle('active', i === index);
+        item.setAttribute('aria-selected', i === index ? 'true' : 'false');
+      });
+      var item = list.children[index];
+      if (!item) return;
+      textarea.setAttribute('aria-activedescendant', item.id);
+      // scroll the list only (scrollIntoView could move the whole page)
+      if (item.offsetTop < list.scrollTop) list.scrollTop = item.offsetTop;
+      else if (item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight) {
+        list.scrollTop = item.offsetTop + item.offsetHeight - list.clientHeight;
+      }
+    }
+
+    // Under the textarea, unless the on-screen keyboard (or the window's
+    // bottom edge) leaves more room above it.
+    function place() {
+      var rect = textarea.getBoundingClientRect();
+      var vv = window.visualViewport;
+      var visibleTop = Math.max(coveredTop(), vv ? vv.offsetTop : 0);
+      var visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      var below = visibleBottom - rect.bottom - 12;
+      var above = rect.top - visibleTop - 12;
+      var full = people.length * 44 + 10;
+      var under = below >= Math.min(full, 140) || below >= above;
+      list.style.top = under ? (textarea.offsetTop + textarea.offsetHeight + 4) + 'px' : '';
+      list.style.bottom = under ? '' : (form.offsetHeight - textarea.offsetTop + 4) + 'px';
+      list.style.maxHeight = Math.max(under ? below : above, 96) + 'px';
+    }
+
+    function show(found) {
+      people = found;
+      if (!people.length) return close();
+      list.textContent = '';
+      people.forEach(function (person, i) {
+        var item = el('li', 'mention-option');
+        item.id = list.id + '-' + i;
+        item.setAttribute('role', 'option');
+        item.appendChild(el('span', 'comment-avatar avatar-' + avatarTone(person.name), person.name.charAt(0).toUpperCase()));
+        item.appendChild(el('span', 'mention-name', person.name));
+        item.addEventListener('click', function () { pick(person); });
+        list.appendChild(item);
+      });
+      list.hidden = false;
+      openMention = handle;
+      textarea.setAttribute('aria-expanded', 'true');
+      setActive(0);
+      place();
+    }
+
+    function pick(person) {
+      if (!current) return;
+      var after = textarea.value.slice(current.caret);
+      var spaced = /^\s/.test(after);
+      textarea.value = textarea.value.slice(0, current.at) + '@' + person.name + (spaced ? '' : ' ') + after;
+      var caret = current.at + person.name.length + 2;
+      textarea.setSelectionRange(caret, caret);
+      quiet = { at: current.at, name: person.name.toLowerCase() };
+      close();
+      textarea.focus();
+    }
+
+    function update() {
+      var query = mentionQuery(textarea);
+      if (!query) quiet = null; // the caret left that "@": a new one may list again
+      else if (quiet && query.at === quiet.at && query.q.toLowerCase().indexOf(quiet.name) === 0) query = null;
+      if (!query) return close();
+      current = query;
+      clearTimeout(timer);
+      if (mentionCache[query.q]) return show(mentionCache[query.q]);
+      // a query nobody's name contains can't start matching by typing more
+      for (var known in mentionCache) {
+        if (!mentionCache[known].length && query.q.indexOf(known) === 0) return close();
+      }
+      timer = setTimeout(function () {
+        api('GET', '/api/mentions?q=' + encodeURIComponent(query.q)).then(function (found) {
+          mentionCache[query.q] = found;
+          var now = mentionQuery(textarea);
+          if (now && now.q === query.q && document.activeElement === textarea) {
+            current = now;
+            show(found);
+          }
+        }).catch(close);
+      }, 120);
+    }
+
+    // Typing opens the list; moving the caret only re-checks an open one
+    // (clicking into an existing "@Name" while editing shouldn't pop it up).
+    textarea.addEventListener('input', update);
+    textarea.addEventListener('click', function () { if (!list.hidden) update(); });
+    textarea.addEventListener('keyup', function (event) {
+      if (!list.hidden && /^(ArrowLeft|ArrowRight|Home|End)$/.test(event.key)) update();
+    });
+    textarea.addEventListener('blur', close);
+    textarea.addEventListener('keydown', function (event) {
+      if (list.hidden || event.isComposing) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        setActive((active + (event.key === 'ArrowDown' ? 1 : people.length - 1)) % people.length);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        pick(people[active]);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation(); // close just the list, not the comment panel
+        if (current) quiet = { at: current.at, name: '' };
+        close();
+      }
+    });
+  }
+
+  if (window.visualViewport) {
+    // the phone keyboard opening or closing changes which side has room
+    window.visualViewport.addEventListener('resize', function () { if (openMention) openMention.place(); });
   }
 
   function loginPrompt() {
@@ -265,11 +527,12 @@
     return box;
   }
 
-  function postComment(body, para, parentId) {
+  function postComment(body, para, parentId, spoiler) {
     return api('POST', '/api/chapter/' + R.chapterId + '/comments', {
       body: body,
       para_index: para,
       parent_id: parentId || null,
+      spoiler: !!spoiler,
     }).then(function (res) {
       if (!parentId && para !== null) bumpBadge(para);
       return res;
@@ -308,7 +571,7 @@
     formBox.appendChild(R.user ? buildForm({
       placeholder: t('Add a comment'),
       submitLabel: t('Submit'),
-      onSubmit: function (text) { return postComment(text, panelState.para, null).then(panelCtx().reload); },
+      onSubmit: function (text, spoiler) { return postComment(text, panelState.para, null, spoiler).then(panelCtx().reload); },
     }) : loginPrompt());
     panel.hidden = false;
     backdrop.hidden = false;
@@ -354,7 +617,7 @@
   chapterFormBox.appendChild(R.user ? buildForm({
     placeholder: t('Add a comment'),
     submitLabel: t('Submit'),
-    onSubmit: function (text) { return postComment(text, null, null).then(chapterCtx().reload); },
+    onSubmit: function (text, spoiler) { return postComment(text, null, null, spoiler).then(chapterCtx().reload); },
   }) : loginPrompt());
   document.getElementById('chapter-sort').addEventListener('change', function (event) {
     chapterSort = event.target.value;

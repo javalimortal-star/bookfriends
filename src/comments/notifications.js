@@ -15,6 +15,13 @@ function notifyReply(recipientId, replyCommentId) {
   notify(recipientId, replyCommentId, 'reply');
 }
 
+// Who already has a notification for this comment (any kind): someone
+// replied to and mentioned in it hears about it once, and so does someone
+// mentioned again after an edit removed and re-added their name.
+function recipientsOf(commentId) {
+  return new Set(db.prepare('SELECT user_id FROM notifications WHERE comment_id = ?').all(commentId).map((r) => r.user_id));
+}
+
 function unseenCount(userId) {
   return db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND seen = 0').get(userId).n;
 }
@@ -41,4 +48,4 @@ function markAllSeen(userId) {
   db.prepare('UPDATE notifications SET seen = 1 WHERE user_id = ? AND seen = 0').run(userId);
 }
 
-module.exports = { notify, notifyReply, unseenCount, listForUser, markAllSeen };
+module.exports = { notify, notifyReply, recipientsOf, unseenCount, listForUser, markAllSeen };

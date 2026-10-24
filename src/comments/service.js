@@ -1,7 +1,20 @@
 const { db } = require('../db');
+const { findMentions } = require('./mentions');
 
-function displayName(email) {
-  return String(email).split('@')[0];
+// The name a user goes by in comments and @mentions.
+function userName(row) {
+  return row.display_name || String(row.email).split('@')[0];
+}
+
+// Everyone who can be @mentioned, with what canViewBook() needs (role).
+function mentionableUsers() {
+  return db.prepare('SELECT id, email, display_name, role FROM users').all()
+    .map((row) => ({ id: row.id, name: userName(row), role: row.role }));
+}
+
+// Distinct mentioned names as written, for reader.js to highlight.
+function mentionNames(body, users) {
+  return [...new Set(findMentions(body, users).map((m) => m.name))];
 }
 
 // Per-paragraph badge counts for a chapter (paragraph comments only, replies included).
@@ -18,14 +31,16 @@ function chapterCommentCount(chapterId) {
   return db.prepare('SELECT COUNT(*) AS n FROM comments WHERE chapter_id = ?').get(chapterId).n;
 }
 
-function toJson(row, user, isOwner) {
+function toJson(row, user, isOwner, users) {
   return {
     id: row.id,
     paraIndex: row.para_index,
     parentId: row.parent_id,
     userId: row.user_id,
-    userName: row.display_name || displayName(row.email),
+    userName: userName(row),
     body: row.body,
+    spoiler: !!row.spoiler,
+    mentions: mentionNames(row.body, users),
     createdAt: row.created_at,
     edited: !!row.edited,
     score: row.score || 0,
@@ -57,9 +72,10 @@ function listComments({ chapterId, paraIndex, sort, user, bookOwnerId }) {
   `).all(user ? user.id : 0, ...params);
 
   const isOwner = !!(user && user.role === 'owner' && bookOwnerId === user.id);
+  const users = rows.length ? mentionableUsers() : [];
   const byId = new Map();
   const top = [];
-  for (const row of rows) byId.set(row.id, toJson(row, user, isOwner));
+  for (const row of rows) byId.set(row.id, toJson(row, user, isOwner, users));
   for (const row of rows) {
     const node = byId.get(row.id);
     if (row.parent_id && byId.has(row.parent_id)) {
@@ -81,15 +97,16 @@ function getComment(id) {
   return db.prepare('SELECT * FROM comments WHERE id = ?').get(id);
 }
 
-function createComment({ bookId, chapterId, paraIndex, parentId, userId, body }) {
+function createComment({ bookId, chapterId, paraIndex, parentId, userId, body, spoiler = false }) {
   const info = db.prepare(
-    'INSERT INTO comments (book_id, chapter_id, para_index, parent_id, user_id, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(bookId, chapterId, paraIndex, parentId, userId, body, Date.now());
+    'INSERT INTO comments (book_id, chapter_id, para_index, parent_id, user_id, body, spoiler, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(bookId, chapterId, paraIndex, parentId, userId, body, spoiler ? 1 : 0, Date.now());
   return getComment(info.lastInsertRowid);
 }
 
-function updateComment(id, body) {
-  db.prepare('UPDATE comments SET body = ?, updated_at = ?, edited = 1 WHERE id = ?').run(body, Date.now(), id);
+function updateComment(id, body, spoiler) {
+  db.prepare('UPDATE comments SET body = ?, spoiler = ?, updated_at = ?, edited = 1 WHERE id = ?')
+    .run(body, spoiler ? 1 : 0, Date.now(), id);
   return getComment(id);
 }
 
@@ -120,4 +137,5 @@ function vote(commentId, userId, value) {
 module.exports = {
   badgeCounts, chapterCommentCount, listComments, getComment,
   createComment, updateComment, deleteComment, vote,
+  mentionableUsers, mentionNames,
 };

@@ -1,14 +1,18 @@
 <%- include('partials/head') %>
 <h1 class="page-title"><%= t('Notifications') %></h1>
 <% if (items.length === 0) { %>
-  <p class="empty"><%= t('Nothing here yet — when a friend replies to one of your comments, it shows up here.') %></p>
+  <p class="empty"><%= t('Nothing here yet — when a friend replies to one of your comments or mentions you, it shows up here.') %></p>
 <% } %>
 <div class="notif-list">
   <% for (const n of items) { %>
     <a class="notif<%= n.seen ? '' : ' unseen' %>" href="<%= n.link %>">
-      <div class="notif-title"><strong><%= n.replierName %></strong> <%= t('replied to your comment') %></div>
+      <div class="notif-title"><strong><%= n.replierName %></strong> <%= n.kind === 'reply' ? t('replied to your comment') : n.kind === 'mention' ? t('mentioned you') : t('left a comment') %></div>
       <div class="notif-meta"><%= n.book_title %> — <%= n.chapter_title %><%= n.para_index === null ? '' : ' · ' + t('paragraph {n}', { n: n.para_index + 1 }) %> · <%= n.when %></div>
-      <div class="notif-excerpt"><%= n.excerpt %></div>
+      <% if (n.spoiler) { %>
+        <div class="notif-excerpt notif-spoiler"><%= t('Spoiler — open it to read') %></div>
+      <% } else { %>
+        <div class="notif-excerpt"><%= n.excerpt %></div>
+      <% } %>
     </a>
   <% } %>
 </div>
