@@ -1,12 +1,14 @@
-/* BookFriends — ink-navy dark theme with the logo's orange and teal */
+/* BookFriends — Wuxiaworld-style near-black dark theme with the logo's
+   orange and teal. Greys are neutral (R = G = B) so Samsung Internet's wider
+   colour space can't tint them (see the light theme below). */
 :root {
-  --bg: #0f131c;
-  --surface: #161b27;
-  --surface-2: #1f2535;
-  --border: #2a3144;
-  --text: #d9dde6;
-  --text-strong: #f4f6fa;
-  --muted: #8d95a8;
+  --bg: #050505;
+  --surface: #121212;
+  --surface-2: #1c1c1c;
+  --border: #282828;
+  --text: #ececec;
+  --text-strong: #ffffff;
+  --muted: #9a9a9a;
   --accent: #f28c4f;          /* fills: buttons, progress, active states */
   --accent-strong: #f6a271;
   --accent-soft: rgba(242, 140, 79, 0.16);
@@ -16,11 +18,17 @@
   --teal-soft: rgba(108, 195, 180, 0.16);
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.12);
-  --nav-bg: rgba(22, 27, 39, 0.86);
-  --shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  --cover-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-  --glow-1: rgba(242, 140, 79, 0.2);
-  --glow-2: rgba(108, 195, 180, 0.14);
+  --nav-bg: rgba(5, 5, 5, 0.9);
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --cover-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  --glow-1: rgba(242, 140, 79, 0.16);
+  --glow-2: rgba(108, 195, 180, 0.1);
+  /* paragraph comment counts: solid pills, like Wuxiaworld's */
+  --badge-bg: #d0d0d0;
+  --badge-text: #ffffff;
+  --badge-opacity: 1;
+  --badge-hot-bg: var(--accent);
+  --badge-hot-text: var(--on-accent);
   --radius: 12px;
   --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
@@ -50,6 +58,11 @@ html.theme-light {
   --cover-shadow: 0 6px 16px rgba(20, 20, 20, 0.2);
   --glow-1: rgba(242, 140, 79, 0.16);
   --glow-2: rgba(47, 143, 128, 0.12);
+  --badge-bg: var(--surface-2);
+  --badge-text: var(--muted);
+  --badge-opacity: 0.7;
+  --badge-hot-bg: var(--accent-soft);
+  --badge-hot-text: var(--link);
 }
 html.theme-sepia {
   --bg: #f3e9d2;
@@ -71,6 +84,11 @@ html.theme-sepia {
   --cover-shadow: 0 6px 16px rgba(74, 59, 38, 0.28);
   --glow-1: rgba(214, 110, 50, 0.14);
   --glow-2: rgba(61, 125, 110, 0.12);
+  --badge-bg: var(--surface-2);
+  --badge-text: var(--muted);
+  --badge-opacity: 0.7;
+  --badge-hot-bg: var(--accent-soft);
+  --badge-hot-text: var(--link);
 }
 
 * { box-sizing: border-box; }
@@ -297,7 +315,7 @@ a:hover { text-decoration: underline; }
 .cover-badge {
   position: absolute; top: 0.5rem; left: 0.6rem; z-index: 1;
   padding: 0.1rem 0.55rem; border-radius: 999px;
-  background: rgba(15, 19, 28, 0.82); color: #f4f6fa;
+  background: rgba(5, 5, 5, 0.82); color: #ffffff;
   font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .book-meta { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
@@ -369,10 +387,10 @@ a:hover { text-decoration: underline; }
   vertical-align: middle; position: relative; top: -0.08em; margin-left: 0.45em;
   min-width: 1.45rem; height: 1.3rem; padding: 0 0.4rem; line-height: 1;
   border-radius: 999px; border: 0; cursor: pointer; user-select: none; -webkit-user-select: none;
-  background: var(--surface-2); color: var(--muted); font-size: 0.72rem; font-weight: 700;
-  opacity: 0.7; transition: opacity 0.15s ease, background 0.15s ease;
+  background: var(--badge-bg); color: var(--badge-text); font-size: 0.72rem; font-weight: 700;
+  opacity: var(--badge-opacity); transition: opacity 0.15s ease, background 0.15s ease;
 }
-.para-badge.has-comments { background: var(--accent-soft); color: var(--link); opacity: 1; }
+.para-badge.has-comments { background: var(--badge-hot-bg); color: var(--badge-hot-text); opacity: 1; }
 .para-badge:hover { background: var(--accent); color: var(--on-accent); opacity: 1; }
 
 /* ---------- bookmarks ---------- */
@@ -477,7 +495,7 @@ a:hover { text-decoration: underline; }
 .comment-replies { margin-top: 0.7rem; padding-left: 1rem; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 0.9rem; }
 
 /* ---------- slide-out panel ---------- */
-.panel-backdrop { position: fixed; inset: 0; background: rgba(5, 8, 14, 0.5); z-index: 40; }
+.panel-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 40; }
 .comment-panel {
   position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw;
   background: var(--bg); border-left: 1px solid var(--border); z-index: 50;
@@ -567,7 +585,7 @@ a:hover { text-decoration: underline; }
   cursor: pointer; font-size: 0.85rem;
 }
 .theme-btn.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.theme-btn[data-theme="dark"] { background: #161b27; color: #d9dde6; }
+.theme-btn[data-theme="dark"] { background: #050505; color: #ececec; }
 .theme-btn[data-theme="light"] { background: #ffffff; color: #2b3040; }
 .theme-btn[data-theme="sepia"] { background: #f3e9d2; color: #4a3b26; }
 

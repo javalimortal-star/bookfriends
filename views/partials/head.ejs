@@ -12,7 +12,7 @@
   </script>
   <style>
     /* Painted before app.css arrives — no white flash between pages */
-    html { background: #0f131c; color: #d9dde6; }
+    html { background: #050505; color: #ececec; }
     html.theme-light { background: #f9f9f9; color: #2b3040; }
     html.theme-sepia { background: #f3e9d2; color: #4a3b26; }
   </style>
@@ -24,7 +24,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=<%= assetVersion %>">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=<%= assetVersion %>">
   <link rel="manifest" href="/site.webmanifest">
-  <meta name="theme-color" content="#161b27">
+  <meta name="theme-color" content="#050505">
 </head>
 <body<% if (typeof bodyClass !== 'undefined') { %> class="<%= bodyClass %>"<% } %>>
 <% const navName = user ? (user.display_name || user.email.split('@')[0]) : ''; %>
