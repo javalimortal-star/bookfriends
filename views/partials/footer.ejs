@@ -66,6 +66,12 @@
     var previous = null;
     var remembered = true;
     try { previous = localStorage.getItem(KEY); } catch (e) { remembered = false; }
+    // The last account that was LOGGED IN here: logging in always passes the
+    // logged-out /login page, so `previous` is '' by the time someone else
+    // arrives and can't tell a new account from the same one coming back.
+    var PUSH_KEY = 'bf-sw-push-account';
+    var pushPrevious = null;
+    try { pushPrevious = localStorage.getItem(PUSH_KEY); } catch (e) { /* private mode */ }
     navigator.serviceWorker.ready.then(function (reg) {
       if (!reg.active) return;
       reg.active.postMessage({
@@ -78,10 +84,13 @@
         // notifications only go when someone else logs in on this device; a
         // plain logout (or an expired login) keeps them, the Log out button
         // below turns them off itself
-        dropPush: account !== null && remembered && !!previous && !!account && previous !== account,
+        dropPush: !!account && !!pushPrevious && pushPrevious !== account,
       });
       if (account === null) return;
-      try { localStorage.setItem(KEY, account); } catch (e) { /* private mode */ }
+      try {
+        localStorage.setItem(KEY, account);
+        if (account) localStorage.setItem(PUSH_KEY, account);
+      } catch (e) { /* private mode */ }
     }).catch(function () {});
     // Log out on purpose: this device stops getting this account's
     // notifications (at most a 1.5 s wait, then the logout goes ahead).
