@@ -78,6 +78,18 @@ function middleware(req, res, next) {
   next();
 }
 
+// Push notifications reach users outside any request, so they are written in
+// the language the user last browsed in. Runs after loadUser (the middleware
+// above runs before the session is read); writes only when it changed.
+function rememberUserLang(req, res, next) {
+  if (req.user && req.user.lang !== req.lang) {
+    // required here, not at the top: the i18n tests load this file without a DB
+    require('../db').db.prepare('UPDATE users SET lang = ? WHERE id = ?').run(req.lang, req.user.id);
+    req.user.lang = req.lang;
+  }
+  next();
+}
+
 // "3 hours ago" in the reader's language; older than 30 days shows the date.
 function relTime(ts, lang) {
   const rtf = new Intl.RelativeTimeFormat(LANGS[lang].locale, { numeric: 'auto' });
@@ -91,4 +103,4 @@ function relTime(ts, lang) {
   return new Date(ts).toLocaleDateString(LANGS[lang].locale);
 }
 
-module.exports = { LANGS, CODES, COOKIE, dicts, translator, keysIn, middleware, relTime };
+module.exports = { LANGS, CODES, COOKIE, dicts, translator, keysIn, middleware, rememberUserLang, relTime };

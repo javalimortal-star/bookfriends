@@ -11,6 +11,48 @@
   </form>
   <p class="hint"><%= t('Leave it empty to go back to the start of your email ({prefix}). Your old comments update too.', { prefix: user.email.split('@')[0] }) %></p>
 </div>
+<%# Phone notifications: public/js/push.js shows the block for this browser's state %>
+<div class="form-card push-card" id="push-card" data-sw="<%= swEnabled ? '1' : '0' %>"
+     data-msg-on="<%= t('Done! This device will get a notification when a friend replies to you.') %>"
+     data-msg-off="<%= t('Turned off for this device.') %>"
+     data-msg-sent="<%= t('Sent! It should show up in a few seconds.') %>"
+     data-msg-not-sent="<%= t("Couldn't send it. Turn notifications off and on again, then retry.") %>"
+     data-msg-dismissed="<%= t('Notifications were not allowed. Tap Turn on to be asked again.') %>"
+     data-msg-error="<%= t('Something went wrong: {error}') %>">
+  <h2 class="form-subtitle" id="push"><%= t('Phone notifications') %></h2>
+  <p class="hint"><%= t('Get a notification on this phone or computer when a friend replies to you, even when BookFriends is closed.') %></p>
+  <div data-push-state="loading"><p class="hint"><%= t('Checking this device…') %></p></div>
+  <div data-push-state="unsupported" hidden>
+    <p class="push-note"><%= t("This browser can't show notifications from websites. Try Chrome, Firefox, Edge, Samsung Internet or Safari.") %></p>
+  </div>
+  <div data-push-state="unavailable" hidden>
+    <p class="push-note"><%= t("Phone notifications aren't available right now.") %></p>
+  </div>
+  <div data-push-state="ios" hidden>
+    <p class="push-note"><%= t('On iPhone and iPad, notifications only work from the BookFriends icon on your Home Screen (iOS 16.4 or newer):') %></p>
+    <ol class="push-steps">
+      <li><%= t('In Safari, tap the Share button.') %></li>
+      <li><%= t('Choose "Add to Home Screen".') %></li>
+      <li><%= t('Open BookFriends from the new icon and come back to this page.') %></li>
+    </ol>
+  </div>
+  <div data-push-state="blocked" hidden>
+    <p class="push-note"><%= t('Notifications are blocked for this site.') %></p>
+    <p class="hint"><%= t('To allow them again, tap the icon to the left of the address bar, open Permissions (or Site settings), set Notifications to Allow, then reload this page. On iPhone: Settings → Notifications → BookFriends.') %></p>
+  </div>
+  <div data-push-state="off" hidden>
+    <p class="push-note"><%= t('Off on this device.') %></p>
+    <div class="push-actions"><button class="btn" type="button" data-push-action="on"><%= t('Turn on') %></button></div>
+  </div>
+  <div data-push-state="on" hidden>
+    <p class="form-ok"><%= t('On for this device.') %></p>
+    <div class="push-actions">
+      <button class="btn" type="button" data-push-action="test"><%= t('Send a test') %></button>
+      <button class="btn btn-ghost" type="button" data-push-action="off"><%= t('Turn off') %></button>
+    </div>
+  </div>
+  <p class="push-msg hint" role="status" aria-live="polite" hidden></p>
+</div>
 <% if (user.auth_provider === 'local') { %>
 <div class="form-card">
   <h2 class="form-subtitle"><%= t('Change password') %></h2>
@@ -31,4 +73,5 @@
   <p class="hint"><%= t('You sign in with Google, so there is no password to change here.') %></p>
 </div>
 <% } %>
+<script src="/js/push.js?v=<%= assetVersion %>"></script>
 <%- include('partials/footer') %>

@@ -80,9 +80,8 @@ router.post('/api/chapter/:chapterId/comments', requireAuth, commentLimiter, (re
 
 router.get('/notifications', requireAuth, (req, res) => {
   const items = notifications.listForUser(req.user.id).map((n) => {
-    const base = `/book/${n.book_slug}/${n.chapter_idx}?peek=1`;
     return Object.assign(n, {
-      link: n.para_index === null ? `${base}#comments` : `${base}&panel=${n.para_index}`,
+      link: notifications.linkFor(n),
       replierName: n.replier_name || n.replier_email.split('@')[0],
       excerpt: n.body.length > 140 ? `${n.body.slice(0, 140)}…` : n.body,
       when: relTime(n.created_at, req.lang),

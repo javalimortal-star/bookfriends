@@ -35,6 +35,9 @@ async function main() {
     // archive, then rename into place (atomic on the same filesystem).
     const args = ['-czf', `${out}.part`, '-C', tmp, 'bookfriends.db'];
     if (fs.existsSync(path.join(DATA_DIR, 'books'))) args.push('-C', DATA_DIR, 'books');
+    // the push key pair: without it a restore would silently cut off every
+    // device that turned on phone notifications
+    if (fs.existsSync(path.join(DATA_DIR, 'vapid.json'))) args.push('-C', DATA_DIR, 'vapid.json');
     execFileSync('tar', args);
     fs.renameSync(`${out}.part`, out);
 

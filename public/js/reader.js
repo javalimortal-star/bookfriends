@@ -21,6 +21,31 @@
     });
     return frag;
   }
+
+  /* ---------- offline reading (service worker: public/sw.js) ---------- */
+
+  // A saved copy shown without a connection carries the bookmark state from
+  // when it was saved: its Undo, position saves and resume could move the
+  // bookmark backwards. Read it like a peek (nothing moves) instead.
+  if (window.__BF_SAVED_COPY__ && R.bookmark) {
+    R.bookmark = { action: 'peek', bmIdx: R.bookmark.bmIdx };
+    var staleBanner = document.getElementById('bm-banner');
+    if (staleBanner) staleBanner.remove();
+  }
+  // Offline, comment forms can't send: say so instead of losing the text.
+  document.addEventListener('submit', function (event) {
+    if (navigator.onLine !== false || !event.target.classList.contains('comment-form')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    window.alert(t('Comments need an internet connection.'));
+  }, true);
+  // A position save that failed offline is retried once the connection is back.
+  window.addEventListener('online', function () {
+    if (!positionArmed) return;
+    lastSavedPara = -1;
+    savePosition(false);
+  });
+
   var panel = document.getElementById('comment-panel');
   var backdrop = document.getElementById('panel-backdrop');
   var panelState = { para: null, sort: 'top' };
@@ -88,6 +113,9 @@
       method: method,
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
+    }).catch(function () {
+      // no connection (see "offline reading" above): a readable message, not "Failed to fetch"
+      throw new Error(/comments/.test(url) ? t('Comments need an internet connection.') : t("You're offline. This needs an internet connection."));
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (json) {
         if (!res.ok) throw new Error(json.error || ('HTTP ' + res.status));

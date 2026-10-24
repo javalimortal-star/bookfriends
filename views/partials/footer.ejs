@@ -23,5 +23,63 @@
     });
   })();
 </script>
+<div id="offline-banner" class="offline-banner" role="status" hidden><%= t("You're offline — showing saved chapters") %></div>
+<script>
+  // Offline reading and phone notifications: the service worker (public/sw.js)
+  // saves chapters, this tells it what is happening on the page.
+  (function () {
+    var banner = document.getElementById('offline-banner');
+    var main = document.querySelector('.main');
+    // top of the page; in the reader under the chapter title (clear of its bars)
+    var titlebar = document.querySelector('.reader-titlebar');
+    if (titlebar) titlebar.parentNode.insertBefore(banner, titlebar.nextSibling);
+    else if (main) main.insertBefore(banner, main.firstChild);
+    function syncOnline() {
+      var offline = navigator.onLine === false;
+      banner.hidden = !offline;
+      document.body.classList.toggle('is-offline', offline);
+    }
+    syncOnline();
+    window.addEventListener('online', syncOnline);
+    window.addEventListener('offline', syncOnline);
+
+    if (!('serviceWorker' in navigator)) return;
+    <% if (!swEnabled) { %>
+    // SW_DISABLED=1 on the server: remove the worker and everything it saved
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      regs.forEach(function (reg) { reg.unregister(); });
+    }).catch(function () {});
+    if (window.caches) {
+      caches.keys().then(function (names) {
+        names.forEach(function (name) { if (name.indexOf('bf-') === 0) caches.delete(name); });
+      }).catch(function () {});
+    }
+    return;
+    <% } %>
+    navigator.serviceWorker.register('/sw.js').catch(function () {});
+    // Which account the saved pages belong to ('' = logged out). When it
+    // changes, the worker drops them: they show the previous account's name
+    // and private books (and this device's notifications were theirs).
+    // null on the offline page: it is saved logged out, whoever is reading.
+    var KEY = 'bf-sw-account';
+    var account = <%- typeof offlinePage !== 'undefined' && offlinePage ? 'null' : JSON.stringify(user ? String(user.id) : '') %>;
+    var previous = null;
+    var remembered = true;
+    try { previous = localStorage.getItem(KEY); } catch (e) { remembered = false; }
+    navigator.serviceWorker.ready.then(function (reg) {
+      if (!reg.active) return;
+      reg.active.postMessage({
+        type: 'page',
+        path: location.pathname,
+        lang: document.documentElement.lang,
+        online: navigator.onLine !== false,
+        // without storage, play safe: purge whenever logged out
+        purge: account !== null && (remembered ? previous !== null && previous !== account : account === ''),
+      });
+      if (account === null) return;
+      try { localStorage.setItem(KEY, account); } catch (e) { /* private mode */ }
+    }).catch(function () {});
+  })();
+</script>
 </body>
 </html>

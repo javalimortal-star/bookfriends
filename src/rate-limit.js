@@ -48,4 +48,10 @@ module.exports = {
     limit: 20,
     message: (t) => t('You are commenting too fast. Wait a few minutes and try again.'),
   }),
+  // each test makes the server call out to the push services
+  pushTestLimiter: makeLimiter({
+    windowMs: 10 * 60 * 1000,
+    limit: 10,
+    message: (t) => t('Too many test notifications. Wait a few minutes and try again.'),
+  }),
 };

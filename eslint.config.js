@@ -20,4 +20,12 @@ module.exports = [
       globals: { ...globals.browser },
     },
   },
+  {
+    files: ['public/sw.js'],
+    languageOptions: {
+      ecmaVersion: 2023,
+      sourceType: 'script',
+      globals: { ...globals.serviceworker },
+    },
+  },
 ];

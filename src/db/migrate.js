@@ -17,6 +17,8 @@ function migrate() {
   ensureColumn('bookmarks', 'para_index', 'para_index INTEGER');
   ensureColumn('comments', 'spoiler', 'spoiler INTEGER NOT NULL DEFAULT 0');
   ensureColumn('notifications', 'kind', "kind TEXT NOT NULL DEFAULT 'reply'");
+  // last language the user browsed in, so push notifications can use it
+  ensureColumn('users', 'lang', 'lang TEXT');
 }
 
 module.exports = { migrate };

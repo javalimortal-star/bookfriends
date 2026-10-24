@@ -699,3 +699,38 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .lang-switch a { color: var(--muted); }
 .lang-switch a:hover { color: var(--link); }
 .lang-current { color: var(--text-strong); font-weight: 700; }
+
+/* ---------- offline reading + phone notifications ---------- */
+/* footer.ejs moves the banner to the top of the page while offline */
+.offline-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin: 0 0 1rem; padding: 0.55rem 0.9rem; border-radius: var(--radius);
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-strong); font-size: 0.85rem; font-weight: 600;
+}
+.offline-banner::before {
+  content: ""; flex: 0 0 auto; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--muted);
+}
+.offline-banner[hidden] { display: none; }
+/* comment forms can't send without a connection (reader.js says so on tap) */
+body.is-offline .comment-form .btn { opacity: 0.45; }
+
+.offline-card { text-align: center; }
+.offline-card p { color: var(--muted); }
+.offline-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 1.2rem; }
+/* the offline page is saved logged out: no account buttons, no (online-only) language links */
+.offline-page .nav-right, .offline-page .lang-switch, .offline-page .offline-banner { display: none; }
+
+.push-card [hidden] { display: none; }
+.push-note { margin: 0.4rem 0 0.6rem; }
+.push-steps { margin: 0 0 0.4rem; padding-left: 1.3rem; font-size: 0.92rem; }
+.push-steps li + li { margin-top: 0.25rem; }
+.push-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.push-actions .btn { padding: 0.55rem 1.1rem; }
+.push-card .form-ok { margin: 0.4rem 0 0.8rem; }
+.push-msg { margin: 0.8rem 0 0; }
+.push-hint {
+  margin: -0.4rem 0 1rem; padding: 0.6rem 0.9rem; border-radius: var(--radius);
+  background: var(--teal-soft); font-size: 0.9rem;
+}
+.push-hint[hidden] { display: none; }
