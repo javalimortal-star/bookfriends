@@ -11,8 +11,17 @@ const commentsService = require('../comments/service');
 const router = express.Router();
 
 const MAX_EPUB_MB = Number(process.env.MAX_EPUB_MB) || 200;
+const UPLOAD_TMP = nodePath.join(os.tmpdir(), 'bookfriends-uploads');
 const upload = multer({
-  dest: nodePath.join(os.tmpdir(), 'bookfriends-uploads'),
+  // Re-create the temp folder on every upload rather than using multer's
+  // `dest`, which creates it only once at boot: the OS tmp cleaner (Ubuntu's
+  // systemd-tmpfiles, 30 days) deletes it after a quiet month, and every
+  // upload after that failed with ENOENT.
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      fs.mkdir(UPLOAD_TMP, { recursive: true }, (err) => cb(err, UPLOAD_TMP));
+    },
+  }),
   limits: { fileSize: MAX_EPUB_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     cb(null, file.originalname.toLowerCase().endsWith('.epub'));

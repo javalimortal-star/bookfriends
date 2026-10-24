@@ -19,15 +19,19 @@ if (PROD) app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-// Baseline security headers (media routes add a strict CSP of their own)
+// Baseline security headers (media routes add a strict CSP of their own).
+// Runs before the body parsers: a request they reject (malformed JSON from a
+// scanner) jumps straight to the error handler, skipping loadUser, and the
+// error page's nav needs `user` to exist or rendering it crashes too.
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'DENY');
+  res.locals.user = null;
   res.locals.googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   next();
 });
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 // Templates fingerprint static assets as ?v=<content hash>, so production can
 // cache them long-term and a deploy still busts the cache (new hash, new URL).
 app.locals.assetVersion = crypto.createHash('md5')
