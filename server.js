@@ -30,6 +30,8 @@ app.use((req, res, next) => {
   res.locals.googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   next();
 });
+// Uptime probe: before sessions and parsers, a monitor needs neither.
+app.use(require('./src/backup/health'));
 // Language before the body parsers too: their errors render the error page.
 app.use(require('./src/i18n').middleware);
 app.use(express.urlencoded({ extended: false }));
@@ -63,6 +65,12 @@ app.use(loadUser);
 const notifications = require('./src/comments/notifications');
 app.use((req, res, next) => {
   res.locals.unseenNotifs = req.user ? notifications.unseenCount(req.user.id) : 0;
+  next();
+});
+// Owner only: a warning dot on the avatar when the backups are in trouble.
+const backups = require('./src/backup');
+app.use((req, res, next) => {
+  res.locals.backupAlert = !!(req.user && req.user.role === 'owner') && backups.needsAttention();
   next();
 });
 

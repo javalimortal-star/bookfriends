@@ -84,3 +84,13 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+
+-- One row per finished /backup/download (the off-site copy), so the owner can
+-- see whether the nightly download still happens. Trimmed to the newest 100.
+CREATE TABLE IF NOT EXISTS backup_downloads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  file_name TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  ip TEXT,
+  created_at INTEGER NOT NULL
+);

@@ -1,0 +1,108 @@
+<%# Owner-only backups box at the top of /users; data from src/backup ownerView(). %>
+<% const b = backup, loc = b.local, off = b.offsite; %>
+<section class="backup-box backup-<%= b.level %>" id="backups" aria-labelledby="backups-title">
+  <div class="backup-head">
+    <h2 class="backup-title" id="backups-title"><%= t('Backups') %></h2>
+    <span class="backup-pill"><%= b.level === 'ok' ? t('OK') : b.level === 'warning' ? t('Warning') : b.level === 'problem' ? t('Problem') : t('Not set up') %></span>
+  </div>
+  <% if (b.level === 'ok') { %>
+    <p class="backup-lead"><%= t('All good: the mini PC downloaded a copy {ago}.', { ago: b.ago(off.last.created_at) }) %></p>
+  <% } else if (b.level === 'none') { %>
+    <p class="backup-lead"><%= t('No backups on this server yet.') %></p>
+    <p class="hint"><%= t('That is normal on a test computer. On the real server a job makes one every night (README, "Backups").') %></p>
+  <% } %>
+
+  <dl class="backup-facts">
+    <div class="backup-fact">
+      <dt><%= t('Newest backup on this server') %></dt>
+      <% if (loc.newest) { %>
+        <dd class="backup-when"><%= b.ago(loc.newest.mtime) %></dd>
+        <dd class="backup-detail"><%= loc.newest.name %> · <%= b.size(loc.newest.size) %> · <%= t.n('{count} backup kept', '{count} backups kept', loc.count) %></dd>
+      <% } else { %>
+        <dd class="backup-when"><%= t('None yet') %></dd>
+      <% } %>
+    </div>
+    <div class="backup-fact">
+      <dt><%= t('Last off-site copy (mini PC)') %></dt>
+      <% if (off.level === 'disabled') { %>
+        <dd class="backup-when"><%= t('Turned off') %></dd>
+        <dd class="backup-detail"><%= t('{name} is not set on the server.', { name: 'BACKUP_TOKEN' }) %></dd>
+      <% } else if (off.last) { %>
+        <dd class="backup-when"><%= b.ago(off.last.created_at) %></dd>
+        <dd class="backup-detail"><%= off.last.file_name %> · <%= b.size(off.last.size) %><% if (off.last.ip) { %> · <%= t('from {ip}', { ip: off.last.ip }) %><% } %></dd>
+      <% } else { %>
+        <dd class="backup-when"><%= t('Never') %></dd>
+      <% } %>
+    </div>
+  </dl>
+
+  <% if (b.level === 'warning' || b.level === 'problem') { %>
+    <div class="backup-help">
+      <% if (loc.level === 'missing') { %>
+        <p><%= t('There are no backups on this server, so the mini PC has nothing to download: the nightly backup job has never run here, or its folder is missing.') %>
+          <%= t('On the server, check that the job is still scheduled ({cmd}) and look for errors in {log}.', { cmd: 'crontab -l', log: '~/backup.log' }) %></p>
+      <% } else if (loc.level !== 'ok') { %>
+        <p><%= t('The newest backup on this server was made {ago}: the nightly backup job (03:30 UTC) seems to have stopped.', { ago: b.ago(loc.newest.mtime) }) %>
+          <%= t('On the server, check that the job is still scheduled ({cmd}) and look for errors in {log}.', { cmd: 'crontab -l', log: '~/backup.log' }) %></p>
+      <% } %>
+      <% if (off.level === 'disabled') { %>
+        <p><%= t('Off-site download is turned off ({name} is not set in the server .env file), so every backup lives only on this server. If Oracle deletes the server, the backups go with it. See README, "Backups".', { name: 'BACKUP_TOKEN' }) %></p>
+      <% } else if (off.level === 'never') { %>
+        <p><%= t('The mini PC has never downloaded a backup, so there is no copy outside this server yet. Follow the steps below to set it up.') %></p>
+      <% } else if (off.level !== 'ok') { %>
+        <p><%= off.level === 'warning'
+          ? t('The mini PC has not downloaded a backup for more than a day and a half. One missed night is usually harmless (the PC was off or asleep), but check it soon:')
+          : t('The mini PC has not downloaded a backup for more than 3 days. If Oracle deleted this server now, your newest copy at home would be that old. Check:') %></p>
+        <ol>
+          <li><%= t('Is the mini PC on, awake and connected to the internet? (Windows power settings: Sleep = Never.)') %></li>
+          <li><%= t('On the mini PC, open Task Scheduler and find the “BookFriends backup” task. Its Last Run Result should be 0x0; right-click it → Run to try right now.') %></li>
+          <li><%= t('Look in {folder}: there should be a new file for every day, and {log} says what went wrong.', { folder: 'C:\\bookfriends-backups', log: 'backup.log' }) %></li>
+          <li><%= t('Still not working? Run the setup command below again.') %></li>
+        </ol>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (b.setup) { %>
+    <details class="backup-setup"<% if (off.level !== 'ok') { %> open<% } %>>
+      <summary><%= t('Set up the off-site copy on your mini PC') %></summary>
+      <p><%= t('The mini PC then downloads the newest backup every night, so your books and comments survive even if this server is lost.') %></p>
+      <ol>
+        <li><%= t('On the mini PC, open {site}, log in and go to Users (this page).', { site: b.setup.site }) %></li>
+        <li><%= t('Right-click the Start button and open “Terminal (Admin)” or “Windows PowerShell (Admin)”. Click Yes when Windows asks.') %></li>
+        <li><%= t('Press Copy, paste the command into that window (right-click or Ctrl+V) and press Enter.') %></li>
+      </ol>
+      <div class="backup-cmd-bar">
+        <button type="button" class="btn btn-small" id="backup-copy" data-copied="<%= t('Copied!') %>"><%= t('Copy') %></button>
+        <span class="hint"><%= t('It contains your secret backup key: do not share it.') %></span>
+      </div>
+      <pre class="backup-cmd" id="backup-cmd"><%= b.setup.command %></pre>
+      <p class="hint"><%= t('It creates {folder}, adds the “BookFriends backup” task (every day at 04:00, even when nobody is logged in) and downloads the first copy right away. Running it again is safe.', { folder: 'C:\\bookfriends-backups' }) %></p>
+      <p class="hint"><%= t('When it says “Backup downloaded”, refresh this page: the box should turn green.') %></p>
+    </details>
+    <script>
+      // Copy the setup command; without the Clipboard API (plain http) select it for Ctrl+C
+      (function () {
+        var btn = document.getElementById('backup-copy');
+        var pre = document.getElementById('backup-cmd');
+        var label = btn.textContent;
+        function copied() {
+          btn.textContent = btn.getAttribute('data-copied');
+          setTimeout(function () { btn.textContent = label; }, 2500);
+        }
+        function selectIt() {
+          var range = document.createRange();
+          range.selectNodeContents(pre);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          try { if (document.execCommand('copy')) copied(); } catch (e) { /* stays selected */ }
+        }
+        btn.addEventListener('click', function () {
+          if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(pre.textContent).then(copied, selectIt);
+          else selectIt();
+        });
+      })();
+    </script>
+  <% } %>
+</section>
