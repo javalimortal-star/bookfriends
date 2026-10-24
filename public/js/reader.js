@@ -618,6 +618,12 @@
   if (bottomBar && window.visualViewport) {
     var vv = window.visualViewport;
     var vvRaf = null;
+    // No browser toolbar is this tall. A bigger reading is the soft keyboard,
+    // or a frame where the toolbars are sliding back in (scrolling up) and the
+    // two viewports haven't caught up with each other yet; following those
+    // flung the bar halfway up the screen and back. Keep the last good lift.
+    var MAX_TOOLBAR = 150;
+    var lastGap = 0;
     var applyViewportGap = function () {
       vvRaf = null;
       // Bar on top (computers): an inline bottom would override the CSS
@@ -629,13 +635,15 @@
       }
       // While pinch-zoomed the visual viewport is a magnified slice; pinning
       // to its bottom would fling the bar around, so fall back to bottom: 0.
-      var covered = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
+      // (offsetTop goes negative while overscrolling past the top of the page)
+      var covered = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - (Math.max(0, vv.offsetTop) + vv.height));
       // Browsers that report the overlay via safe-area-inset-bottom already
       // lift the bar through its CSS padding (0.5rem base + inset); subtract
       // that so the bar is never lifted twice.
       var rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       var envInset = Math.max(0, (parseFloat(getComputedStyle(bottomBar).paddingBottom) || 0) - 0.5 * rootFont);
-      var gap = Math.max(0, covered - envInset);
+      var gap = covered > MAX_TOOLBAR ? lastGap : Math.max(0, covered - envInset);
+      lastGap = gap;
       bottomBar.style.bottom = gap + 'px';
       fontPanel.style.bottom = 'calc(3.6rem + ' + gap + 'px + env(safe-area-inset-bottom, 0px))';
     };
