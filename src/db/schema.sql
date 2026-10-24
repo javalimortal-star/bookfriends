@@ -123,13 +123,16 @@ CREATE TABLE IF NOT EXISTS backup_downloads (
 -- chapters.content_html). The rowid packs book, chapter and paragraph
 -- (src/books/search.js), so each book's rows are one rowid range in reading
 -- order. remove_diacritics 2: "joao" finds "João". Virtual tables ignore
--- foreign keys: deleteBook() removes a book's rows itself.
+-- foreign keys: deleteBook() removes a book's rows itself. prefix = '3': a
+-- 3-letter prefix search ("wol*") reads a ready-made index instead of
+-- scanning every term (~100x faster, for ~50% more index).
 CREATE VIRTUAL TABLE IF NOT EXISTS para_search USING fts5(
   text,
   book_id UNINDEXED,
   chapter_idx UNINDEXED,
   para_index UNINDEXED,
-  tokenize = 'unicode61 remove_diacritics 2'
+  tokenize = 'unicode61 remove_diacritics 2',
+  prefix = '3'
 );
 
 -- How far each book's search indexing got: books are indexed in small

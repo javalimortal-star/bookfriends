@@ -319,5 +319,6 @@
   "New notification from {name}": "Nueva notificación de {name}",
   "Test notification": "Notificación de prueba",
   "If you can see this, phone notifications work on this device.": "Si ves esto, las notificaciones funcionan en este dispositivo.",
-  "Too many test notifications. Wait a few minutes and try again.": "Demasiadas pruebas. Espera unos minutos y vuelve a intentarlo."
+  "Too many test notifications. Wait a few minutes and try again.": "Demasiadas pruebas. Espera unos minutos y vuelve a intentarlo.",
+  "“{title}” is still private. Make it public on the shelf first, then mark the request as uploaded.": "“{title}” todavía es privado. Primero hazlo público en la estantería y luego marca la solicitud como subida."
 }

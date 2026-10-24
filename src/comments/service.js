@@ -17,6 +17,16 @@ function mentionNames(body, users) {
   return [...new Set(findMentions(body, users).map((m) => m.name))];
 }
 
+// Stored when the comment is saved: parsing every comment on every list
+// load let a few comments full of "@" stall the server for every reader.
+function setMentions(commentId, names) {
+  db.prepare('UPDATE comments SET mentions = ? WHERE id = ?').run(names.length ? JSON.stringify(names) : null, commentId);
+}
+
+function storedMentions(row) {
+  try { return row.mentions ? JSON.parse(row.mentions) : []; } catch { return []; }
+}
+
 // Per-paragraph badge counts for a chapter (paragraph comments only, replies included).
 function badgeCounts(chapterId) {
   const rows = db.prepare(
@@ -31,7 +41,7 @@ function chapterCommentCount(chapterId) {
   return db.prepare('SELECT COUNT(*) AS n FROM comments WHERE chapter_id = ?').get(chapterId).n;
 }
 
-function toJson(row, user, isOwner, users) {
+function toJson(row, user, isOwner) {
   return {
     id: row.id,
     paraIndex: row.para_index,
@@ -40,7 +50,7 @@ function toJson(row, user, isOwner, users) {
     userName: userName(row),
     body: row.body,
     spoiler: !!row.spoiler,
-    mentions: mentionNames(row.body, users),
+    mentions: storedMentions(row),
     createdAt: row.created_at,
     edited: !!row.edited,
     score: row.score || 0,
@@ -72,10 +82,9 @@ function listComments({ chapterId, paraIndex, sort, user, bookOwnerId }) {
   `).all(user ? user.id : 0, ...params);
 
   const isOwner = !!(user && user.role === 'owner' && bookOwnerId === user.id);
-  const users = rows.length ? mentionableUsers() : [];
   const byId = new Map();
   const top = [];
-  for (const row of rows) byId.set(row.id, toJson(row, user, isOwner, users));
+  for (const row of rows) byId.set(row.id, toJson(row, user, isOwner));
   for (const row of rows) {
     const node = byId.get(row.id);
     if (row.parent_id && byId.has(row.parent_id)) {
@@ -137,5 +146,5 @@ function vote(commentId, userId, value) {
 module.exports = {
   badgeCounts, chapterCommentCount, listComments, getComment,
   createComment, updateComment, deleteComment, vote,
-  mentionableUsers, mentionNames,
+  mentionableUsers, mentionNames, setMentions,
 };

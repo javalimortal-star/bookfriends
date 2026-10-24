@@ -1,5 +1,6 @@
 <%- include('partials/head', { bodyClass: 'search-page' }) %>
-<% const backUrl = '/book/' + book.slug + '/' + backIdx; %>
+<%# peek: going back to the chapter you searched from never moves the bookmark %>
+<% const backUrl = '/book/' + book.slug + '/' + backIdx + '?peek=1'; %>
 <div class="search-head">
   <a class="titlebar-back" href="<%= backUrl %>" title="<%= t('Back to the book') %>" aria-label="<%= t('Back to the book') %>">‹</a>
   <div class="search-head-text">

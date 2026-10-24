@@ -57,6 +57,9 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  // each visit extends the 30 days, so regular readers never get logged out
+  // (a lapsed login also logged their phone notifications out)
+  rolling: true,
   cookie: {
     httpOnly: true,
     sameSite: 'lax',

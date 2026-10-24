@@ -75,10 +75,37 @@
         online: navigator.onLine !== false,
         // without storage, play safe: purge whenever logged out
         purge: account !== null && (remembered ? previous !== null && previous !== account : account === ''),
+        // notifications only go when someone else logs in on this device; a
+        // plain logout (or an expired login) keeps them, the Log out button
+        // below turns them off itself
+        dropPush: account !== null && remembered && !!previous && !!account && previous !== account,
       });
       if (account === null) return;
       try { localStorage.setItem(KEY, account); } catch (e) { /* private mode */ }
     }).catch(function () {});
+    // Log out on purpose: this device stops getting this account's
+    // notifications (at most a 1.5 s wait, then the logout goes ahead).
+    var logoutForm = document.querySelector('form[action="/logout"]');
+    if (logoutForm) logoutForm.addEventListener('submit', function (event) {
+      if (logoutForm.dataset.pushDone) return;
+      event.preventDefault();
+      var go = function () {
+        if (logoutForm.dataset.pushDone) return;
+        logoutForm.dataset.pushDone = '1';
+        logoutForm.submit();
+      };
+      setTimeout(go, 1500);
+      navigator.serviceWorker.ready.then(function (reg) {
+        return reg.pushManager ? reg.pushManager.getSubscription() : null;
+      }).then(function (sub) {
+        if (!sub) return null;
+        return fetch('/api/push/unsubscribe', {
+          method: 'POST', keepalive: true,
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        }).catch(function () {}).then(function () { return sub.unsubscribe(); });
+      }).catch(function () {}).then(go);
+    });
   })();
 </script>
 </body>

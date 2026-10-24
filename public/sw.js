@@ -242,7 +242,7 @@ self.addEventListener('message', function (event) {
   var msg = event.data || {};
   if (msg.type !== 'page') return;
   var work = Promise.resolve();
-  if (msg.purge) work = work.then(purgePersonal);
+  if (msg.purge) work = work.then(function () { return purgePersonal(msg.dropPush); });
   if (msg.online) {
     work = work.then(function () { return refreshOfflinePage(msg.lang); });
     if (msg.path === '/') work = work.then(saveShelf);
@@ -252,12 +252,13 @@ self.addEventListener('message', function (event) {
 });
 
 // Logged out, or someone else logged in: the saved pages show the previous
-// account's name and private books, and this device's notifications were
-// theirs. Drop both.
-function purgePersonal() {
+// account's name and private books, so they go. The device's notifications
+// were theirs too, but only go when another account logged in (dropPush):
+// an expired login shouldn't silently switch a reader's notifications off.
+function purgePersonal(dropPush) {
   generation += 1;
   return Promise.all([caches.delete(PAGES_CACHE), caches.delete(MEDIA_CACHE)]).then(function () {
-    return self.registration.pushManager ? self.registration.pushManager.getSubscription() : null;
+    return dropPush && self.registration.pushManager ? self.registration.pushManager.getSubscription() : null;
   }).then(function (sub) {
     return sub ? sub.unsubscribe() : null;
   }).catch(noop);

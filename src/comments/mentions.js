@@ -2,6 +2,9 @@
 // the same name comments show (display name, else the email's prefix).
 
 const MAX_MENTIONS = 10;
+// Bounds the work on a hostile body like "@@@@…": only an "@" followed by a
+// letter/digit can start a name, and at most this many are looked at.
+const MAX_AT_SCAN = 200;
 // A mention must stand on its own: "a@b.com" is an address, "@Anabela" is
 // not "@Ana". Letters/digits/_ on either side glue the "@" to a word.
 const WORD_CHAR = /[\p{L}\p{N}_]/u;
@@ -21,9 +24,11 @@ function findMentions(text, users) {
   const found = [];
   const seen = new Set();
   let at = body.indexOf('@');
-  while (at !== -1 && found.length < MAX_MENTIONS) {
+  let scanned = 0;
+  while (at !== -1 && found.length < MAX_MENTIONS && scanned < MAX_AT_SCAN) {
     let next = at + 1;
-    if (!isWordChar(body.charAt(at - 1))) {
+    if (!isWordChar(body.charAt(at - 1)) && isWordChar(body.charAt(at + 1))) {
+      scanned += 1;
       let matchedLength = 0;
       for (const user of candidates) {
         // users sharing a name are all mentioned; a shorter name can't match once a longer one did

@@ -12,6 +12,22 @@ function decode(value) {
   return typeof value === 'string' && B64URL.test(value) ? Buffer.from(value, 'base64url') : null;
 }
 
+// The push services browsers actually use (Chrome, Edge, Samsung Internet,
+// Opera → FCM; Firefox → Mozilla; Safari → Apple; legacy Edge → WNS). Only
+// these, on the default port, in production: anything else would let a user
+// make the server probe hosts and ports of their choosing.
+const PUSH_HOSTS = [
+  /^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/,
+  /(^|\.)push\.services\.mozilla\.com$/,
+  /(^|\.)push\.apple\.com$/,
+  /(^|\.)notify\.windows\.com$/,
+];
+
+function isPushService(hostname) {
+  const host = hostname.toLowerCase().replace(/\.$/, '');
+  return PUSH_HOSTS.some((re) => re.test(host));
+}
+
 function isPrivateHost(hostname) {
   const host = hostname.replace(/^\[|\]$/g, '').toLowerCase();
   return net.isIP(host) !== 0 || !host.includes('.') || /\.(localhost|local|internal|lan|home)$/.test(host);
@@ -31,7 +47,7 @@ function parseSubscription(body, { allowLocal = false } = {}) {
     return null;
   }
   if (url.protocol !== 'https:' || url.username || url.password) return null;
-  if (!allowLocal && isPrivateHost(url.hostname)) return null;
+  if (!allowLocal && (isPrivateHost(url.hostname) || !isPushService(url.hostname) || url.port !== '')) return null;
   // p256dh: the device's uncompressed P-256 public key; auth: its 16-byte secret
   const p256dh = decode(keys.p256dh);
   const auth = decode(keys.auth);
@@ -40,4 +56,4 @@ function parseSubscription(body, { allowLocal = false } = {}) {
   return { endpoint, p256dh: keys.p256dh, auth: keys.auth };
 }
 
-module.exports = { parseSubscription };
+module.exports = { parseSubscription, isPushService };

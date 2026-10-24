@@ -67,6 +67,10 @@ function setupCommand(origin, token) {
     `$dir = ${psq(DIR)}`,
     "$ps1 = Join-Path $dir 'download-backup.ps1'",
     'New-Item -ItemType Directory -Force -Path $dir | Out-Null',
+    // only SYSTEM and Administrators may touch it: the nightly task runs the
+    // script as SYSTEM, and it holds the backup token (a folder under C:\
+    // otherwise lets every local account edit it)
+    'icacls $dir /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" | Out-Null',
     `Set-Content -LiteralPath $ps1 -Encoding ASCII -Value @(${script})`,
     // the task name the old backup-bookfriends.cmd suggested: don't run both
     "if (Get-ScheduledTask -TaskName 'BookFriendsBackup' -ErrorAction SilentlyContinue) { Unregister-ScheduledTask -TaskName 'BookFriendsBackup' -Confirm:$false }",

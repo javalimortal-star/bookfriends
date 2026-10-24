@@ -37,12 +37,15 @@ function notifyMentions(comment, book, oldBody) {
   const byId = new Map(users.map((u) => [u.id, u]));
   const before = new Set(oldBody === undefined ? [] : findMentions(oldBody, users).map((m) => m.id));
   const notified = notifications.recipientsOf(comment.id);
-  for (const { id } of findMentions(comment.body, users)) {
+  const found = findMentions(comment.body, users);
+  for (const { id } of found) {
     if (id === comment.user_id || before.has(id) || notified.has(id)) continue;
     if (!canViewBook(book, byId.get(id))) continue;
     notifications.notify(id, comment.id, 'mention');
   }
-  return comments.mentionNames(comment.body, users);
+  const names = [...new Set(found.map((m) => m.name))];
+  comments.setMentions(comment.id, names);
+  return names;
 }
 
 // Names for the suggestions shown while typing "@" in a comment.
@@ -140,7 +143,7 @@ function loadEditableComment(req, res, { ownerMayDelete = false } = {}) {
   return comment;
 }
 
-router.patch('/api/comments/:id', requireAuth, (req, res) => {
+router.patch('/api/comments/:id', requireAuth, commentLimiter, (req, res) => {
   const comment = loadEditableComment(req, res);
   if (!comment) return;
   const body = String(req.body.body || '').trim();

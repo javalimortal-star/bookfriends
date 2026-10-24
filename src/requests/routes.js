@@ -81,6 +81,11 @@ router.post('/requests/:id/done', requireOwner, (req, res) => {
   if (req.body.book_id) {
     book = books.getBookById(Number(req.body.book_id));
     if (!book) return res.status(400).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
+    // friends can't open a private book: the "it's here" notification would
+    // reveal its title and link to a "not found" page
+    if (book.visibility !== 'public') {
+      return renderPage(req, res, { error: req.t('“{title}” is still private. Make it public on the shelf first, then mark the request as uploaded.', { title: book.title }) });
+    }
   }
   if (request.status !== 'open') return res.redirect('/requests');
   requests.setStatus(request.id, 'done', book ? book.id : null);

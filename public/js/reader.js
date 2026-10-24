@@ -712,6 +712,21 @@
   var positionArmed = !!(R.user && R.bookmark
     && (R.bookmark.action === 'advanced' || R.bookmark.action === 'same') && paraNodes.length);
   var lastSavedPara = (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para) || 0;
+  // A notification link (?panel= or #comments) jumps to a comment, not to
+  // where the reader is: saving that spot would move their place in the
+  // chapter. Saving starts once they scroll the page themselves.
+  if (positionArmed && (new URLSearchParams(location.search).has('panel') || location.hash)) {
+    positionArmed = false;
+    var holdForDeepLink = true;
+    ['wheel', 'touchmove', 'keydown'].forEach(function (evt) {
+      window.addEventListener(evt, function (event) {
+        if (!holdForDeepLink) return;
+        if (panel && !panel.hidden && panel.contains(event.target)) return; // scrolling the comments
+        holdForDeepLink = false;
+        positionArmed = true;
+      }, { passive: true });
+    });
+  }
 
   // How far down the screen the bars reach right now: the nav, plus the
   // reader bar when it sits on top. A bar slid out of view covers nothing.
@@ -910,8 +925,18 @@
   /* ---------- immersive reading: hide top nav + bottom bar while scrolling down ---------- */
 
   var lastScrollY = Math.max(0, window.scrollY);
+  // Only the reader's own scrolling hides the bars. Before any touch, wheel
+  // or key, scrolls come from the page itself: the resume / search jump, or
+  // images above it arriving (instantly, from the offline cache) and scroll
+  // anchoring pushing the page down. Hiding the bars then made currentPara()
+  // count the paragraph above the resumed one, and the bookmark crept back.
+  var readerScrolled = false;
+  ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(function (evt) {
+    window.addEventListener(evt, function () { readerScrolled = true; }, { passive: true, once: true });
+  });
   window.addEventListener('scroll', function () {
     var y = Math.max(0, window.scrollY); // iOS overscroll reports negative values
+    if (!readerScrolled) { lastScrollY = y; return; }
     if (Math.abs(y - lastScrollY) < 8) return;
     // keep the bars while the font panel is open so it never floats detached
     var hide = y > lastScrollY && y > 80 && fontPanel.hidden;
@@ -1081,7 +1106,11 @@
   // The chapter this gesture leads to, or null while it is no clear swipe.
   function swipeTarget(dx, dy) {
     if (Math.abs(dx) < SWIPE_MIN_X || Math.abs(dx) < SWIPE_RATIO * Math.abs(dy)) return null;
-    return dx < 0 ? R.nextUrl : R.prevUrl;
+    var url = dx < 0 ? R.nextUrl : R.prevUrl;
+    // From a peek (notification / search result ahead of the bookmark) a
+    // stray swipe mustn't drag the bookmark along; the buttons still do.
+    if (url && R.bookmark && R.bookmark.action === 'peek') url += (url.indexOf('?') < 0 ? '?' : '&') + 'peek=1';
+    return url;
   }
 
   function showSwipeHint(url, next) {

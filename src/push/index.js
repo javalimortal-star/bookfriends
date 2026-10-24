@@ -37,19 +37,28 @@ function vapidKeys() {
     return vapid;
   }
   const file = path.join(DATA_DIR, 'vapid.json');
+  let raw = null;
   try {
-    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (saved.publicKey && saved.privateKey) vapid = { publicKey: saved.publicKey, privateKey: saved.privateKey };
+    raw = fs.readFileSync(file, 'utf8');
   } catch (err) {
-    if (err.code !== 'ENOENT') console.error(`push: ${file} is unreadable (${err.message}); making new keys`);
+    if (err.code !== 'ENOENT') throw new Error(`push: ${file} is unreadable (${err.message})`);
   }
-  if (!vapid) {
-    const keys = webpush().generateVAPIDKeys();
-    fs.writeFileSync(file, `${JSON.stringify(keys, null, 2)}\n`, { mode: 0o600 });
-    fs.chmodSync(file, 0o600); // mode above only applies when the file is new
-    vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey };
-    console.log(`push: generated VAPID keys in ${file}`);
+  if (raw !== null) {
+    // A damaged file must not be silently replaced: new keys would quietly
+    // cut off every device. Push stays off until it is fixed or restored.
+    let saved = null;
+    try { saved = JSON.parse(raw); } catch { /* reported below */ }
+    if (!saved || !saved.publicKey || !saved.privateKey) throw new Error(`push: ${file} is damaged; restore it from a backup`);
+    vapid = { publicKey: saved.publicKey, privateKey: saved.privateKey };
+    return vapid;
   }
+  const keys = webpush().generateVAPIDKeys();
+  // written next to it and renamed: a crash mid-write can't leave half a file
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, `${JSON.stringify(keys, null, 2)}\n`, { mode: 0o600 });
+  fs.renameSync(tmp, file);
+  vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey };
+  console.log(`push: generated VAPID keys in ${file}`);
   return vapid;
 }
 
@@ -134,6 +143,12 @@ function sendToUser(userId, payload) {
 }
 
 // A new row in `notifications` (reply, mention, ...): tell the recipient's devices.
+// At most one notification push per person per minute: a burst of replies
+// or mentions (or someone spamming edits) buzzes the phone once; every one
+// is still listed on /notifications.
+const PUSH_GAP_MS = 60 * 1000;
+const lastPushAt = new Map();
+
 function notificationCreated(notificationId) {
   setImmediate(() => {
     try {
@@ -150,6 +165,9 @@ function notificationCreated(notificationId) {
         WHERE n.id = ?
       `).get(notificationId);
       if (!n) return; // deleted meanwhile
+      const now = Date.now();
+      if (now - (lastPushAt.get(n.user_id) || 0) < PUSH_GAP_MS) return;
+      lastPushAt.set(n.user_id, now);
       // required here: notifications.js requires this module at load time
       const { linkFor } = require('../comments/notifications');
       sendToUser(n.user_id, notificationPayload(n, n.recipient_lang, linkFor(n)));

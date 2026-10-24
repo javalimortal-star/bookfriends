@@ -87,3 +87,16 @@ test('suggest: empty query lists everyone alphabetically, capped', () => {
   assert.strictEqual(suggest(users, '', 3).length, 3);
   assert.deepStrictEqual(suggest(users, '', 2), [{ id: 2, name: 'Ana' }, { id: 4, name: 'Ana Maria' }]);
 });
+
+test('a hostile body full of "@" is cheap to scan', () => {
+  const users = Array.from({ length: 40 }, (_, i) => ({ id: i + 1, name: `Friend Number ${i}` }));
+  const started = process.hrtime.bigint();
+  for (let i = 0; i < 20; i++) {
+    findMentions('@'.repeat(10000), users);
+    findMentions('@a '.repeat(3333), users);
+  }
+  const ms = Number(process.hrtime.bigint() - started) / 1e6;
+  assert.ok(ms < 200, `40 scans took ${ms.toFixed(0)} ms`);
+  // only "@" + a letter or digit starts a name ("@@Name" still counts, "@ Name" doesn't)
+  assert.deepStrictEqual(findMentions('@@Friend Number 1 @ Friend Number 2', users).map((m) => m.name), ['Friend Number 1']);
+});
