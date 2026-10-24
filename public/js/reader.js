@@ -7,6 +7,29 @@
   var panelState = { para: null, sort: 'top' };
   var chapterSort = 'top';
 
+  /* ---------- bar placement ---------- */
+
+  // With a mouse or trackpad app.css moves the bottom bar to the top, under
+  // the nav (the macOS Dock / Windows taskbar pop up over the bottom edge).
+  // It is positioned from these measured heights, kept current as they
+  // change; measured first so the scroll jumps below already account for it.
+  var topBarQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+  var topNav = document.querySelector('.nav');
+  var bottomBar = document.querySelector('.reader-bottombar');
+  var measureBars = function () {
+    var rootStyle = document.documentElement.style;
+    if (topNav) rootStyle.setProperty('--nav-h', topNav.offsetHeight + 'px');
+    if (bottomBar) rootStyle.setProperty('--bar-h', bottomBar.offsetHeight + 'px');
+  };
+  measureBars();
+  if (window.ResizeObserver) {
+    var barObserver = new ResizeObserver(measureBars);
+    if (topNav) barObserver.observe(topNav);
+    if (bottomBar) barObserver.observe(bottomBar);
+  } else {
+    window.addEventListener('resize', measureBars);
+  }
+
   /* ---------- helpers ---------- */
 
   function el(tag, className, text) {
@@ -420,7 +443,9 @@
         window.addEventListener(evt, function () { resumeInteracted = true; }, { passive: true, once: true });
       });
       var jumpToResume = function () {
-        window.scrollTo(0, resumeTarget.getBoundingClientRect().top + window.scrollY - 70);
+        // Clear the sticky nav, and the reader bar too when it sits on top.
+        var cover = 70 + (topBarQuery.matches && bottomBar ? bottomBar.offsetHeight : 0);
+        window.scrollTo(0, resumeTarget.getBoundingClientRect().top + window.scrollY - cover);
       };
       jumpToResume();
       // Images above the target can shift the layout as they load; re-align
@@ -531,8 +556,6 @@
 
   /* ---------- immersive reading: hide top nav + bottom bar while scrolling down ---------- */
 
-  var topNav = document.querySelector('.nav');
-  var bottomBar = document.querySelector('.reader-bottombar');
   var lastScrollY = Math.max(0, window.scrollY);
   window.addEventListener('scroll', function () {
     var y = Math.max(0, window.scrollY); // iOS overscroll reports negative values
@@ -553,6 +576,13 @@
     var vvRaf = null;
     var applyViewportGap = function () {
       vvRaf = null;
+      // Bar on top (computers): an inline bottom would override the CSS
+      // `bottom: auto` and stretch the bar down the whole screen.
+      if (topBarQuery.matches) {
+        bottomBar.style.bottom = '';
+        fontPanel.style.bottom = '';
+        return;
+      }
       // While pinch-zoomed the visual viewport is a magnified slice; pinning
       // to its bottom would fling the bar around, so fall back to bottom: 0.
       var covered = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - (vv.offsetTop + vv.height));
@@ -570,6 +600,9 @@
     };
     vv.addEventListener('resize', queueViewportGap);
     vv.addEventListener('scroll', queueViewportGap);
+    // A mouse plugged into a tablet (or one unplugged) flips the bar's side.
+    if (topBarQuery.addEventListener) topBarQuery.addEventListener('change', queueViewportGap);
+    else if (topBarQuery.addListener) topBarQuery.addListener(queueViewportGap);
     queueViewportGap();
   }
 }());

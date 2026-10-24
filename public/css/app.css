@@ -340,6 +340,30 @@ body.high-contrast .chapter-content { color: #fff; }
 html.theme-light body.high-contrast .chapter-content,
 html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 
+/* ---------- computers: bottom bar moves to the top ---------- */
+/* The macOS Dock and Windows' auto-hide taskbar slide up over the bottom edge
+   of the screen, and no API tells a page they are there. With a mouse or
+   trackpad the bar sits under the nav instead; reader.js measures --nav-h
+   and --bar-h. */
+@media (hover: hover) and (pointer: fine) {
+  .reader-bottombar {
+    top: var(--nav-h, 3.3rem); bottom: auto;
+    border-top: 0; border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+  .reader-bottombar.bar-hidden { transform: translateY(calc(-100% - var(--nav-h, 3.3rem) - 2px)); }
+  .reader-titlebar { margin-top: var(--bar-h, 3.1rem); }
+  /* scrollIntoView (?panel= links) and #anchors land below both bars; the
+     0px fallbacks leave pages without reader.js untouched */
+  html { scroll-padding-top: calc(var(--nav-h, 0px) + var(--bar-h, 0px)); }
+  .font-panel {
+    top: calc(var(--nav-h, 3.3rem) + var(--bar-h, 3.1rem) + 0.5rem); bottom: auto;
+    /* hangs down from the top now, so a short window must scroll it */
+    max-height: calc(100vh - var(--nav-h, 3.3rem) - var(--bar-h, 3.1rem) - 1rem);
+    overflow-y: auto; overscroll-behavior: contain;
+  }
+}
+
 /* ---------- notifications ---------- */
 .notif-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .notif {
