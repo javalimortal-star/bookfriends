@@ -2,6 +2,7 @@ const fs = require('fs');
 const nodePath = require('path');
 const { db, DATA_DIR } = require('../db');
 const { parseEpub, MEDIA_BASE_PLACEHOLDER } = require('../epub/parse');
+const search = require('./search');
 
 function slugify(title) {
   const base = String(title).toLowerCase().normalize('NFKD')
@@ -59,11 +60,17 @@ function createBookFromEpub(epubPath, ownerId) {
       db.prepare('UPDATE books SET cover_path = ? WHERE id = ?').run(coverFile, bookId);
     }
   }
+  // Search index: built in small background batches, so a 2000-chapter
+  // upload doesn't freeze the site while it is indexed.
+  search.queueBook(bookId);
   return db.prepare('SELECT * FROM books WHERE id = ?').get(bookId);
 }
 
 function deleteBook(bookId) {
-  db.prepare('DELETE FROM books WHERE id = ?').run(bookId);
+  db.transaction(() => {
+    search.removeBook(bookId); // FTS rows don't cascade with the book
+    db.prepare('DELETE FROM books WHERE id = ?').run(bookId);
+  })();
   fs.rmSync(bookDir(bookId), { recursive: true, force: true });
 }
 

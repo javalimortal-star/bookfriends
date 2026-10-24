@@ -6,7 +6,10 @@ const multer = require('multer');
 const { requireAuth, requireOwner, canViewBook } = require('../auth/middleware');
 const books = require('./service');
 const bookmarks = require('./bookmarks');
+const search = require('./search');
+const { checkQuery } = require('./search-text');
 const commentsService = require('../comments/service');
+const { searchLimiter } = require('../rate-limit');
 
 const router = express.Router();
 
@@ -104,6 +107,34 @@ router.get('/book/:slug/download', (req, res) => {
     return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No EPUB stored for this book.') });
   }
   res.download(file, `${book.slug}.epub`);
+});
+
+// Search inside a book. Registered before /book/:slug/:idx, which would
+// otherwise read "search" as a chapter number (and 404).
+router.get('/book/:slug/search', searchLimiter, (req, res) => {
+  const book = books.getBookBySlug(req.params.slug);
+  if (!canViewBook(book, req.user)) {
+    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
+  }
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const check = q ? checkQuery(q) : 'empty';
+  // "Back" returns to the chapter the search was opened from (?from=),
+  // else to the bookmark, else to the start.
+  const total = books.chapterCount(book.id);
+  const from = Number.parseInt(req.query.from, 10);
+  const mark = req.user ? bookmarks.getBookmark(req.user.id, book.id) : null;
+  const backIdx = Number.isInteger(from) && from >= 0 && from < total ? from : (mark ? mark.chapter_idx : 0);
+  res.render('search', {
+    title: req.t('Search in {book}', { book: book.title }),
+    book,
+    q,
+    check,
+    result: check === 'ok' ? search.searchBook(book.id, q) : null,
+    status: search.indexStatus(book.id),
+    backIdx,
+    total,
+    maxResults: search.MAX_RESULTS,
+  });
 });
 
 router.get('/book/:slug/:idx', (req, res) => {

@@ -371,7 +371,10 @@ a:hover { text-decoration: underline; }
 .chapter-arrow:hover { background: var(--accent); color: var(--on-accent); text-decoration: none; }
 .chapter-arrow.disabled { opacity: 0.35; pointer-events: none; }
 
-.chapter-content { font-size: 18px; }
+/* the reader's default size (reader.js DEFAULTS), so the page renders right before the script runs */
+.chapter-content { font-size: 20px; line-height: 24px; }
+/* paragraph gap as on Wuxiaworld (their 1.25em, measured from the owner's screenshot) */
+.chapter-content p { margin: 1.25em 0; }
 .chapter-content h1, .chapter-content h2, .chapter-content h3 { color: var(--text-strong); }
 .chapter-content img { max-width: 100%; height: auto; border-radius: 6px; }
 /* EPUB position-marker anchors (no href) must read as normal text, including
@@ -699,3 +702,70 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .lang-switch a { color: var(--muted); }
 .lang-switch a:hover { color: var(--link); }
 .lang-current { color: var(--text-strong); font-weight: 700; }
+
+/* ---------- reader: search inside a book, swipe between chapters ---------- */
+.titlebar-search { padding: 0; }
+.titlebar-search svg { display: block; }
+
+.search-head { display: flex; align-items: center; gap: 0.8rem; margin: 0.4rem 0 1.2rem; }
+.search-head-text { flex: 1; min-width: 0; }
+.search-title {
+  margin: 0; color: var(--text-strong); font-family: var(--font-display); font-weight: 700;
+  font-size: 1.45rem; line-height: 1.25; letter-spacing: -0.01em;
+}
+.search-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.search-input {
+  flex: 1; min-width: 0; padding: 0.6rem 1rem; border-radius: 999px; font: inherit; font-size: 1rem;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search-form .btn { flex: 0 0 auto; }
+.search-note {
+  margin: 0 0 1rem; padding: 0.6rem 0.85rem; border-radius: 10px;
+  background: var(--teal-soft); color: var(--text); font-size: 0.9rem;
+}
+.search-summary { margin: 0 0 0.9rem; color: var(--muted); font-size: 0.85rem; }
+.search-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.3rem; }
+.search-chapter { display: flex; align-items: baseline; gap: 0.55rem; min-width: 0; margin-bottom: 0.45rem; }
+/* position in the book (titles carry their own numbering, often different) */
+.search-chapter-num {
+  flex: 0 0 auto; margin-left: auto; color: var(--muted); font-size: 0.75rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.search-chapter-title {
+  min-width: 0; color: var(--text-strong); font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.search-hit {
+  display: block; padding: 0.7rem 0.9rem; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  line-height: 1.55; overflow-wrap: anywhere; transition: border-color 0.15s ease;
+}
+.search-hit + .search-hit { margin-top: 0.5rem; }
+.search-hit:hover { border-color: var(--accent); text-decoration: none; }
+/* matched words, on the results page and inside the opened paragraph */
+.search-hit mark, .chapter-content mark.search-term {
+  background: var(--accent-soft); color: var(--text-strong);
+  box-shadow: inset 0 -2px 0 var(--accent); border-radius: 3px; padding: 0 0.08em;
+}
+/* the paragraph a search result opened: a short flash that fades out */
+.chapter-content .search-target { border-radius: 6px; animation: search-target-flash 2.6s ease-out 0.3s both; }
+@keyframes search-target-flash {
+  from { background-color: var(--accent-soft); box-shadow: 0 0 0 0.45rem var(--accent-soft); }
+  to { background-color: transparent; box-shadow: 0 0 0 0.45rem transparent; }
+}
+
+/* pill shown while a swipe is far enough to change chapter on release */
+.swipe-hint {
+  position: fixed; top: 50%; z-index: 45; pointer-events: none; white-space: nowrap;
+  padding: 0.55rem 1rem; border-radius: 999px; box-shadow: var(--shadow);
+  background: var(--accent); color: var(--on-accent); font-size: 0.9rem; font-weight: 800;
+  opacity: 0; transform: translateY(-50%) scale(0.92); transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.swipe-hint.show { opacity: 1; transform: translateY(-50%) scale(1); }
+.swipe-hint.swipe-next { right: 1rem; }
+.swipe-hint.swipe-prev { left: 1rem; }
+@media (prefers-reduced-motion: reduce) {
+  .swipe-hint { transition: none; }
+}

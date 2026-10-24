@@ -1,0 +1,54 @@
+<%- include('partials/head', { bodyClass: 'search-page' }) %>
+<% const backUrl = '/book/' + book.slug + '/' + backIdx; %>
+<div class="search-head">
+  <a class="titlebar-back" href="<%= backUrl %>" title="<%= t('Back to the book') %>" aria-label="<%= t('Back to the book') %>">‹</a>
+  <div class="search-head-text">
+    <div class="titlebar-book"><%= book.title %></div>
+    <h1 class="search-title"><%= t('Search in this book') %></h1>
+  </div>
+</div>
+
+<form class="search-form" method="get" action="/book/<%= book.slug %>/search" role="search">
+  <input type="hidden" name="from" value="<%= backIdx %>">
+  <%# autofocus only on the empty page: with results, a phone keyboard popping up would cover them %>
+  <input class="search-input" type="search" name="q" value="<%= q %>" maxlength="100" required
+         placeholder="<%= t('Words or names…') %>" aria-label="<%= t('Search in this book') %>"
+         enterkeyhint="search" autocomplete="off"<%= q ? '' : ' autofocus' %>>
+  <button class="btn" type="submit"><%= t('Search') %></button>
+</form>
+
+<% if (!status.ready) { %>
+  <p class="search-note"><%= t('This book is still being prepared for search ({percent}% done), so some matches may be missing. Try again in a minute.', { percent: status.percent }) %></p>
+<% } %>
+
+<% if (check === 'short') { %>
+  <p class="empty"><%= t('Type at least 2 letters.') %></p>
+<% } else if (check === 'long') { %>
+  <p class="empty"><%= t('That is too long: a search can have up to 100 characters.') %></p>
+<% } else if (result && result.total === 0) { %>
+  <p class="empty"><%= t('Nothing found for “{q}”. Try fewer words or another spelling.', { q }) %></p>
+<% } else if (result) { %>
+  <p class="search-summary">
+    <% if (result.more || result.total > maxResults) { %>
+      <%= t('Showing the first {shown} of {count} matching paragraphs.', { shown: maxResults, count: result.more ? result.total + '+' : result.total }) %>
+    <% } else { %>
+      <%= t.n('{count} matching paragraph', '{count} matching paragraphs', result.total) %>
+    <% } %>
+  </p>
+  <ol class="search-results">
+    <% for (const group of result.groups) { %>
+      <li class="search-group">
+        <div class="search-chapter">
+          <span class="search-chapter-title"><%= group.title %></span>
+          <span class="search-chapter-num" title="<%= t('Chapter {n} of {total}', { n: group.chapterIdx + 1, total }) %>"><%= group.chapterIdx + 1 %>/<%= total %></span>
+        </div>
+        <% for (const match of group.matches) { %>
+          <%# peek=1: opening a result must never move the reader's bookmark %>
+          <% const hitUrl = '/book/' + book.slug + '/' + group.chapterIdx + '?peek=1&p=' + match.para + '&q=' + encodeURIComponent(q); %>
+          <a class="search-hit" href="<%= hitUrl %>"><% for (const part of match.parts) { %><% if (part.hit) { %><mark><%= part.text %></mark><% } else { %><%= part.text %><% } %><% } %></a>
+        <% } %>
+      </li>
+    <% } %>
+  </ol>
+<% } %>
+<%- include('partials/footer') %>

@@ -48,4 +48,11 @@ module.exports = {
     limit: 20,
     message: (t) => t('You are commenting too fast. Wait a few minutes and try again.'),
   }),
+  // Search inside a book is open to anyone on public books; one search is
+  // cheap, a script firing thousands is not on the small VM.
+  searchLimiter: makeLimiter({
+    windowMs: 60 * 1000,
+    limit: 30,
+    message: (t) => t('Too many searches. Wait a minute and try again.'),
+  }),
 };

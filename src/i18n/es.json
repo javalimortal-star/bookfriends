@@ -166,5 +166,19 @@
   "Bookmarked! This is now your current chapter.": "¡Marcado! Ahora este es tu capítulo actual.",
   "{count} comment on this paragraph": "{count} comentario en este párrafo",
   "{count} comments on this paragraph": "{count} comentarios en este párrafo",
-  "{login} or {register} to join the discussion.": "{login} o {register} para participar en la conversación."
+  "{login} or {register} to join the discussion.": "{login} o {register} para participar en la conversación.",
+  "Too many searches. Wait a minute and try again.": "Demasiadas búsquedas. Espera un minuto y vuelve a intentarlo.",
+  "Search in {book}": "Buscar en {book}",
+  "Back to the book": "Volver al libro",
+  "Search in this book": "Buscar en este libro",
+  "Words or names…": "Palabras o nombres…",
+  "Search": "Buscar",
+  "This book is still being prepared for search ({percent}% done), so some matches may be missing. Try again in a minute.": "Este libro todavía se está preparando para la búsqueda ({percent}% listo), así que pueden faltar algunos resultados. Vuelve a intentarlo en un minuto.",
+  "Type at least 2 letters.": "Escribe al menos 2 letras.",
+  "That is too long: a search can have up to 100 characters.": "Demasiado largo: la búsqueda puede tener hasta 100 caracteres.",
+  "Nothing found for “{q}”. Try fewer words or another spelling.": "No se encontró nada para «{q}». Prueba con menos palabras u otra ortografía.",
+  "Showing the first {shown} of {count} matching paragraphs.": "Mostrando los primeros {shown} de {count} párrafos encontrados.",
+  "{count} matching paragraph": "{count} párrafo encontrado",
+  "{count} matching paragraphs": "{count} párrafos encontrados",
+  "Chapter {n} of {total}": "Capítulo {n} de {total}"
 }

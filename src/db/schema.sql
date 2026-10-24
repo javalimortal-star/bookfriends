@@ -84,3 +84,32 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+
+-- Search inside a book: one FTS5 row per paragraph (the data-p blocks of
+-- chapters.content_html). The rowid packs book, chapter and paragraph
+-- (src/books/search.js), so each book's rows are one rowid range in reading
+-- order. remove_diacritics 2: "joao" finds "João". Virtual tables ignore
+-- foreign keys: deleteBook() removes a book's rows itself.
+CREATE VIRTUAL TABLE IF NOT EXISTS para_search USING fts5(
+  text,
+  book_id UNINDEXED,
+  chapter_idx UNINDEXED,
+  para_index UNINDEXED,
+  tokenize = 'unicode61 remove_diacritics 2'
+);
+
+-- How far each book's search indexing got: books are indexed in small
+-- background batches (after an upload, and after boot for older books), and
+-- a restart resumes at next_idx.
+CREATE TABLE IF NOT EXISTS search_progress (
+  book_id INTEGER PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+  next_idx INTEGER NOT NULL DEFAULT 0,
+  done INTEGER NOT NULL DEFAULT 0
+);
+
+-- Deleted books whose search rows are still being removed in the background
+-- (deleting a big book's rows at once froze the site for seconds). Book ids
+-- are AUTOINCREMENT, never reused, so leftover rows can't show up in searches.
+CREATE TABLE IF NOT EXISTS search_purge (
+  book_id INTEGER PRIMARY KEY
+);
