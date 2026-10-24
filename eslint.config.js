@@ -2,7 +2,8 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
-  { ignores: ['node_modules/**', 'data/**', '.omc/**'] },
+  // .claude/ holds agent git worktrees (full copies of the repo)
+  { ignores: ['node_modules/**', 'data/**', '.omc/**', '.claude/**'] },
   {
     ...js.configs.recommended,
     files: ['**/*.js'],
