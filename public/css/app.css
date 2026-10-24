@@ -699,3 +699,178 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .lang-switch a { color: var(--muted); }
 .lang-switch a:hover { color: var(--link); }
 .lang-current { color: var(--text-strong); font-weight: 700; }
+
+/* ---------- friends: where they are in each book ---------- */
+/* Small initial circles; the colour comes from .avatar-0 … .avatar-4 (same
+   name hash as the comment avatars), so no background here. */
+.friend-avatar {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--on-accent); font-size: 0.68rem; font-weight: 800; line-height: 1;
+}
+/* overlapping stack; the ring in the page colour separates the circles */
+.friend-stack { display: inline-flex; flex: 0 0 auto; }
+.friend-stack .friend-avatar { box-shadow: 0 0 0 2px var(--bg); }
+.friend-stack .friend-avatar + .friend-avatar { margin-left: -7px; }
+
+/* shelf card: "Ana · ch. 11 +2", tap for the full list. On a narrow phone
+   card the line drops below the avatars instead of being cut short. */
+.friends-reading { margin-top: 0.4rem; min-width: 0; }
+.friends-reading summary {
+  list-style: none; cursor: pointer; user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.4rem; min-width: 0;
+  color: var(--muted); font-size: 0.78rem; line-height: 1.3;
+}
+.friends-reading summary::-webkit-details-marker { display: none; }
+.friends-reading summary:hover, .friends-reading[open] summary { color: var(--text-strong); }
+.friends-line { flex: 1 1 auto; display: flex; align-items: center; gap: 0.3rem; min-width: 0; max-width: 100%; }
+.friends-first { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.friends-more {
+  flex: 0 0 auto; padding: 0 0.35rem; border-radius: 999px;
+  background: var(--surface-2); color: var(--text); font-size: 0.7rem; font-weight: 700;
+}
+.friends-list {
+  list-style: none; margin: 0.45rem 0 0; padding: 0.5rem 0.55rem;
+  display: flex; flex-direction: column; gap: 0.45rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+}
+.friends-list li { display: flex; align-items: center; gap: 0.45rem; min-width: 0; }
+.friends-list-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.friends-list-name {
+  color: var(--text-strong); font-size: 0.8rem; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.friends-list-meta { color: var(--muted); font-size: 0.72rem; }
+
+/* "Continue reading" card: the nearest friend in that book, as a full-width
+   row under the cover so the sentence isn't squeezed into the title column */
+.continue-card.with-friend { flex-wrap: wrap; row-gap: 0.7rem; }
+.continue-friend {
+  flex: 1 0 100%; display: flex; align-items: center; gap: 0.45rem;
+  padding-top: 0.65rem; border-top: 1px solid var(--border);
+  color: var(--teal); font-size: 0.82rem; font-weight: 600; line-height: 1.35;
+}
+.continue-friend .friend-avatar { width: 20px; height: 20px; font-size: 0.64rem; }
+.continue-friend-text { min-width: 0; }
+
+/* reader: strip above the chapter comments */
+.friends-strip {
+  margin: 0 0 2.2rem; padding: 0.85rem 1rem; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border);
+}
+.friends-strip-title {
+  margin: 0 0 0.55rem; color: var(--muted); font-family: var(--font-ui);
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.friends-here { margin: 0 0 0.6rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; line-height: 1.4; }
+.friend-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.friend-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem; max-width: 100%;
+  padding: 0.2rem 0.7rem 0.2rem 0.2rem; border-radius: 999px;
+  background: var(--surface-2); font-size: 0.82rem; line-height: 1.3;
+}
+.friend-chip.here { background: var(--teal-soft); box-shadow: inset 0 0 0 1.5px var(--teal); }
+.friend-chip-name { color: var(--text-strong); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.friend-chip-ch { color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
+.friend-chip.here .friend-chip-ch { color: var(--teal); font-weight: 600; }
+
+/* settings: a checkbox with its label beside it */
+.check-field {
+  display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer;
+  color: var(--text); font-weight: 600; font-size: 0.95rem; line-height: 1.4;
+}
+.check-field input { flex: 0 0 auto; width: 1.15rem; height: 1.15rem; margin: 0.12rem 0 0; accent-color: var(--accent); cursor: pointer; }
+
+/* ---------- book requests ---------- */
+/* end of the shelf: "Can't find a book? Ask for it" */
+.ask-book {
+  display: flex; align-items: center; gap: 0.8rem; margin-top: 2.4rem; padding: 0.85rem 1rem;
+  border: 1px dashed var(--border); border-radius: var(--radius); color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ask-book:hover { text-decoration: none; border-color: var(--accent); background: var(--surface); }
+.ask-book-icon {
+  flex: 0 0 auto; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent-soft); color: var(--link); font-weight: 800; font-size: 1.05rem;
+}
+.ask-book-text { flex: 1; min-width: 0; font-weight: 600; }
+.ask-book-go { color: var(--link); font-weight: 800; }
+
+/* open-request count in the owner's account menu */
+.menu-badge {
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: 0.05em;
+  min-width: 1.2rem; height: 1.2rem; margin-left: 0.3rem; padding: 0 0.3rem; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent); font-size: 0.7rem; font-weight: 800; line-height: 1;
+}
+
+.requests-page { max-width: 640px; margin: 0 auto; }
+.requests-intro { margin-top: -0.4rem; }
+.request-form {
+  margin: 1.2rem 0 2.2rem; padding: 1.2rem 1.3rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+}
+.field textarea {
+  display: block; width: 100%; min-height: 4.2rem; resize: vertical;
+  padding: 0.65rem 0.8rem; border-radius: 10px; font: inherit; font-size: 0.95rem;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+}
+.field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.requests-heading { margin-bottom: 0.2rem; }
+.request-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.request {
+  padding: 0.85rem 1rem; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border);
+}
+.request-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; }
+.request-info { min-width: 0; }
+.request-title {
+  color: var(--text-strong); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.request-author { color: var(--muted); font-size: 0.85rem; overflow-wrap: anywhere; }
+.request-vote { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+.vote-pill {
+  border: 0; border-radius: 999px; padding: 0.3rem 0.8rem; cursor: pointer; white-space: nowrap;
+  background: var(--surface-2); color: var(--text); font: inherit; font-size: 0.8rem; font-weight: 700;
+}
+.vote-pill:hover { color: var(--text-strong); box-shadow: inset 0 0 0 1px var(--border); }
+.vote-pill.active { background: var(--accent-soft); color: var(--link); box-shadow: inset 0 0 0 1px var(--accent); }
+.request-count { color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+.request-note {
+  margin: 0.5rem 0 0; padding-left: 0.65rem; border-left: 3px solid var(--border);
+  color: var(--text); font-size: 0.9rem; white-space: pre-line; overflow-wrap: anywhere;
+}
+.request-meta { margin-top: 0.45rem; color: var(--muted); font-size: 0.78rem; }
+.request-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.4rem; margin-top: 0.7rem; }
+/* three owner buttons fit on one line of a 360px phone */
+.request-actions .btn-small { padding: 0.3rem 0.7rem; }
+.request-fulfil summary { list-style: none; -webkit-tap-highlight-color: transparent; }
+.request-fulfil summary::-webkit-details-marker { display: none; }
+.request-fulfil[open] { flex-basis: 100%; }
+.request-fulfil-body {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.55rem; margin-top: 0.55rem; padding: 0.75rem;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+}
+.request-fulfil-body .field { margin: 0; width: 100%; }
+.request-book-select { width: 100%; max-width: 100%; }
+.request-status {
+  flex: 0 0 auto; padding: 0.12rem 0.55rem; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.status-done { background: var(--teal-soft); color: var(--teal); }
+.status-declined { background: var(--surface-2); color: var(--muted); }
+.requests-finished { margin-top: 2.2rem; }
+.requests-finished > summary {
+  list-style: none; cursor: pointer; width: fit-content; -webkit-tap-highlight-color: transparent;
+  color: var(--muted); font-weight: 700; display: flex; align-items: baseline; gap: 0.4rem;
+}
+.requests-finished > summary::-webkit-details-marker { display: none; }
+.requests-finished > summary::after { content: "▾"; }
+.requests-finished[open] > summary::after { content: "▴"; }
+.requests-finished > summary:hover { color: var(--text-strong); }
+.request-closed .request-title { font-size: 0.98rem; }
+@media (max-width: 400px) {
+  .request { padding: 0.8rem 0.85rem; }
+}

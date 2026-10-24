@@ -1,0 +1,104 @@
+<%- include('partials/head') %>
+<div class="requests-page">
+  <h1 class="page-title"><%= t('Book requests') %></h1>
+  <p class="hint requests-intro"><%= t("Can't find a book on the shelf? Ask for it here. Friends who want it too can tap “Me too”.") %></p>
+  <% if (sent) { %><p class="form-ok"><%= t("Request sent! When the book is on the shelf, you'll see it under Finished requests.") %></p><% } %>
+
+  <form class="request-form" method="post" action="/requests">
+    <h2 class="form-subtitle"><%= t('Ask for a book') %></h2>
+    <% if (error) { %><p class="form-error" role="alert"><%= error %></p><% } %>
+    <label class="field"><span><%= t('Title') %></span>
+      <input type="text" name="title" maxlength="120" required value="<%= form.title || '' %>">
+    </label>
+    <label class="field"><span><%= t('Author (optional)') %></span>
+      <input type="text" name="author" maxlength="80" value="<%= form.author || '' %>">
+    </label>
+    <label class="field"><span><%= t('Note (optional)') %></span>
+      <textarea name="note" maxlength="300" rows="2" placeholder="<%= t('Edition, translation, why you want it…') %>"><%= form.note || '' %></textarea>
+    </label>
+    <button class="btn" type="submit"><%= t('Send request') %></button>
+  </form>
+
+  <h2 class="section-title requests-heading"><%= t('Open requests') %><% if (open.length > 0) { %> <span class="section-count"><%= open.length %></span><% } %></h2>
+  <% if (open.length === 0) { %><p class="empty"><%= t('No open requests right now.') %></p><% } %>
+  <ul class="request-list">
+    <% for (const r of open) { %>
+      <li class="request" id="req-<%= r.id %>">
+        <div class="request-top">
+          <div class="request-info">
+            <div class="request-title"><%= r.title %></div>
+            <% if (r.author) { %><div class="request-author"><%= r.author %></div><% } %>
+          </div>
+          <div class="request-vote">
+            <% if (r.user_id !== user.id && !isOwner) { %>
+              <form method="post" action="/requests/<%= r.id %>/vote">
+                <button class="vote-pill<%= r.voted ? ' active' : '' %>" type="submit" aria-pressed="<%= r.voted ? 'true' : 'false' %>"><%= r.voted ? '✓ ' : '+ ' %><%= t('Me too') %></button>
+              </form>
+            <% } %>
+            <span class="request-count"><%= t.n('{count} person wants it', '{count} people want it', r.wanters) %></span>
+          </div>
+        </div>
+        <% if (r.note) { %><p class="request-note"><%= r.note %></p><% } %>
+        <div class="request-meta"><%= t('Asked by {name}', { name: r.requesterName }) %> · <%= r.when %></div>
+        <% if (isOwner) { %>
+          <div class="request-actions">
+            <details class="request-fulfil">
+              <summary class="btn btn-small"><%= t('Mark as uploaded') %></summary>
+              <form method="post" action="/requests/<%= r.id %>/done" class="request-fulfil-body">
+                <label class="field"><span><%= t('Which book on the shelf is it?') %></span>
+                  <select name="book_id" class="sort-select request-book-select">
+                    <option value=""><%= t('None (no link)') %></option>
+                    <% for (const b of shelf) { %>
+                      <option value="<%= b.id %>"<%= b.id === r.suggestedBookId ? ' selected' : '' %>><%= b.title %><%= b.visibility === 'public' ? '' : ' (' + t('Private') + ')' %></option>
+                    <% } %>
+                  </select>
+                </label>
+                <button class="btn btn-small" type="submit"><%= t('Done') %></button>
+              </form>
+            </details>
+            <form method="post" action="/requests/<%= r.id %>/decline" class="inline-form">
+              <button class="btn btn-small btn-ghost" type="submit"><%= t('Decline') %></button>
+            </form>
+            <form method="post" action="/requests/<%= r.id %>/delete" class="inline-form" onsubmit="return confirm(<%= JSON.stringify(t('Delete this request?')) %>)">
+              <button class="btn btn-small btn-danger" type="submit"><%= t('Delete') %></button>
+            </form>
+          </div>
+        <% } else if (r.user_id === user.id) { %>
+          <div class="request-actions">
+            <form method="post" action="/requests/<%= r.id %>/delete" class="inline-form" onsubmit="return confirm(<%= JSON.stringify(t('Delete this request?')) %>)">
+              <button class="btn btn-small btn-danger" type="submit"><%= t('Delete') %></button>
+            </form>
+          </div>
+        <% } %>
+      </li>
+    <% } %>
+  </ul>
+
+  <% if (finished.length > 0) { %>
+    <details class="requests-finished">
+      <summary><%= t('Finished requests') %> <span class="section-count"><%= finished.length %></span></summary>
+      <ul class="request-list">
+        <% for (const r of finished) { %>
+          <li class="request request-closed" id="req-<%= r.id %>">
+            <div class="request-top">
+              <div class="request-info">
+                <div class="request-title"><% if (r.bookLink) { %><a href="<%= r.bookLink %>"><%= r.title %></a><% } else { %><%= r.title %><% } %></div>
+                <% if (r.author) { %><div class="request-author"><%= r.author %></div><% } %>
+              </div>
+              <span class="request-status status-<%= r.status %>"><%= r.status === 'done' ? t('Uploaded') : t('Declined') %></span>
+            </div>
+            <div class="request-meta"><%= t('Asked by {name}', { name: r.requesterName }) %> · <%= r.when %><% if (r.bookLink) { %> · <a href="<%= r.bookLink %>"><%= t('Read it') %> →</a><% } %></div>
+            <% if (isOwner) { %>
+              <div class="request-actions">
+                <form method="post" action="/requests/<%= r.id %>/delete" class="inline-form" onsubmit="return confirm(<%= JSON.stringify(t('Delete this request?')) %>)">
+                  <button class="btn btn-small btn-danger" type="submit"><%= t('Delete') %></button>
+                </form>
+              </div>
+            <% } %>
+          </li>
+        <% } %>
+      </ul>
+    </details>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

@@ -5,7 +5,7 @@
     <% if (user && current) { %>
       <p class="hero-kicker"><%= t('Welcome back, {name}', { name: firstName }) %></p>
       <h1 class="hero-title"><%= t('Pick up where you left off') %></h1>
-      <a class="continue-card" href="/book/<%= current.slug %>/<%= current.bookmarkIdx %>">
+      <a class="continue-card<%= currentFriend ? ' with-friend' : '' %>" href="/book/<%= current.slug %>/<%= current.bookmarkIdx %>">
         <% if (current.cover_path) { %>
           <img class="continue-cover" src="/media/book/<%= current.id %>/cover" alt="">
         <% } else { %>
@@ -21,6 +21,16 @@
           </span>
         </div>
         <span class="continue-go" aria-hidden="true">→</span>
+        <% if (currentFriend) { const ahead = currentFriend.chapterIdx - current.bookmarkIdx; %>
+          <span class="continue-friend">
+            <span class="friend-avatar avatar-<%= currentFriend.tone %>" aria-hidden="true"><%= currentFriend.initial %></span>
+            <span class="continue-friend-text"><%= ahead > 0
+              ? t.n('{name} is {count} chapter ahead of you', '{name} is {count} chapters ahead of you', ahead, { name: currentFriend.name })
+              : ahead < 0
+                ? t.n("You're {count} chapter ahead of {name}", "You're {count} chapters ahead of {name}", -ahead, { name: currentFriend.name })
+                : t('{name} is on the same chapter as you', { name: currentFriend.name }) %></span>
+          </span>
+        <% } %>
       </a>
     <% } else if (user) { %>
       <p class="hero-kicker"><%= t('Welcome, {name}', { name: firstName }) %></p>
@@ -69,6 +79,27 @@
       <div class="book-meta">
         <a class="book-title" href="/book/<%= book.slug %>/0"><%= book.title %></a>
         <% if (book.author) { %><div class="book-author"><%= book.author %></div><% } %>
+        <% const reading = friendsByBook.get(book.id); %>
+        <% if (reading) { %>
+          <%# tap the avatars for the full list; a <details> needs no script %>
+          <details class="friends-reading">
+            <summary title="<%= t('Friends reading this book') %>">
+              <span class="friend-stack" aria-hidden="true"><% for (const f of reading.slice(0, 3)) { %><span class="friend-avatar avatar-<%= f.tone %>"><%= f.initial %></span><% } %></span>
+              <span class="friends-line"><span class="friends-first"><%= t('{name} · ch. {n}', { name: reading[0].name, n: reading[0].chapter }) %></span><% if (reading.length > 1) { %><span class="friends-more">+<%= reading.length - 1 %></span><% } %></span>
+            </summary>
+            <ul class="friends-list">
+              <% for (const f of reading) { %>
+                <li>
+                  <span class="friend-avatar avatar-<%= f.tone %>" aria-hidden="true"><%= f.initial %></span>
+                  <span class="friends-list-text">
+                    <span class="friends-list-name"><%= f.name %></span>
+                    <span class="friends-list-meta"><%= t('ch. {n}/{total}', { n: f.chapter, total: f.total }) %> · <%= f.when %></span>
+                  </span>
+                </li>
+              <% } %>
+            </ul>
+          </details>
+        <% } %>
         <% if (book.bookmarkIdx !== undefined) { %>
           <div class="book-progress">
             <div class="progress-top">
@@ -99,4 +130,11 @@
     </article>
   <% } %>
 </div>
+<% if (user) { %>
+  <a class="ask-book" href="/requests">
+    <span class="ask-book-icon" aria-hidden="true">?</span>
+    <span class="ask-book-text"><% if (user.role === 'owner') { %><%= t('Book requests from your friends') %><% } else { %><%= t("Can't find a book? Ask for it") %><% } %></span>
+    <span class="ask-book-go" aria-hidden="true">→</span>
+  </a>
+<% } %>
 <%- include('partials/footer') %>
