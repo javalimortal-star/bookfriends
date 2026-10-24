@@ -44,8 +44,17 @@ function listForUser(userId, limit = 50) {
   `).all(userId, limit);
 }
 
+// Where a notification leads (notifications page and phone notifications):
+// the chapter as a peek, so checking a reply far ahead of where you are
+// reading never drags your bookmark there; at the paragraph's comment panel,
+// or the chapter comments. Needs book_slug, chapter_idx and para_index.
+function linkFor(n) {
+  const base = `/book/${n.book_slug}/${n.chapter_idx}?peek=1`;
+  return n.para_index === null ? `${base}#comments` : `${base}&panel=${n.para_index}`;
+}
+
 function markAllSeen(userId) {
   db.prepare('UPDATE notifications SET seen = 1 WHERE user_id = ? AND seen = 0').run(userId);
 }
 
-module.exports = { notify, notifyReply, recipientsOf, unseenCount, listForUser, markAllSeen };
+module.exports = { notify, notifyReply, recipientsOf, unseenCount, listForUser, linkFor, markAllSeen };

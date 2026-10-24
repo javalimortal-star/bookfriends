@@ -1,5 +1,7 @@
 <%- include('partials/head') %>
 <h1 class="page-title"><%= t('Notifications') %></h1>
+<%# shown by public/js/push.js when this device could get phone notifications but doesn't %>
+<p id="push-hint" class="push-hint" hidden><%= t('Want these on your phone, even with BookFriends closed?') %> <a href="/settings#push"><%= t('Turn on phone notifications') %></a></p>
 <% if (items.length === 0) { %>
   <p class="empty"><%= t('Nothing here yet — when a friend replies to one of your comments or mentions you, it shows up here.') %></p>
 <% } %>
@@ -16,4 +18,5 @@
     </a>
   <% } %>
 </div>
+<script src="/js/push.js?v=<%= assetVersion %>"></script>
 <%- include('partials/footer') %>

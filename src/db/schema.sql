@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   role TEXT NOT NULL DEFAULT 'reader' CHECK (role IN ('owner', 'reader')),
   display_name TEXT,
   auth_provider TEXT NOT NULL DEFAULT 'local',
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  lang TEXT
 );
 
 CREATE TABLE IF NOT EXISTS books (
@@ -146,3 +147,17 @@ CREATE TABLE IF NOT EXISTS search_progress (
 CREATE TABLE IF NOT EXISTS search_purge (
   book_id INTEGER PRIMARY KEY
 );
+
+-- Web Push: one row per subscribed browser/device. The endpoint is the push
+-- service URL that reaches that device, so it is unique; re-subscribing
+-- the same device (e.g. another account on it) reassigns the row.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT UNIQUE NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);

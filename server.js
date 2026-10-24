@@ -41,7 +41,12 @@ app.use(express.json());
 app.locals.assetVersion = crypto.createHash('md5')
   .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'app.css')))
   .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'reader.js')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'push.js')))
   .digest('hex').slice(0, 10);
+// Offline reading + phone notifications (public/sw.js); SW_DISABLED=1 turns it off.
+app.locals.swEnabled = process.env.SW_DISABLED !== '1';
+// /sw.js before express.static: it needs no-cache, never the 30-day caching
+app.use(require('./src/offline/routes'));
 app.use(express.static(path.join(__dirname, 'public'), PROD ? { maxAge: '30d', immutable: true } : {}));
 
 if (!process.env.SESSION_SECRET) {
@@ -61,6 +66,7 @@ app.use(session({
 }));
 
 app.use(loadUser);
+app.use(require('./src/i18n').rememberUserLang);
 // Unread-reply count for the nav bell on every rendered page.
 const notifications = require('./src/comments/notifications');
 app.use((req, res, next) => {
@@ -87,6 +93,7 @@ app.use(require('./src/backup/routes'));
 app.use(require('./src/media/routes'));
 app.use(require('./src/comments/routes'));
 app.use(require('./src/requests/routes'));
+app.use(require('./src/push/routes'));
 app.use(require('./src/books/routes'));
 
 app.use((req, res) => {

@@ -19,6 +19,8 @@ function migrate() {
   ensureColumn('notifications', 'kind', "kind TEXT NOT NULL DEFAULT 'reply'");
   // 0 hides the user's bookmarks from the friends' progress on shelf and reader
   ensureColumn('users', 'share_progress', 'share_progress INTEGER NOT NULL DEFAULT 1');
+  // last language the user browsed in, so push notifications can use it
+  ensureColumn('users', 'lang', 'lang TEXT');
 }
 
 module.exports = { migrate };
