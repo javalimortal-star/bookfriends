@@ -1,11 +1,6 @@
 #!/usr/bin/env node
-// Nightly backup: snapshot the SQLite DB with better-sqlite3's backup API
-// (raw-copying a live WAL database can capture a torn state), bundle it with
-// the extracted book media into backups/bookfriends-YYYY-MM-DD.tar.gz, and
-// keep the newest 7 archives. Run from the repo root, e.g. via cron:
-//   30 3 * * * cd /home/ubuntu/bookfriends && /usr/bin/node scripts/backup.js
-// Restore = extract the archive into a fresh DATA_DIR:
-//   tar -xzf bookfriends-YYYY-MM-DD.tar.gz -C data
+// Nightly backup (cron, see README "Backups"): a WAL-safe snapshot of the DB
+// plus the book files in backups/bookfriends-YYYY-MM-DD.tar.gz; keeps 7.
 require('dotenv').config();
 const fs = require('fs');
 const os = require('os');
@@ -13,12 +8,10 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const Database = require('better-sqlite3');
 
+const { BACKUP_DIR, NAME_RE } = require('../src/backup/status');
+
 const DATA_DIR = path.resolve(process.env.DATA_DIR || './data');
-const BACKUP_DIR = process.env.BACKUP_DIR
-  ? path.resolve(process.env.BACKUP_DIR)
-  : path.join(DATA_DIR, '..', 'backups');
 const KEEP = 7;
-const NAME_RE = /^bookfriends-\d{4}-\d{2}-\d{2}\.tar\.gz$/;
 
 async function main() {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });

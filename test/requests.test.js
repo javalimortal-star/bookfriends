@@ -1,27 +1,13 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-// A throwaway database: src/db opens DATA_DIR on require.
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bf-requests-'));
-process.env.DATA_DIR = dir;
-const { db } = require('../src/db');
-require('../src/db/migrate').migrate();
+const { db, addUser } = require('./fresh-db');
 const push = require('../src/push');
 const { translator } = require('../src/i18n');
 const requests = require('../src/requests/service');
 
-test.after(() => {
-  db.close();
-  fs.rmSync(dir, { recursive: true, force: true });
-});
-
-const addUser = db.prepare("INSERT INTO users (email, password_hash, role, display_name, created_at) VALUES (?, 'x', ?, ?, 0)");
-const owner = Number(addUser.run('owner@example.com', 'owner', null).lastInsertRowid);
-const ana = Number(addUser.run('ana@example.com', 'reader', 'Ana').lastInsertRowid);
-const pedro = Number(addUser.run('pedro@example.com', 'reader', 'Pedro').lastInsertRowid);
+const owner = addUser('owner@example.com', 'owner');
+const ana = addUser('ana@example.com', 'reader', 'Ana');
+const pedro = addUser('pedro@example.com', 'reader', 'Pedro');
 
 // Collect what would go to phones instead of sending it.
 let sent = [];
@@ -79,9 +65,6 @@ test('findOpenDuplicate ignores case, accents and finished requests', () => {
 });
 
 test('pushes go out in each recipient\'s language and skip whoever acted', () => {
-  // users.lang belongs to another workstream; add it here if it isn't there yet
-  const cols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
-  if (!cols.includes('lang')) db.exec('ALTER TABLE users ADD COLUMN lang TEXT');
   db.prepare("UPDATE users SET lang = 'pt' WHERE id = ?").run(owner);
   db.prepare("UPDATE users SET lang = 'es' WHERE id = ?").run(pedro);
   db.prepare("UPDATE users SET lang = 'xx' WHERE id = ?").run(ana); // unknown: English

@@ -5,7 +5,7 @@ const path = require('path');
 // Pure functions plus a directory listing; nothing here touches the database,
 // so the tests can load it without a DATA_DIR.
 
-// Same default as scripts/backup.js: a sibling of DATA_DIR.
+// scripts/backup.js writes here (default: a sibling of DATA_DIR)
 const BACKUP_DIR = process.env.BACKUP_DIR
   ? path.resolve(process.env.BACKUP_DIR)
   : path.join(path.resolve(process.env.DATA_DIR || './data'), '..', 'backups');

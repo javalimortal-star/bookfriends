@@ -91,4 +91,4 @@ function setupCommand(origin, token) {
   return `& { $ErrorActionPreference = 'Stop'; try { ${steps.join('; ')} } catch { Write-Host ('Setup failed: ' + $_.Exception.Message) -ForegroundColor Red } }`;
 }
 
-module.exports = { setupCommand, downloaderLines, DIR, TASK };
+module.exports = { setupCommand, downloaderLines };

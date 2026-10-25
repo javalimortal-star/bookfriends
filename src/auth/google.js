@@ -8,9 +8,7 @@ const router = express.Router();
 
 // "Continue with Google" via the plain OAuth 2.0 authorization-code flow —
 // enabled only when both env vars are set; the UI hides the button otherwise.
-function configured() {
-  return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
-}
+const enabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 // Must exactly match an Authorized redirect URI in the Google Cloud console.
 function redirectUri(req) {
@@ -18,7 +16,7 @@ function redirectUri(req) {
 }
 
 router.get('/auth/google', (req, res) => {
-  if (!configured()) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Google login is not enabled.') });
+  if (!enabled) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Google login is not enabled.') });
   const state = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
   const params = new URLSearchParams({
@@ -33,7 +31,7 @@ router.get('/auth/google', (req, res) => {
 });
 
 router.get('/auth/google/callback', async (req, res) => {
-  if (!configured()) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Google login is not enabled.') });
+  if (!enabled) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Google login is not enabled.') });
   try {
     const { code, state } = req.query;
     if (!code || !state || state !== req.session.oauthState) throw new Error('OAuth state mismatch');
@@ -79,3 +77,4 @@ router.get('/auth/google/callback', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.enabled = enabled;

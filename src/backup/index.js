@@ -75,4 +75,4 @@ function health() {
   return healthReport(dbOk, statusWith(last));
 }
 
-module.exports = { recordDownload, lastDownload, currentStatus, ownerView, needsAttention, health };
+module.exports = { recordDownload, lastDownload, ownerView, needsAttention, health };

@@ -56,4 +56,4 @@ function parseSubscription(body, { allowLocal = false } = {}) {
   return { endpoint, p256dh: keys.p256dh, auth: keys.auth };
 }
 
-module.exports = { parseSubscription, isPushService };
+module.exports = { parseSubscription };

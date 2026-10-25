@@ -2,11 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
+const { db } = require('./fresh-db');
 
-// src/push/index.js opens the database: give it a throwaway DATA_DIR.
-process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bf-push-test-'));
 delete process.env.VAPID_PUBLIC_KEY;
 delete process.env.VAPID_PRIVATE_KEY;
 
@@ -14,14 +12,6 @@ const { notificationPayload, excerpt, EXCERPT_CHARS } = require('../src/push/pay
 const { parseSubscription } = require('../src/push/subscription');
 const { linkFor } = require('../src/comments/notifications');
 const push = require('../src/push');
-const { db } = require('../src/db');
-
-require('../src/db/migrate').migrate();
-
-test.after(() => {
-  require('../src/db').db.close();
-  fs.rmSync(process.env.DATA_DIR, { recursive: true, force: true });
-});
 
 const reply = {
   kind: 'reply', body: 'What a twist!', spoiler: 0,
@@ -153,7 +143,6 @@ test('subscriptions: upsert by endpoint, reassigned to whoever subscribes, cappe
 });
 
 test('production accepts only real push services on the default port', () => {
-  const { parseSubscription } = require('../src/push/subscription');
   const keys = { p256dh: Buffer.concat([Buffer.from([4]), Buffer.alloc(64, 7)]).toString('base64url'), auth: Buffer.alloc(16, 9).toString('base64url') };
   const ok = (endpoint) => parseSubscription({ endpoint, keys }) !== null;
   assert.ok(ok('https://fcm.googleapis.com/fcm/send/abc'));

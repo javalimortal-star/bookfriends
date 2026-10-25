@@ -1,77 +1,35 @@
 const { rateLimit } = require('express-rate-limit');
 
-// Per-IP limits on the endpoints an anonymous internet can abuse. In
-// production `trust proxy` is 1 (server.js), so req.ip is the real client
-// address behind Caddy, not the proxy's.
-// `message` gets the request's translator, so the text is in the reader's language.
-function tooMany(message) {
-  return (req, res) => {
-    const text = message(req.t);
-    if (req.path.startsWith('/api/')) return res.status(429).json({ error: text });
-    res.status(429).render('error', { title: req.t('Slow down'), message: text });
-  };
-}
-
-function makeLimiter({ windowMs, limit, onlyFailures = false, message }) {
+// Per-IP limits on what an anonymous internet can abuse (behind Caddy,
+// `trust proxy` makes req.ip the real client). `message` gets the request's
+// translator, so the answer is in the reader's language.
+function limiter(minutes, limit, message, { onlyFailures = false } = {}) {
   return rateLimit({
-    windowMs,
+    windowMs: minutes * 60 * 1000,
     limit,
-    // Don't punish normal use: with onlyFailures a request that succeeds
-    // (status < 400) is refunded, so only wrong passwords eat the budget.
+    // onlyFailures refunds successful requests: only wrong passwords/tokens count
     skipSuccessfulRequests: onlyFailures,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: tooMany(message),
+    handler: (req, res) => {
+      const text = message(req.t);
+      if (req.path.startsWith('/api/')) return res.status(429).json({ error: text });
+      res.status(429).render('error', { title: req.t('Slow down'), message: text });
+    },
   });
 }
 
+const failures = { onlyFailures: true };
+
 module.exports = {
-  loginLimiter: makeLimiter({
-    windowMs: 15 * 60 * 1000,
-    limit: 10,
-    onlyFailures: true,
-    message: (t) => t('Too many login attempts. Wait 15 minutes and try again.'),
-  }),
-  passwordLimiter: makeLimiter({
-    windowMs: 15 * 60 * 1000,
-    limit: 10,
-    onlyFailures: true,
-    message: (t) => t('Too many password attempts. Wait 15 minutes and try again.'),
-  }),
-  registerLimiter: makeLimiter({
-    windowMs: 60 * 60 * 1000,
-    limit: 5,
-    message: (t) => t('Too many new accounts from your network. Try again in an hour.'),
-  }),
-  commentLimiter: makeLimiter({
-    windowMs: 5 * 60 * 1000,
-    limit: 20,
-    message: (t) => t('You are commenting too fast. Wait a few minutes and try again.'),
-  }),
-  bookRequestLimiter: makeLimiter({
-    windowMs: 60 * 60 * 1000,
-    limit: 10,
-    message: (t) => t('That is a lot of book requests at once. Try again in an hour.'),
-  }),
-  // Search inside a book is open to anyone on public books; one search is
-  // cheap, a script firing thousands is not on the small VM.
-  searchLimiter: makeLimiter({
-    windowMs: 60 * 1000,
-    limit: 30,
-    message: (t) => t('Too many searches. Wait a minute and try again.'),
-  }),
-  // wrong /backup/download tokens: a guesser gets 10 tries an hour (the
-  // mini PC's successful downloads don't count)
-  backupLimiter: makeLimiter({
-    windowMs: 60 * 60 * 1000,
-    limit: 10,
-    onlyFailures: true,
-    message: (t) => t('Too many attempts. Try again in an hour.'),
-  }),
+  loginLimiter: limiter(15, 10, (t) => t('Too many login attempts. Wait 15 minutes and try again.'), failures),
+  passwordLimiter: limiter(15, 10, (t) => t('Too many password attempts. Wait 15 minutes and try again.'), failures),
+  registerLimiter: limiter(60, 5, (t) => t('Too many new accounts from your network. Try again in an hour.')),
+  commentLimiter: limiter(5, 20, (t) => t('You are commenting too fast. Wait a few minutes and try again.')),
+  bookRequestLimiter: limiter(60, 10, (t) => t('That is a lot of book requests at once. Try again in an hour.')),
+  // search is open to anyone on public books: cheap once, not thousands of times
+  searchLimiter: limiter(1, 30, (t) => t('Too many searches. Wait a minute and try again.')),
+  backupLimiter: limiter(60, 10, (t) => t('Too many attempts. Try again in an hour.'), failures),
   // each test makes the server call out to the push services
-  pushTestLimiter: makeLimiter({
-    windowMs: 10 * 60 * 1000,
-    limit: 10,
-    message: (t) => t('Too many test notifications. Wait a few minutes and try again.'),
-  }),
+  pushTestLimiter: limiter(10, 10, (t) => t('Too many test notifications. Wait a few minutes and try again.')),
 };

@@ -186,6 +186,4 @@ function removeBook(bookId) {
   kick();
 }
 
-module.exports = {
-  MAX_RESULTS, rowidOf, bookRange, indexStatus, searchBook, queueBook, startBackfill, removeBook,
-};
+module.exports = { MAX_RESULTS, bookRange, indexStatus, searchBook, queueBook, startBackfill, removeBook };

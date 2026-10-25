@@ -1,25 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-// A throwaway database: src/db opens DATA_DIR on require.
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bf-friends-'));
-process.env.DATA_DIR = dir;
-const { db } = require('../src/db');
-require('../src/db/migrate').migrate();
+const { db, addUser } = require('./fresh-db');
 const friends = require('../src/friends/service');
 
-test.after(() => {
-  db.close();
-  fs.rmSync(dir, { recursive: true, force: true });
-});
-
-const addUser = db.prepare("INSERT INTO users (email, password_hash, role, display_name, created_at) VALUES (?, 'x', ?, ?, 0)");
-const owner = { id: Number(addUser.run('owner@example.com', 'owner', null).lastInsertRowid), role: 'owner' };
-const ana = { id: Number(addUser.run('ana@example.com', 'reader', 'Ana').lastInsertRowid), role: 'reader' };
-const pedro = { id: Number(addUser.run('pedro@example.com', 'reader', 'Pedro').lastInsertRowid), role: 'reader' };
+const owner = { id: addUser('owner@example.com', 'owner'), role: 'owner' };
+const ana = { id: addUser('ana@example.com', 'reader', 'Ana'), role: 'reader' };
+const pedro = { id: addUser('pedro@example.com', 'reader', 'Pedro'), role: 'reader' };
 const addBook = db.prepare("INSERT INTO books (owner_id, title, slug, visibility, created_at) VALUES (?, ?, ?, ?, 0)");
 const pub = Number(addBook.run(owner.id, 'Public', 'public', 'public').lastInsertRowid);
 const priv = Number(addBook.run(owner.id, 'Private', 'private', 'private').lastInsertRowid);

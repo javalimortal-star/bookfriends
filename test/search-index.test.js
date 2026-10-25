@@ -1,17 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-// A throwaway database: src/db opens DATA_DIR when first required.
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bf-search-test-'));
-process.env.DATA_DIR = dir;
-const { db } = require('../src/db');
-require('../src/db/migrate').migrate();
+const { db, addUser } = require('./fresh-db');
 const search = require('../src/books/search');
 
-const owner = db.prepare("INSERT INTO users (email, password_hash, role, created_at) VALUES ('o@x', 'x', 'owner', 0)").run().lastInsertRowid;
+const owner = addUser('o@x', 'owner');
 function addBook(slug, chapters) {
   const id = db.prepare("INSERT INTO books (owner_id, title, slug, visibility, created_at) VALUES (?, ?, ?, 'public', 0)").run(owner, slug, slug).lastInsertRowid;
   const insert = db.prepare('INSERT INTO chapters (book_id, idx, title, content_html) VALUES (?, ?, ?, ?)');
@@ -32,11 +24,6 @@ async function settle() {
 
 const a = addBook('a', [['Alyosha met Ivan.', 'Smerdyakov listened.'], ['Ivan Karamázov returned.'], ['', '<img src="x.png">']]);
 const b = addBook('b', [['Ivan in another book.']]);
-
-test.after(() => {
-  db.close();
-  fs.rmSync(dir, { recursive: true, force: true });
-});
 
 test('backfill indexes every book; results stay inside their book, in reading order', async () => {
   assert.deepStrictEqual(search.indexStatus(a), { ready: false, percent: 0 });

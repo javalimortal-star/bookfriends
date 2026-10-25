@@ -15,15 +15,12 @@ function decodeHref(href) {
   }
 }
 
-function zipEntryText(zip, entryPath) {
-  const normalized = path.normalize(entryPath).replace(/^\.\//, '');
-  const entry = zip.getEntry(normalized);
-  if (!entry) throw new Error(`EPUB entry not found: ${normalized}`);
-  return entry.getData().toString('utf8');
-}
+const zipEntry = (zip, entryPath) => zip.getEntry(path.normalize(entryPath));
 
-function zipHasEntry(zip, entryPath) {
-  return !!zip.getEntry(path.normalize(entryPath).replace(/^\.\//, ''));
+function zipEntryText(zip, entryPath) {
+  const entry = zipEntry(zip, entryPath);
+  if (!entry) throw new Error(`EPUB entry not found: ${path.normalize(entryPath)}`);
+  return entry.getData().toString('utf8');
 }
 
 // dc: metadata helper — xmlMode keeps namespace prefixes in tag names.
@@ -214,7 +211,7 @@ function parseEpub(epubPath) {
   const images = new Map();
   const chapters = new Array(navPoints.length);
   for (const [file, anchors] of byFile) {
-    if (!zipHasEntry(zip, file)) {
+    if (!zipEntry(zip, file)) {
       anchors.forEach((a) => { chapters[a.order] = { title: a.title, contentHtml: '', paraCount: 0 }; });
       continue;
     }
@@ -234,7 +231,7 @@ function parseEpub(epubPath) {
     chapters,
     images: [...images.entries()].map(([name, zipPath]) => ({ name, zipPath })),
     readZipEntry: (zipPath) => {
-      const entry = zip.getEntry(path.normalize(zipPath));
+      const entry = zipEntry(zip, zipPath);
       return entry ? entry.getData() : null;
     },
   };

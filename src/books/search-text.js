@@ -118,7 +118,4 @@ function snippetParts(snippet) {
   return parts;
 }
 
-module.exports = {
-  MIN_QUERY, MAX_QUERY, MAX_PARA, HIT_START, HIT_END,
-  paragraphTexts, checkQuery, buildMatchQuery, snippetParts,
-};
+module.exports = { MAX_PARA, HIT_START, HIT_END, paragraphTexts, checkQuery, buildMatchQuery, snippetParts };

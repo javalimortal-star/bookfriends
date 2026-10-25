@@ -1,25 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-
-// A throwaway database: src/db opens DATA_DIR on require.
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bf-ratings-'));
-process.env.DATA_DIR = dir;
-const { db } = require('../src/db');
-require('../src/db/migrate').migrate();
+const { db, addUser } = require('./fresh-db');
 const ratings = require('../src/books/ratings');
 const { imageExt, parseDetails } = require('../src/books/details');
 
-test.after(() => {
-  db.close();
-  fs.rmSync(dir, { recursive: true, force: true });
-});
-
-const addUser = db.prepare("INSERT INTO users (email, password_hash, role, display_name, created_at) VALUES (?, 'x', 'reader', ?, 0)");
-const ana = Number(addUser.run('ana@example.com', 'Ana').lastInsertRowid);
-const pedro = Number(addUser.run('pedro@example.com', null).lastInsertRowid);
+const ana = addUser('ana@example.com', 'reader', 'Ana');
+const pedro = addUser('pedro@example.com');
 const book = Number(db.prepare("INSERT INTO books (owner_id, title, slug, visibility, created_at) VALUES (?, 'B', 'b', 'public', 0)").run(ana).lastInsertRowid);
 
 test('finish, rate, re-rate and unfinish', () => {

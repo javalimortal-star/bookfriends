@@ -27,7 +27,6 @@ app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'DENY');
   res.locals.user = null;
-  res.locals.googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
   next();
 });
 // Uptime probe: before sessions and parsers, a monitor needs neither.
@@ -45,6 +44,7 @@ app.locals.assetVersion = crypto.createHash('md5')
   .digest('hex').slice(0, 10);
 // Offline reading + phone notifications (public/sw.js); SW_DISABLED=1 turns it off.
 app.locals.swEnabled = process.env.SW_DISABLED !== '1';
+app.locals.googleEnabled = require('./src/auth/google').enabled;
 // Covers are cached for 30 days as immutable: the URL changes with each edit.
 app.locals.displayName = require('./src/users').displayName;
 app.locals.coverUrl = (book) => `/media/book/${book.id}/cover?v=${book.updated_at || book.created_at}`;
@@ -75,22 +75,16 @@ app.use(session({
 
 app.use(loadUser);
 app.use(require('./src/i18n').rememberUserLang);
-// Unread-reply count for the nav bell on every rendered page.
+// The nav's counters: unread notifications (bell); for the owner also open
+// book requests and a warning dot when the backups are in trouble.
 const notifications = require('./src/comments/notifications');
-app.use((req, res, next) => {
-  res.locals.unseenNotifs = req.user ? notifications.unseenCount(req.user.id) : 0;
-  next();
-});
-// Open book requests: a count on the owner's "Book requests" menu item.
 const bookRequests = require('./src/requests/service');
-app.use((req, res, next) => {
-  res.locals.openRequests = req.user && req.user.role === 'owner' ? bookRequests.openCount() : 0;
-  next();
-});
-// Owner only: a warning dot on the avatar when the backups are in trouble.
 const backups = require('./src/backup');
 app.use((req, res, next) => {
-  res.locals.backupAlert = !!(req.user && req.user.role === 'owner') && backups.needsAttention();
+  const owner = !!(req.user && req.user.role === 'owner');
+  res.locals.unseenNotifs = req.user ? notifications.unseenCount(req.user.id) : 0;
+  res.locals.openRequests = owner ? bookRequests.openCount() : 0;
+  res.locals.backupAlert = owner && backups.needsAttention();
   next();
 });
 

@@ -118,9 +118,8 @@ function deleteRequest(requestId) {
 
 // ---------- phone notifications, in each recipient's own language ----------
 
-// users.lang may not exist yet on every database, hence SELECT *.
 function langOf(userId) {
-  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const row = db.prepare('SELECT lang FROM users WHERE id = ?').get(userId);
   return row && LANGS[row.lang] ? row.lang : 'en';
 }
 
@@ -161,7 +160,5 @@ function notifyDone(request, book, doneBy) {
 }
 
 module.exports = {
-  LIMITS, cleanLine, cleanNote, normTitle, validate, suggestBook,
-  listOpen, listFinished, openCount, getRequest, findOpenDuplicate, createRequest,
-  toggleVote, setStatus, deleteRequest, notifyCreated, notifyDone, langOf,
+  normTitle, validate, suggestBook, listOpen, listFinished, openCount, getRequest, findOpenDuplicate, createRequest, toggleVote, setStatus, deleteRequest, notifyCreated, notifyDone,
 };
