@@ -6,6 +6,7 @@ const multer = require('multer');
 const { requireAuth, requireOwner, canViewBook } = require('../auth/middleware');
 const books = require('./service');
 const bookmarks = require('./bookmarks');
+const ratings = require('./ratings');
 const search = require('./search');
 const { checkQuery } = require('./search-text');
 const commentsService = require('../comments/service');
@@ -34,7 +35,7 @@ const upload = multer({
 });
 
 router.get('/', (req, res) => {
-  const sort = ['added', 'title', 'author'].includes(req.query.sort) ? req.query.sort : 'added';
+  const sort = ['added', 'title', 'author', 'series'].includes(req.query.sort) ? req.query.sort : 'added';
   const shelf = books.getShelf(req.user, sort);
   // The most recently read book gets a "Continue reading" card above the shelf
   let current = null;
@@ -58,6 +59,7 @@ router.get('/', (req, res) => {
   const currentFriend = current ? friends.closestFriend(current.bookmarkIdx, friendsByBook.get(current.id)) : null;
   res.render('shelf', {
     title: 'BookFriends', books: shelf, sort, current, currentChapter, friendsByBook, currentFriend,
+    ratingsByBook: ratings.shelfSummary(req.user && req.user.id),
   });
 });
 
@@ -181,6 +183,7 @@ router.get('/book/:slug/:idx', (req, res) => {
   }
 
   res.render('reader', {
+    finished: req.user ? !!ratings.mine(req.user.id, book.id) : false,
     title: `${chapter.title} — ${book.title}`,
     book,
     chapter,

@@ -1,0 +1,18 @@
+<%# Friends' progress chips; hereIdx = the chapter being read (-1 on the book page). %>
+<% if (friends.length > 0) { %>
+  <section class="friends-strip" aria-labelledby="friends-strip-title">
+    <h2 id="friends-strip-title" class="friends-strip-title"><%= t('Friends reading this book') %></h2>
+    <% if (typeof friendsHere !== 'undefined' && friendsHere > 0) { %>
+      <p class="friends-here"><%= t.n('{names} is reading this chapter too', '{names} are reading this chapter too', friendsHere, { names: friendsHereNames }) %></p>
+    <% } %>
+    <ul class="friend-chips">
+      <% for (const f of friends) { %>
+        <li class="friend-chip<%= f.chapterIdx === hereIdx ? ' here' : '' %>" title="<%= f.when %>">
+          <span class="friend-avatar avatar-<%= f.tone %>" aria-hidden="true"><%= f.initial %></span>
+          <span class="friend-chip-name"><%= f.name %></span>
+          <span class="friend-chip-ch"><%= f.chapterIdx === hereIdx ? t('this chapter') : t('ch. {n}', { n: f.chapter }) %></span>
+        </li>
+      <% } %>
+    </ul>
+  </section>
+<% } %>

@@ -2,9 +2,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Source+Serif+4:wght@400;600&family=Inter:wght@400;600&family=Merriweather:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
 <div class="reader-titlebar">
   <a class="titlebar-back" href="/" title="<%= t('Back to shelf') %>">‹</a>
-  <% if (book.cover_path) { %><img class="titlebar-cover" src="/media/book/<%= book.id %>/cover" alt=""><% } %>
+  <% if (book.cover_path) { %><a href="/book/<%= book.slug %>"><img class="titlebar-cover" src="<%= coverUrl(book) %>" alt=""></a><% } %>
   <div class="titlebar-text">
-    <div class="titlebar-book"><%= book.title %></div>
+    <a class="titlebar-book" href="/book/<%= book.slug %>"><%= book.title %></a>
     <div class="titlebar-chapter"><%= chapter.title %></div>
   </div>
   <div class="titlebar-nav">
@@ -33,23 +33,17 @@
   <% if (nextIdx !== null) { %>
     <a class="next-chapter-btn" href="/book/<%= book.slug %>/<%= nextIdx %>"><%= t('NEXT CHAPTER') %></a>
   <% } %>
-  <% if (friends.length > 0) { %>
-    <section class="friends-strip" aria-labelledby="friends-strip-title">
-      <h2 id="friends-strip-title" class="friends-strip-title"><%= t('Friends reading this book') %></h2>
-      <% if (friendsHere > 0) { %>
-        <p class="friends-here"><%= t.n('{names} is reading this chapter too', '{names} are reading this chapter too', friendsHere, { names: friendsHereNames }) %></p>
+  <% if (nextIdx === null) { %>
+    <section class="book-end">
+      <p class="book-end-title"><%= t('You reached the end of {title}!', { title: book.title }) %></p>
+      <% if (user && !finished) { %>
+        <form method="post" action="/book/<%= book.slug %>/finish"><button class="btn" type="submit"><%= t('Mark as finished and rate it') %></button></form>
+      <% } else { %>
+        <a class="btn btn-ghost" href="/book/<%= book.slug %>#ratings"><%= t('See what your friends thought') %></a>
       <% } %>
-      <ul class="friend-chips">
-        <% for (const f of friends) { %>
-          <li class="friend-chip<%= f.chapterIdx === chapter.idx ? ' here' : '' %>" title="<%= f.when %>">
-            <span class="friend-avatar avatar-<%= f.tone %>" aria-hidden="true"><%= f.initial %></span>
-            <span class="friend-chip-name"><%= f.name %></span>
-            <span class="friend-chip-ch"><%= f.chapterIdx === chapter.idx ? t('this chapter') : t('ch. {n}', { n: f.chapter }) %></span>
-          </li>
-        <% } %>
-      </ul>
     </section>
   <% } %>
+  <%- include('partials/friends-strip', { hereIdx: chapter.idx }) %>
   <section id="comments" class="chapter-comments">
     <div class="comments-header">
       <h2 id="chapter-comments-title"><%= t.n('{count} comment', '{count} comments', chapterCommentCount) %></h2>

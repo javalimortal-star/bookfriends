@@ -79,6 +79,7 @@ const SHELF_ORDER = {
   added: 'created_at DESC',
   title: 'title COLLATE NOCASE, created_at DESC',
   author: 'author IS NULL, author COLLATE NOCASE, title COLLATE NOCASE',
+  series: 'series IS NULL, series COLLATE NOCASE, series_index, title COLLATE NOCASE',
 };
 
 function getShelf(user, sort) {

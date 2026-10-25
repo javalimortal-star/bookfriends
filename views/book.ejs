@@ -1,0 +1,106 @@
+<%- include('partials/head') %>
+<% const read = mark ? mark.chapter_idx : null; const iFinished = !!mine; %>
+<article class="book-page">
+  <div class="book-hero">
+    <div class="book-hero-cover">
+      <% if (book.cover_path) { %>
+        <img class="book-cover" src="<%= coverUrl(book) %>" alt="<%= t('Cover of {title}', { title: book.title }) %>">
+      <% } else { %>
+        <div class="book-cover book-cover-placeholder"><%= book.title %></div>
+      <% } %>
+    </div>
+    <div class="book-hero-info">
+      <% if (book.series) { %><p class="book-page-series"><%= book.series %><% if (book.series_index !== null) { %> #<%= book.series_index %><% } %></p><% } %>
+      <h1 class="book-page-title"><%= book.title %></h1>
+      <% if (book.author) { %><p class="book-page-author"><%= book.author %></p><% } %>
+      <p class="book-page-meta">
+        <%= t.n('{count} chapter', '{count} chapters', chapterTotal) %>
+        <% if (ratings.count) { %> · <span class="stars" aria-hidden="true"><%= stars(ratings.avg) %></span> <%= t.n('{avg} from {count} rating', '{avg} from {count} ratings', ratings.count, { avg: ratings.avg.toFixed(1) }) %><% } %>
+      </p>
+      <div class="book-page-actions">
+        <% if (read !== null) { %>
+          <a class="btn" href="/book/<%= book.slug %>/<%= read %>"><%= t('Continue reading') %></a>
+          <span class="hint"><%= markTitle || t('Chapter {n}', { n: read + 1 }) %> · <%= read + 1 %>/<%= chapterTotal %></span>
+        <% } else { %>
+          <a class="btn" href="/book/<%= book.slug %>/0"><%= t('Start reading') %></a>
+        <% } %>
+      </div>
+      <div class="book-page-links">
+        <a class="download-link" href="/book/<%= book.slug %>/download" title="<%= t('Download the EPUB (works with Send to Kindle)') %>">⤓ <%= t('Download EPUB') %></a>
+        <% if (user && user.role === 'owner') { %><a class="download-link" href="/book/<%= book.slug %>/edit">✎ <%= t('Edit details') %></a><% } %>
+      </div>
+    </div>
+  </div>
+
+  <% if (book.description) { %>
+    <div class="book-description"><% for (const para of book.description.split('\n\n')) { %><p><%= para %></p><% } %></div>
+  <% } %>
+
+  <%- include('partials/friends-strip', { hereIdx: -1 }) %>
+
+  <section class="book-section" id="rate">
+    <h2 class="section-title"><%= t('Your rating') %></h2>
+    <% if (!user) { %>
+      <p class="hint"><a href="/login"><%= t('Log in') %></a> <%= t('to rate this book and see what your friends thought.') %></p>
+    <% } else if (!iFinished) { %>
+      <p class="hint"><%= t('Finished it? Mark it as finished, then give it stars and a few words for your friends.') %></p>
+      <form method="post" action="/book/<%= book.slug %>/finish"><button class="btn" type="submit"><%= t('Mark as finished') %></button></form>
+    <% } else { %>
+      <p class="finished-note">✓ <%= t('You finished this book {when}.', { when: ago(mine.finished_at) }) %></p>
+      <form class="rating-form" method="post" action="/book/<%= book.slug %>/rate">
+        <fieldset class="star-picker">
+          <legend class="field-label"><%= t('Stars') %></legend>
+          <% for (let s = 5; s >= 1; s--) { %>
+            <input type="radio" id="star-<%= s %>" name="stars" value="<%= s %>"<%= mine.stars === s ? ' checked' : '' %>>
+            <label for="star-<%= s %>" title="<%= t.n('{count} star', '{count} stars', s) %>"><span aria-hidden="true">★</span><span class="visually-hidden"><%= t.n('{count} star', '{count} stars', s) %></span></label>
+          <% } %>
+        </fieldset>
+        <label class="field"><span><%= t('Review (optional)') %></span>
+          <textarea name="review" maxlength="1000" rows="4" placeholder="<%= t('What did you think? Careful with spoilers.') %>"><%= mine.review || '' %></textarea>
+        </label>
+        <div class="rating-actions">
+          <button class="btn" type="submit"><%= t('Save rating') %></button>
+        </div>
+      </form>
+      <form method="post" action="/book/<%= book.slug %>/unfinish" class="unfinish-form" onsubmit="return confirm(<%= JSON.stringify(t('Mark this book as not finished? Your stars and review are removed.')) %>)">
+        <button class="link-btn" type="submit"><%= t('Not finished after all') %></button>
+      </form>
+    <% } %>
+  </section>
+
+  <section class="book-section" id="ratings">
+    <h2 class="section-title"><%= t('Ratings from friends') %> <span class="section-count"><%= ratings.list.length %></span></h2>
+    <% if (ratings.list.length === 0) { %>
+      <p class="empty"><%= t('Nobody has finished this book yet.') %></p>
+    <% } else { %>
+      <% const reviews = ratings.list.filter((r) => r.review); %>
+      <ul class="rating-list">
+        <% for (const r of ratings.list) { %>
+          <li class="rating-item">
+            <span class="comment-avatar avatar-<%= r.tone %>" aria-hidden="true"><%= r.initial %></span>
+            <div class="rating-main">
+              <div class="rating-head">
+                <span class="comment-user"><%= r.name %></span>
+                <% if (r.stars) { %><span class="stars" aria-label="<%= t.n('{count} star', '{count} stars', r.stars) %>"><%= stars(r.stars) %></span><% } else { %><span class="hint"><%= t('finished, no stars yet') %></span><% } %>
+                <span class="comment-time"><%= ago(r.updatedAt) %></span>
+              </div>
+              <% if (r.review && iFinished) { %><p class="rating-review"><%= r.review %></p><% } %>
+            </div>
+          </li>
+        <% } %>
+      </ul>
+      <% if (reviews.length && !iFinished) { %>
+        <details class="spoiler-reviews">
+          <summary><%= t.n('Show {count} review (it may contain spoilers)', 'Show {count} reviews (they may contain spoilers)', reviews.length) %></summary>
+          <ul class="rating-list">
+            <% for (const r of reviews) { %>
+              <li class="rating-item"><span class="comment-avatar avatar-<%= r.tone %>" aria-hidden="true"><%= r.initial %></span>
+                <div class="rating-main"><span class="comment-user"><%= r.name %></span><p class="rating-review"><%= r.review %></p></div></li>
+            <% } %>
+          </ul>
+        </details>
+      <% } %>
+    <% } %>
+  </section>
+</article>
+<%- include('partials/footer') %>

@@ -164,3 +164,17 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);
+
+-- A reader who finished a book; stars (1-5) and a short review are optional
+-- and can be added or changed later.
+CREATE TABLE IF NOT EXISTS book_ratings (
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  stars INTEGER CHECK (stars BETWEEN 1 AND 5),
+  review TEXT,
+  finished_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, book_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_book_ratings_book ON book_ratings(book_id);

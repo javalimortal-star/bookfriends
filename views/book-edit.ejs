@@ -1,0 +1,38 @@
+<%- include('partials/head') %>
+<div class="form-card book-edit-card">
+  <h1><%= t('Edit details') %></h1>
+  <p class="hint"><a href="/book/<%= book.slug %>">‹ <%= book.title %></a></p>
+  <% if (error) { %><p class="form-error"><%= error %></p><% } %>
+  <form method="post" action="/book/<%= book.slug %>/edit" enctype="multipart/form-data">
+    <label class="field"><span><%= t('Title') %></span>
+      <input type="text" name="title" maxlength="200" required value="<%= values.title || '' %>">
+    </label>
+    <label class="field"><span><%= t('Author') %></span>
+      <input type="text" name="author" maxlength="120" value="<%= values.author || '' %>">
+    </label>
+    <div class="field-row">
+      <label class="field field-grow"><span><%= t('Series (optional)') %></span>
+        <input type="text" name="series" maxlength="120" value="<%= values.series || '' %>" placeholder="<%= t('e.g. The Lord of the Rings') %>">
+      </label>
+      <label class="field field-narrow"><span><%= t('Number') %></span>
+        <input type="text" name="series_index" inputmode="decimal" maxlength="8" value="<%= values.series_index === null || values.series_index === undefined ? '' : values.series_index %>" placeholder="1">
+      </label>
+    </div>
+    <label class="field"><span><%= t('Description (optional)') %></span>
+      <textarea name="description" maxlength="2000" rows="6"><%= values.description || '' %></textarea>
+    </label>
+    <div class="field">
+      <span><%= t('Cover') %></span>
+      <div class="cover-edit">
+        <% if (book.cover_path) { %><img class="cover-edit-preview" src="<%= coverUrl(book) %>" alt=""><% } %>
+        <div class="cover-edit-controls">
+          <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/gif">
+          <span class="hint"><%= t('JPEG, PNG, WebP or GIF, up to {mb} MB. Leave empty to keep the current cover.', { mb: coverMaxMb }) %></span>
+          <% if (book.cover_path) { %><label class="check-field"><input type="checkbox" name="remove_cover" value="1"> <span><%= t('Remove the cover') %></span></label><% } %>
+        </div>
+      </div>
+    </div>
+    <button class="btn" type="submit"><%= t('Save') %></button>
+  </form>
+</div>
+<%- include('partials/footer') %>

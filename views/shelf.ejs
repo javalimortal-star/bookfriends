@@ -7,7 +7,7 @@
       <h1 class="hero-title"><%= t('Pick up where you left off') %></h1>
       <a class="continue-card<%= currentFriend ? ' with-friend' : '' %>" href="/book/<%= current.slug %>/<%= current.bookmarkIdx %>">
         <% if (current.cover_path) { %>
-          <img class="continue-cover" src="/media/book/<%= current.id %>/cover" alt="">
+          <img class="continue-cover" src="<%= coverUrl(current) %>" alt="">
         <% } else { %>
           <div class="continue-cover book-cover-placeholder"><%= current.title %></div>
         <% } %>
@@ -56,6 +56,7 @@
       <option value="/?sort=added" <%= sort === 'added' ? 'selected' : '' %>><%= t('Date added') %></option>
       <option value="/?sort=title" <%= sort === 'title' ? 'selected' : '' %>><%= t('Name A–Z') %></option>
       <option value="/?sort=author" <%= sort === 'author' ? 'selected' : '' %>><%= t('Author') %></option>
+      <% if (books.some((b) => b.series)) { %><option value="/?sort=series" <%= sort === 'series' ? 'selected' : '' %>><%= t('Series') %></option><% } %>
     </select>
   <% } %>
 </div>
@@ -68,17 +69,25 @@
 <div class="shelf">
   <% for (const book of books) { %>
     <article class="book-card">
-      <a class="book-cover-link" href="/book/<%= book.slug %>/0">
+      <a class="book-cover-link" href="/book/<%= book.slug %>">
         <% if (user && user.role === 'owner' && book.visibility !== 'public') { %><span class="cover-badge"><%= t('Private') %></span><% } %>
         <% if (book.cover_path) { %>
-          <img class="book-cover" src="/media/book/<%= book.id %>/cover" alt="<%= t('Cover of {title}', { title: book.title }) %>" loading="lazy">
+          <img class="book-cover" src="<%= coverUrl(book) %>" alt="<%= t('Cover of {title}', { title: book.title }) %>" loading="lazy">
         <% } else { %>
           <div class="book-cover book-cover-placeholder"><%= book.title %></div>
         <% } %>
       </a>
       <div class="book-meta">
-        <a class="book-title" href="/book/<%= book.slug %>/0"><%= book.title %></a>
+        <a class="book-title" href="/book/<%= book.slug %>"><%= book.title %></a>
         <% if (book.author) { %><div class="book-author"><%= book.author %></div><% } %>
+        <% if (book.series) { %><div class="book-series"><%= book.series %><% if (book.series_index !== null) { %> #<%= book.series_index %><% } %></div><% } %>
+        <% const rated = ratingsByBook.get(book.id); %>
+        <% if (rated && (rated.count || rated.mine)) { %>
+          <div class="book-rating">
+            <% if (rated.count) { %><span class="stars" aria-label="<%= t('{avg} out of 5 stars', { avg: rated.avg.toFixed(1) }) %>"><%= stars(rated.avg) %></span> <span class="book-rating-num"><%= rated.avg.toFixed(1) %> · <%= rated.count %></span><% } %>
+            <% if (rated.mine) { %><span class="finished-badge">✓ <%= t('Finished') %></span><% } %>
+          </div>
+        <% } %>
         <% const reading = friendsByBook.get(book.id); %>
         <% if (reading) { %>
           <%# tap the avatars for the full list; a <details> needs no script %>
@@ -117,6 +126,7 @@
           <details class="book-manage">
             <summary><%= t('Manage') %></summary>
             <div class="book-manage-body">
+              <a class="btn btn-small btn-ghost" href="/book/<%= book.slug %>/edit"><%= t('Edit details') %></a>
               <form method="post" action="/book/<%= book.slug %>/visibility" class="inline-form">
                 <button class="btn btn-small btn-ghost" type="submit"><%= book.visibility === 'public' ? t('Make private') : t('Make public') %></button>
               </form>

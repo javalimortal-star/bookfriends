@@ -19,6 +19,11 @@ function migrate() {
   ensureColumn('notifications', 'kind', "kind TEXT NOT NULL DEFAULT 'reply'");
   // @names as written, found once when the comment is saved (JSON array)
   ensureColumn('comments', 'mentions', 'mentions TEXT');
+  // book details the owner can edit after upload; updated_at versions the cover URL
+  ensureColumn('books', 'description', 'description TEXT');
+  ensureColumn('books', 'series', 'series TEXT');
+  ensureColumn('books', 'series_index', 'series_index REAL');
+  ensureColumn('books', 'updated_at', 'updated_at INTEGER');
   // 0 hides the user's bookmarks from the friends' progress on shelf and reader
   ensureColumn('users', 'share_progress', 'share_progress INTEGER NOT NULL DEFAULT 1');
   // last language the user browsed in, so push notifications can use it
