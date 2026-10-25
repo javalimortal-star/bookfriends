@@ -1,46 +1,77 @@
 # BookFriends
 
-Share EPUB books with your friends: a responsive website with a Wuxiaworld-style dark
-reader, per-paragraph comments (badge + slide-out panel), end-of-chapter comment
-sections, replies and like/dislike votes. Includes light/sepia themes, a font options
-panel, and EPUB download for Send-to-Kindle.
+**A little online library for friends: read the same books and talk about them right in the margins, paragraph by paragraph.**
 
-> **About this project:** built end-to-end with AI (Claude Code) — requirements were
-> crystallized through a Socratic deep-interview, the plan was consensus-reviewed by
-> architect/critic agents, and the implementation went through automated QA plus
-> independent security and code review passes.
+Live at **[bookfriends.com.br](https://bookfriends.com.br)** · English · Português · Español
 
-- **Only the owner uploads books** — everyone else registers to read public books and comment.
-- Each book is **public** (anyone visiting the shelf can read it) or **private** (owner only).
-- Public books are readable without an account; commenting requires login.
+![BookFriends on a phone: the bookshelf, the reader, paragraph comments with a spoiler and an @mention, and a book page with ratings](docs/screenshots/phones.png)
 
-## Run locally
+## What it does
+
+**Reading**
+- A Wuxiaworld-style reader for EPUB books: dark, light and sepia themes, six fonts, adjustable text size and line spacing.
+- Your place is saved down to the paragraph. Swipe (or press ← →) to change chapters.
+- Search inside a book, accent-insensitive ("joao" finds "João").
+- Reads offline: the next chapters are saved on the phone automatically. Installable as an app.
+
+**Together**
+- Comments on any paragraph (a small count bubble after its last word) or on the whole chapter, with replies, likes, @mentions and a spoiler blur.
+- Phone notifications when a friend replies to you or mentions you.
+- See where each friend is in a book, on the shelf and in the reader.
+- Finished books, 1–5 star ratings and reviews; reviews stay hidden until you finish the book yourself.
+- Book requests with "me too" votes.
+
+**For the owner**
+- Upload EPUBs, keep books private or public, and edit a book's title, author, series, description and cover.
+- Nightly backups, plus an off-site copy on a home Windows PC that one pasted command sets up. The Users page shows whether it's working, and GitHub emails you if the site goes down or the backups stop.
+
+The site speaks English, Brazilian Portuguese and Spanish, picked from the browser's language and switchable at the bottom of every page.
+
+![The bookshelf on a computer, light theme](docs/screenshots/desktop.png)
+
+## How it was built
+
+BookFriends is the first project in a portfolio of AI-built software. Its owner isn't a programmer: every line was written by [Claude Code](https://claude.com/claude-code) from plain-language requests ("make the dark theme look like this screenshot", "the bar jumps when I scroll up on my phone").
+
+- **Features in parallel.** Big batches were split across several AI agents, each working in its own git worktree, then merged and integrated.
+- **Independent checks before every release.** A separate reviewer agent read the merged code, and an integration-test agent re-ran every feature's test suite against it. Between them they caught a denial-of-service in @mention parsing, notifications that silently switched themselves off, and a scroll-anchoring bug that moved readers' bookmarks.
+- **Tested like a reader.** Changes are checked in headless Chrome (Playwright) at phone and desktop sizes, in dark and light themes and in Portuguese. Visual cleanups are proven by diffing every element's computed style before and after.
+
+## Tech
+
+Node.js and Express with server-rendered EJS pages; SQLite through better-sqlite3 (WAL, FTS5 full-text search); plain JavaScript in the browser with no build step; a service worker for offline reading and Web Push. Production runs on a free 1 GB Oracle Cloud VM behind Caddy.
+
+```
+server.js           app setup, middleware order, routers
+src/                one folder per area: auth, books, comments, friends, requests, push, offline, backup, i18n, db
+views/              EJS pages and partials
+public/             reader.js (the reading page), push.js, sw.js, app.css, icons
+test/               node --test suites (npm test)
+scripts/backup.js   nightly backup
+```
+
+## Run it locally
 
 ```sh
-cp .env.example .env   # set OWNER_EMAIL + SESSION_SECRET
+cp .env.example .env   # set OWNER_EMAIL and SESSION_SECRET
 npm install
 npm start              # http://localhost:3000
 ```
 
-Register with the exact `OWNER_EMAIL` address to get the owner account, then use
-**Upload** to add an `.epub`. New books start private; use **Make public** on the shelf
-to share them.
-
-## Tests & lint
+Register with the exact `OWNER_EMAIL` address to get the owner account, then use **Upload** to add an `.epub`. New books start private; **Manage → Make public** on the shelf shares them.
 
 ```sh
-npm test    # EPUB pipeline tests against pg345-images-3.epub (Dracula)
+npm test         # unit tests (EPUB parsing against the Dracula fixture, search, mentions, push, ...)
 npm run lint
 ```
 
-## Deploy — any $5 VPS
+## Deploy on a small server
 
 ```sh
-# on the server
 git clone <this repo> && cd bookfriends
-cp .env.example .env            # set OWNER_EMAIL, SESSION_SECRET, NODE_ENV=production
+cp .env.example .env            # OWNER_EMAIL, SESSION_SECRET, NODE_ENV=production
 npm ci --omit=dev
-node server.js                  # or run under systemd
+node server.js                  # run it under systemd so it restarts and starts on boot
 ```
 
 Put [Caddy](https://caddyserver.com) in front for automatic HTTPS:
@@ -51,79 +82,45 @@ example.com {
 }
 ```
 
+To update: `git pull`, `npm install --omit=dev` when `package.json` changed, then restart the service.
+
 ## Google login (optional)
 
-The login/register pages show a **Continue with Google** button when Google OAuth
-credentials are configured; without them the button is hidden and email/password
-login works as usual.
+The login and register pages show **Continue with Google** when Google OAuth credentials are set; otherwise email and password work as usual.
 
-1. Go to https://console.cloud.google.com and create (or pick) a project.
-2. **APIs & Services → OAuth consent screen** → External → fill in the app name
-   and your email → publish the app (the basic email/profile scopes need no
-   Google verification).
-3. **APIs & Services → Credentials → Create credentials → OAuth client ID** →
-   Application type **Web application** → under **Authorized redirect URIs** add
-   your site's callback, e.g. `https://your-site.example/auth/google/callback`
-   (also add `http://localhost:3000/auth/google/callback` for local testing).
-4. Add both values to `.env` and restart the server:
+1. In https://console.cloud.google.com, create (or pick) a project.
+2. **APIs & Services → OAuth consent screen**: External, fill in the app name and your email, and publish it. The basic email and profile scopes need no Google verification.
+3. **APIs & Services → Credentials → Create credentials → OAuth client ID**: type **Web application**, and under **Authorized redirect URIs** add `https://your-site.example/auth/google/callback` (plus `http://localhost:3000/auth/google/callback` for local testing).
+4. Put both values in `.env` and restart:
 
    ```
    GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
    GOOGLE_CLIENT_SECRET=xxxxxxxx
    ```
 
-Google accounts are matched to site accounts by email (a Google sign-in with the
-same address logs into the existing account), and the Google profile name becomes
-the initial display name.
+Google accounts match site accounts by email, and the Google profile name becomes the first display name.
 
 ## Backups
 
-`scripts/backup.js` writes a SQLite-safe snapshot of the database (via
-`better-sqlite3`'s backup API — never raw-copy a live WAL database) plus the
-extracted book media to `backups/bookfriends-YYYY-MM-DD.tar.gz`, keeping the
-newest 7. Schedule it nightly on the server:
+`scripts/backup.js` writes a WAL-safe snapshot of the database (better-sqlite3's backup API) plus the book files and the push keys to `backups/bookfriends-YYYY-MM-DD.tar.gz`, keeping the newest 7. Schedule it nightly:
 
 ```cron
 30 3 * * * cd /path/to/bookfriends && /usr/bin/node scripts/backup.js >> ~/backup.log 2>&1
 ```
 
-Off-site copy: set `BACKUP_TOKEN` in `.env` and another machine can download the
-newest archive from `/backup/download?token=...` over HTTPS. For a Windows PC,
-open the site's **Users** page on that PC and follow "Set up the off-site copy on
-your mini PC" in the Backups box: it gives you a ready-made PowerShell command
-(with your token in it) that writes `C:\bookfriends-backups\download-backup.ps1`,
-registers a "BookFriends backup" scheduled task (daily 04:00, as SYSTEM, runs
-later if the PC was off) and downloads the first copy right away. It keeps 30
-days of downloads and logs each run to `C:\bookfriends-backups\backup.log`. Any
-other machine can use curl:
-`curl -fsS -o bookfriends-$(date +%F).tar.gz "https://your-site/backup/download?token=..."`.
+**Off-site copy:** set `BACKUP_TOKEN` in `.env` to a long random string. Then:
+- **On a Windows PC:** open the site's **Users** page there and follow the **Backups** box. It gives a ready-made PowerShell command that creates `C:\bookfriends-backups`, adds a nightly "BookFriends backup" task, and downloads the first copy right away.
+- **Anywhere else:** download the newest archive with
+  `curl -fsS -o bookfriends-$(date +%F).tar.gz "https://your-site/backup/download?token=..."`.
 
-Every finished download is recorded (a `backup_downloads` row and a
-`backup downloaded:` line in the server log), so the owner-only Backups box on the
-Users page shows when the off-site copy last happened: OK under 36 hours, Warning
-up to 72, Problem after that (plus a red dot on the owner's avatar).
-`/healthz` reports the same as coarse states for the uptime check in
-`.github/workflows/uptime.yml`; see [docs/MONITORING.md](docs/MONITORING.md).
+The Backups box shows when the off-site copy last arrived: OK under 36 hours, Warning up to 72, Problem after that. `/healthz` reports the same for the uptime checks in `.github/workflows/uptime.yml`; see [docs/MONITORING.md](docs/MONITORING.md).
 
-Restore: stop the server, then extract into a fresh data dir:
-`tar -xzf bookfriends-YYYY-MM-DD.tar.gz -C data`.
+**Restore:** stop the server, then `tar -xzf bookfriends-YYYY-MM-DD.tar.gz -C data`.
 
 ## Security notes
 
-- **Register the owner account immediately after deploying.** The first registration
-  using `OWNER_EMAIL` becomes the owner — until you register, anyone who guesses that
-  email could claim it. If registration ever says your owner email is taken, someone
-  squatted it: wipe `DATA_DIR` (or delete that user row) and register again.
-- Login, registration, password changes and comment posting are rate-limited per
-  IP (`src/rate-limit.js`); successful logins don't count against the limit.
-- Known accepted trade-offs for a friends-scale site: registration reveals whether
-  an email exists, and there is no upload decompression-bomb guard (uploads are
-  owner-only).
-
-## Architecture
-
-Single Node process: Express + EJS server-rendered pages, `better-sqlite3` (WAL) for
-data and sessions, vanilla-JS progressive enhancement for the reader. EPUBs are parsed
-at upload (NCX table of contents → chapters, fragment-anchor slicing, sanitized HTML,
-stable `data-p` paragraph anchors); book images are re-served through access-checked
-`/media` routes so private books stay private. Everything mutable lives in `DATA_DIR`.
+- **Register the owner account right after deploying.** The first registration with `OWNER_EMAIL` becomes the owner.
+- Logins, sign-ups, password changes, comments, searches, book requests and backup downloads are rate-limited per IP (`src/rate-limit.js`).
+- Book files are only served through access-checked `/media` routes, so private books stay private, and uploaded covers are checked by their bytes.
+- Push endpoints must be a real push service, so users can't point the server at arbitrary hosts.
+- If the service worker ever misbehaves, `SW_DISABLED=1` in `.env` makes every browser remove it on its next visit.
