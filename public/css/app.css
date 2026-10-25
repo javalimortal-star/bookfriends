@@ -1,6 +1,6 @@
-/* BookFriends — Wuxiaworld-style near-black dark theme with the logo's
-   orange and teal. Greys are neutral (R = G = B) so Samsung Internet's wider
-   colour space can't tint them (see the light theme below). */
+/* BookFriends — Wuxiaworld-style near-black theme with the logo's orange and
+   teal. Greys stay neutral (R = G = B): Samsung Internet renders in the wider
+   DCI-P3 space, which exaggerates any tint (a cream white looked yellow). */
 :root {
   --bg: #050505;
   --surface: #121212;
@@ -34,10 +34,15 @@
   --font-display: "Fraunces", Georgia, "Times New Roman", serif;
 }
 
-/* Light and sepia reading themes override the dark defaults above.
-   Light uses pure greys (R = G = B): Samsung Internet shows pages in the
-   wider DCI-P3 colour space where Chrome uses sRGB, which pushes any tint
-   further, so the old cream white looked yellow there. Grey can't shift. */
+/* Light and sepia reading themes override the dark defaults above. */
+html.theme-light, html.theme-sepia {
+  --accent-strong: #e5743a;
+  --badge-bg: var(--surface-2);
+  --badge-text: var(--muted);
+  --badge-opacity: 0.7;
+  --badge-hot-bg: var(--accent-soft);
+  --badge-hot-text: var(--link);
+}
 html.theme-light {
   --bg: #f9f9f9;
   --surface: #ffffff;
@@ -46,7 +51,6 @@ html.theme-light {
   --text: #2b3040;
   --text-strong: #141a2a;
   --muted: #6a7082;
-  --accent-strong: #e5743a;
   --accent-soft: rgba(242, 140, 79, 0.18);
   --link: #b5531a;
   --teal: #2f8f80;
@@ -56,13 +60,7 @@ html.theme-light {
   --nav-bg: rgba(255, 255, 255, 0.86);
   --shadow: 0 12px 32px rgba(20, 20, 20, 0.12);
   --cover-shadow: 0 6px 16px rgba(20, 20, 20, 0.2);
-  --glow-1: rgba(242, 140, 79, 0.16);
   --glow-2: rgba(47, 143, 128, 0.12);
-  --badge-bg: var(--surface-2);
-  --badge-text: var(--muted);
-  --badge-opacity: 0.7;
-  --badge-hot-bg: var(--accent-soft);
-  --badge-hot-text: var(--link);
 }
 html.theme-sepia {
   --bg: #f3e9d2;
@@ -72,7 +70,6 @@ html.theme-sepia {
   --text: #4a3b26;
   --text-strong: #2e2414;
   --muted: #85714f;
-  --accent-strong: #e5743a;
   --accent-soft: rgba(214, 110, 50, 0.16);
   --link: #9a4a17;
   --teal: #3d7d6e;
@@ -84,11 +81,6 @@ html.theme-sepia {
   --cover-shadow: 0 6px 16px rgba(74, 59, 38, 0.28);
   --glow-1: rgba(214, 110, 50, 0.14);
   --glow-2: rgba(61, 125, 110, 0.12);
-  --badge-bg: var(--surface-2);
-  --badge-text: var(--muted);
-  --badge-opacity: 0.7;
-  --badge-hot-bg: var(--accent-soft);
-  --badge-hot-text: var(--link);
 }
 
 * { box-sizing: border-box; }
@@ -142,13 +134,14 @@ a:hover { text-decoration: underline; }
 /* account menu: a <details> dropdown, closed on outside clicks by footer.ejs */
 .nav-menu { position: relative; }
 .nav-avatar {
-  list-style: none; cursor: pointer; user-select: none;
+  position: relative; list-style: none; cursor: pointer; user-select: none;
   display: inline-flex; align-items: center; justify-content: center;
   width: 2.2rem; height: 2.2rem; border-radius: 50%;
   background: var(--teal); color: var(--on-accent); font-weight: 800; font-size: 0.95rem;
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--border);
 }
-.nav-avatar::-webkit-details-marker { display: none; }
+.nav-avatar::-webkit-details-marker, .book-manage summary::-webkit-details-marker, .friends-reading summary::-webkit-details-marker,
+.request-fulfil summary::-webkit-details-marker, .requests-finished > summary::-webkit-details-marker { display: none; }
 .nav-menu[open] .nav-avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
 .nav-menu-list {
   position: absolute; right: 0; top: calc(100% + 0.6rem); z-index: 35;
@@ -198,12 +191,13 @@ a:hover { text-decoration: underline; }
 .auth-sub { color: var(--muted); margin: 0.2rem 0 1.4rem; }
 .field { display: block; margin-bottom: 1rem; }
 .field span { display: block; margin-bottom: 0.35rem; color: var(--muted); font-size: 0.85rem; font-weight: 600; }
-.field input {
+.field input, .field textarea {
   width: 100%; padding: 0.65rem 0.8rem; border-radius: 10px; font: inherit; font-size: 0.95rem;
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.field input:focus, .comment-form textarea:focus {
+.field input { transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.field textarea { display: block; min-height: 4.2rem; resize: vertical; }
+.field input:focus, .field textarea:focus, .comment-form textarea:focus, .search-input:focus {
   outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .field input[type="file"] { padding: 0.5rem; cursor: pointer; }
@@ -331,7 +325,6 @@ a:hover { text-decoration: underline; }
 .book-manage summary {
   list-style: none; cursor: pointer; width: fit-content; color: var(--muted); font-weight: 700;
 }
-.book-manage summary::-webkit-details-marker { display: none; }
 .book-manage summary::after { content: " ▾"; }
 .book-manage[open] summary::after { content: " ▴"; }
 .book-manage summary:hover { color: var(--text-strong); }
@@ -451,7 +444,7 @@ a:hover { text-decoration: underline; }
 .toc-select { max-width: 40vw; text-overflow: ellipsis; }
 
 /* ---------- comments ---------- */
-.comment-form { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.8rem 0 1.4rem; }
+.comment-form { position: relative; display: flex; flex-direction: column; gap: 0.5rem; margin: 0.8rem 0 1.4rem; } /* relative: anchors the @ list */
 .comment-form textarea {
   width: 100%; min-height: 84px; resize: vertical; padding: 0.7rem 0.85rem;
   background: var(--surface); color: var(--text);
@@ -658,37 +651,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 /* ---------- desktop / phone switches ---------- */
 .nav-narrow { display: none; }
 
-@media (prefers-reduced-motion: reduce) {
-  .btn, .book-cover-link, .continue-card, .next-chapter-btn, .notif { transition: none; }
-  .book-cover-link:hover, .continue-card:hover, .next-chapter-btn:hover, .notif:hover { transform: none; }
-}
-
-/* ---------- mobile ---------- */
-@media (max-width: 640px) {
-  .comment-panel { width: 100vw; border-left: 0; }
-  body.panel-open { overflow: hidden; }
-  .toc-select { max-width: 30vw; }
-  .nav { padding: 0.5rem 0.85rem; }
-  .nav-wide { display: none; }
-  .nav-narrow { display: block; }
-  .hero { padding: 1.3rem 1.2rem; border-radius: 18px; margin-bottom: 1.8rem; }
-  .hero-title { font-size: 1.6rem; }
-  .hero-logo { display: none; }
-  .continue-card { gap: 0.8rem; }
-  .shelf { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.8rem 1rem; }
-  .form-card { margin: 1.5rem auto; padding: 1.4rem; }
-  .titlebar-chapter { font-size: 1.05rem; }
-}
-
-/* small phones: room for the longer Portuguese/Spanish nav buttons */
-@media (max-width: 400px) {
-  .nav { gap: 0.5rem; }
-  .nav-brand { font-size: 1.05rem; gap: 0.45rem; }
-  .nav-logo { height: 1.9rem; width: 1.9rem; }
-  .nav-right { gap: 0.4rem; }
-  .nav-right .btn-small { padding: 0.3rem 0.65rem; }
-}
-
 /* ---------- footer: language switch ---------- */
 .site-footer {
   max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 2.5rem;
@@ -706,7 +668,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .lang-current { color: var(--text-strong); font-weight: 700; }
 
 /* ---------- comments: spoiler toggle + blur, @mentions ---------- */
-.comment-form { position: relative; } /* anchors the @ suggestion list */
 .comment-form-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 .comment-form-row .btn { min-height: 40px; }
 /* the checkbox stays real (keyboard, screen readers) but invisible; the pill shows its state */
@@ -764,15 +725,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .mention-option.active { background: var(--accent-soft); color: var(--text-strong); }
 .mention-option .comment-avatar { width: 28px; height: 28px; font-size: 0.8rem; }
 .mention-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-/* hover only where it's real: a tap leaves :hover stuck and would mask the checked state */
-@media (hover: hover) {
-  .spoiler-toggle:hover .spoiler-check:not(:checked) + .spoiler-pill { border-color: var(--muted); color: var(--text); }
-  .spoiler-reveal:hover .spoiler-label { border-color: var(--accent); }
-  .mention-option:hover { background: var(--accent-soft); color: var(--text-strong); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .spoiler-pill { transition: none; }
-}
 
 /* ---------- friends: where they are in each book ---------- */
 /* Small initial circles; the colour comes from .avatar-0 … .avatar-4 (same
@@ -796,7 +748,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.4rem; min-width: 0;
   color: var(--muted); font-size: 0.78rem; line-height: 1.3;
 }
-.friends-reading summary::-webkit-details-marker { display: none; }
 .friends-reading summary:hover, .friends-reading[open] summary { color: var(--text-strong); }
 .friends-line { flex: 1 1 auto; display: flex; align-items: center; gap: 0.3rem; min-width: 0; max-width: 100%; }
 .friends-first { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -885,12 +836,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
   margin: 1.2rem 0 2.2rem; padding: 1.2rem 1.3rem;
   background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
 }
-.field textarea {
-  display: block; width: 100%; min-height: 4.2rem; resize: vertical;
-  padding: 0.65rem 0.8rem; border-radius: 10px; font: inherit; font-size: 0.95rem;
-  border: 1px solid var(--border); background: var(--bg); color: var(--text);
-}
-.field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .requests-heading { margin-bottom: 0.2rem; }
 .request-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 .request {
@@ -921,7 +866,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 /* three owner buttons fit on one line of a 360px phone */
 .request-actions .btn-small { padding: 0.3rem 0.7rem; }
 .request-fulfil summary { list-style: none; -webkit-tap-highlight-color: transparent; }
-.request-fulfil summary::-webkit-details-marker { display: none; }
 .request-fulfil[open] { flex-basis: 100%; }
 .request-fulfil-body {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.55rem; margin-top: 0.55rem; padding: 0.75rem;
@@ -940,17 +884,12 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
   list-style: none; cursor: pointer; width: fit-content; -webkit-tap-highlight-color: transparent;
   color: var(--muted); font-weight: 700; display: flex; align-items: baseline; gap: 0.4rem;
 }
-.requests-finished > summary::-webkit-details-marker { display: none; }
 .requests-finished > summary::after { content: "▾"; }
 .requests-finished[open] > summary::after { content: "▴"; }
 .requests-finished > summary:hover { color: var(--text-strong); }
 .request-closed .request-title { font-size: 0.98rem; }
-@media (max-width: 400px) {
-  .request { padding: 0.8rem 0.85rem; }
-}
 
 /* ---------- backups status (owner only: /users box, avatar warning dot) ---------- */
-.nav-avatar { position: relative; }
 .avatar-dot {
   position: absolute; top: -0.1rem; right: -0.1rem; width: 0.7rem; height: 0.7rem; border-radius: 50%;
   background: var(--danger); box-shadow: 0 0 0 2px var(--surface);
@@ -1020,7 +959,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .search-form .btn { flex: 0 0 auto; }
 .search-note {
   margin: 0 0 1rem; padding: 0.6rem 0.85rem; border-radius: 10px;
@@ -1067,9 +1005,6 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .swipe-hint.show { opacity: 1; transform: translateY(-50%) scale(1); }
 .swipe-hint.swipe-next { right: 1rem; }
 .swipe-hint.swipe-prev { left: 1rem; }
-@media (prefers-reduced-motion: reduce) {
-  .swipe-hint { transition: none; }
-}
 
 /* ---------- offline reading + phone notifications ---------- */
 /* footer.ejs moves the banner to the top of the page while offline */
@@ -1092,7 +1027,6 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
 /* the offline page is saved logged out: no account buttons, no (online-only) language links */
 .offline-page .nav-right, .offline-page .lang-switch, .offline-page .offline-banner { display: none; }
 
-.push-card [hidden] { display: none; }
 .push-note { margin: 0.4rem 0 0.6rem; }
 .push-steps { margin: 0 0 0.4rem; padding-left: 1.3rem; font-size: 0.92rem; }
 .push-steps li + li { margin-top: 0.25rem; }
@@ -1104,7 +1038,6 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
   margin: -0.4rem 0 1rem; padding: 0.6rem 0.9rem; border-radius: var(--radius);
   background: var(--teal-soft); font-size: 0.9rem;
 }
-.push-hint[hidden] { display: none; }
 
 /* ---------- book page: details, finished, ratings; owner's edit form ---------- */
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -1138,14 +1071,6 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
 .star-picker label { font-size: 2rem; line-height: 1; color: var(--surface-2); cursor: pointer; padding: 0.1rem; -webkit-tap-highlight-color: transparent; }
 .star-picker input:checked ~ label { color: var(--accent); }
 .star-picker input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-@media (hover: hover) {
-  .star-picker label:hover, .star-picker label:hover ~ label { color: var(--accent-strong); }
-}
-.rating-form textarea {
-  width: 100%; padding: 0.7rem 0.85rem; border-radius: var(--radius); font: inherit; resize: vertical;
-  background: var(--surface); color: var(--text); border: 1px solid var(--border);
-}
-.rating-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .unfinish-form { margin-top: 0.6rem; }
 .rating-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
 .rating-item { display: flex; gap: 0.75rem; }
@@ -1165,11 +1090,6 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
 .book-end-title { margin: 0 0 0.9rem; color: var(--text-strong); font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; }
 
 .book-edit-card { max-width: 560px; }
-.field textarea {
-  width: 100%; padding: 0.65rem 0.8rem; border-radius: 10px; font: inherit; font-size: 0.95rem; resize: vertical;
-  border: 1px solid var(--border); background: var(--bg); color: var(--text);
-}
-.field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .field-row { display: flex; gap: 0.8rem; }
 .field-grow { flex: 1; min-width: 0; }
 .field-narrow { flex: 0 0 6rem; }
@@ -1177,8 +1097,44 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
 .cover-edit-preview { width: 72px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 3px 6px 6px 3px; box-shadow: var(--cover-shadow); }
 .cover-edit-controls { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 
+/* ---------- screen-size and preference adjustments (last, so they win) ---------- */
 @media (max-width: 640px) {
+  .comment-panel { width: 100vw; border-left: 0; }
+  body.panel-open { overflow: hidden; }
+  .toc-select { max-width: 30vw; }
+  .nav { padding: 0.5rem 0.85rem; }
+  .nav-wide { display: none; }
+  .nav-narrow { display: block; }
+  .hero { padding: 1.3rem 1.2rem; border-radius: 18px; margin-bottom: 1.8rem; }
+  .hero-title { font-size: 1.6rem; }
+  .hero-logo { display: none; }
+  .continue-card { gap: 0.8rem; }
+  .shelf { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1.8rem 1rem; }
+  .form-card { margin: 1.5rem auto; padding: 1.4rem; }
+  .titlebar-chapter { font-size: 1.05rem; }
   .book-hero { gap: 1rem; }
   .book-hero-cover { width: 118px; }
   .book-page-title { font-size: 1.5rem; }
+}
+/* small phones: room for the longer Portuguese/Spanish nav buttons */
+@media (max-width: 400px) {
+  .nav { gap: 0.5rem; }
+  .nav-brand { font-size: 1.05rem; gap: 0.45rem; }
+  .nav-logo { height: 1.9rem; width: 1.9rem; }
+  .nav-right { gap: 0.4rem; }
+  .nav-right .btn-small { padding: 0.3rem 0.65rem; }
+  .request { padding: 0.8rem 0.85rem; }
+}
+/* hover only where it's real: a tap leaves :hover stuck */
+@media (hover: hover) {
+  .spoiler-toggle:hover .spoiler-check:not(:checked) + .spoiler-pill { border-color: var(--muted); color: var(--text); }
+  .spoiler-reveal:hover .spoiler-label { border-color: var(--accent); }
+  .mention-option:hover { background: var(--accent-soft); color: var(--text-strong); }
+  .star-picker label:hover, .star-picker label:hover ~ label { color: var(--accent-strong); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn, .book-cover-link, .continue-card, .next-chapter-btn, .notif { transition: none; }
+  .book-cover-link:hover, .continue-card:hover, .next-chapter-btn:hover, .notif:hover { transform: none; }
+  .spoiler-pill { transition: none; }
+  .swipe-hint { transition: none; }
 }
