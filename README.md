@@ -33,20 +33,6 @@ npm test    # EPUB pipeline tests against pg345-images-3.epub (Dracula)
 npm run lint
 ```
 
-## Deploy — Fly.io (recommended)
-
-Data (SQLite DB + extracted book images) lives on a mounted volume at `/data`, so it
-survives deploys.
-
-```sh
-fly launch --no-deploy          # reuses fly.toml; pick an app name
-fly volumes create data --size 1
-fly secrets set OWNER_EMAIL=you@example.com SESSION_SECRET=$(openssl rand -hex 32)
-fly deploy
-```
-
-Open `https://<app>.fly.dev`, register with the owner email, upload, share the URL.
-
 ## Deploy — any $5 VPS
 
 ```sh
