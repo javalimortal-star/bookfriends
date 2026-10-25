@@ -25,9 +25,7 @@
 
   /* ---------- offline reading (service worker: public/sw.js) ---------- */
 
-  // A saved copy shown without a connection carries the bookmark state from
-  // when it was saved: its Undo, position saves and resume could move the
-  // bookmark backwards. Read it like a peek (nothing moves) instead.
+  // A copy saved for offline reading has stale bookmark state: treat it as a peek.
   if (window.__BF_SAVED_COPY__ && R.bookmark) {
     R.bookmark = { action: 'peek', bmIdx: R.bookmark.bmIdx };
     var staleBanner = document.getElementById('bm-banner');
@@ -54,10 +52,8 @@
 
   /* ---------- bar placement ---------- */
 
-  // With a mouse or trackpad app.css moves the bottom bar to the top, under
-  // the nav (the macOS Dock / Windows taskbar pop up over the bottom edge).
-  // It is positioned from these measured heights, kept current as they
-  // change; measured first so the scroll jumps below already account for it.
+  // With a mouse the reader bar sits under the nav (the macOS Dock covers the
+  // bottom edge); app.css places it from these heights, measured first.
   var topBarQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
   var topNav = document.querySelector('.nav');
   var bottomBar = document.querySelector('.reader-bottombar');
@@ -90,6 +86,13 @@
     var node = document.createElement(tag);
     if (className) node.className = className;
     if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function button(className, text, onClick) {
+    var node = el('button', className, text);
+    node.type = 'button';
+    if (onClick) node.addEventListener('click', onClick);
     return node;
   }
 
@@ -163,9 +166,8 @@
     return frag;
   }
 
-  // What sits under a spoiler's blur: the same word shapes in other letters.
-  // Blur alone can be read back on short texts, and the real words would
-  // still be in the page for copy-paste and find-in-page.
+  // Under a spoiler's blur: same word shapes, other letters (blur alone can be
+  // read back, and real words would still be copyable / findable).
   var SPOILER_PREVIEW = 280;
   function scramble(text) {
     var letters = 'etaoinshrdlucmfwyp';
@@ -191,14 +193,12 @@
     body.classList.add('is-spoiler');
     var hidden = el('span', 'spoiler-text', scramble(comment.body));
     hidden.setAttribute('aria-hidden', 'true');
-    var reveal = el('button', 'spoiler-reveal');
-    reveal.type = 'button';
-    reveal.appendChild(el('span', 'spoiler-label', topBarQuery.matches ? t('Spoiler — click to show') : t('Spoiler — tap to show')));
-    reveal.addEventListener('click', function () {
+    var reveal = button('spoiler-reveal', undefined, function () {
       revealedSpoilers[comment.id] = true;
       fillBody(body, comment);
       body.focus({ preventScroll: true }); // the button is gone: keep keyboard focus here
     });
+    reveal.appendChild(el('span', 'spoiler-label', topBarQuery.matches ? t('Spoiler — click to show') : t('Spoiler — tap to show')));
     body.appendChild(hidden);
     body.appendChild(reveal);
   }
@@ -207,11 +207,9 @@
 
   function makeBadge(paraIndex) {
     var count = R.badgeCounts[paraIndex] || 0;
-    var badge = el('button', 'para-badge' + (count > 0 ? ' has-comments' : ''), String(count));
-    badge.type = 'button';
+    var badge = button('para-badge' + (count > 0 ? ' has-comments' : ''), String(count), function () { openPanel(paraIndex); });
     badge.setAttribute('data-badge-for', paraIndex);
     badge.setAttribute('aria-label', t.n('{count} comment on this paragraph', '{count} comments on this paragraph', count));
-    badge.addEventListener('click', function () { openPanel(paraIndex); });
     return badge;
   }
 
@@ -247,24 +245,14 @@
     main.appendChild(body);
 
     var actions = el('div', 'comment-actions');
-    var like = el('button', 'vote-btn' + (comment.myVote === 1 ? ' active' : ''), '👍 ' + comment.likes);
-    var dislike = el('button', 'vote-btn' + (comment.myVote === -1 ? ' active' : ''), '👎 ' + comment.dislikes);
-    like.type = 'button';
-    dislike.type = 'button';
-    if (R.user) {
-      like.addEventListener('click', function () { voteOn(comment.id, 1, like, dislike); });
-      dislike.addEventListener('click', function () { voteOn(comment.id, -1, like, dislike); });
-    } else {
-      like.disabled = true;
-      dislike.disabled = true;
-    }
+    var like = button('vote-btn' + (comment.myVote === 1 ? ' active' : ''), '👍 ' + comment.likes, function () { voteOn(comment.id, 1, like, dislike); });
+    var dislike = button('vote-btn' + (comment.myVote === -1 ? ' active' : ''), '👎 ' + comment.dislikes, function () { voteOn(comment.id, -1, like, dislike); });
+    like.disabled = dislike.disabled = !R.user;
     actions.appendChild(like);
     actions.appendChild(dislike);
 
     if (R.user) {
-      var reply = el('button', 'link-btn', t('Reply'));
-      reply.type = 'button';
-      reply.addEventListener('click', function () {
+      actions.appendChild(button('link-btn', t('Reply'), function () {
         var existing = main.querySelector('.reply-form');
         if (existing) { existing.remove(); return; }
         main.appendChild(buildForm({
@@ -275,13 +263,10 @@
             return postComment(text, ctx.para, comment.id, spoiler).then(function () { ctx.reload(); });
           },
         }));
-      });
-      actions.appendChild(reply);
+      }));
     }
     if (comment.canEdit) {
-      var edit = el('button', 'link-btn', t('Edit'));
-      edit.type = 'button';
-      edit.addEventListener('click', function () {
+      actions.appendChild(button('link-btn', t('Edit'), function () {
         var existing = main.querySelector('.edit-form');
         if (existing) { existing.remove(); return; }
         main.appendChild(buildForm({
@@ -290,27 +275,21 @@
             return api('PATCH', '/api/comments/' + comment.id, { body: text, spoiler: spoiler }).then(function () { ctx.reload(); });
           },
         }));
-      });
-      actions.appendChild(edit);
+      }));
     }
     if (comment.canDelete) {
-      var del = el('button', 'link-btn danger', t('Delete'));
-      del.type = 'button';
-      del.addEventListener('click', function () {
+      actions.appendChild(button('link-btn danger', t('Delete'), function () {
         if (!window.confirm(t('Delete this comment?'))) return;
         api('DELETE', '/api/comments/' + comment.id).then(function () { ctx.reload(); });
-      });
-      actions.appendChild(del);
+      }));
     }
     main.appendChild(actions);
 
     if (comment.replies.length > 0) {
       var replyCount = { count: comment.replies.length };
-      var toggle = el('button', 'link-btn view-replies', t('Hide replies ({count})', replyCount) + ' ▴');
-      toggle.type = 'button';
       var repliesBox = el('div', 'comment-replies');
       comment.replies.forEach(function (child) { repliesBox.appendChild(renderComment(child, ctx)); });
-      toggle.addEventListener('click', function () {
+      var toggle = button('link-btn view-replies', t('Hide replies ({count})', replyCount) + ' ▴', function () {
         repliesBox.hidden = !repliesBox.hidden;
         toggle.textContent = repliesBox.hidden ? t('View replies ({count})', replyCount) + ' ▾' : t('Hide replies ({count})', replyCount) + ' ▴';
       });
@@ -377,9 +356,7 @@
   var mentionLists = 0;
   var openMention = null; // the form whose list is showing, to re-place it
 
-  // The "@query" the caret is in, if any: { at, caret, q }. Names may have
-  // spaces, so the query can too; it ends at a line break, and the list
-  // closes by itself once nobody's name contains what was typed.
+  // The "@query" at the caret, if any: { at, caret, q } (names may have spaces).
   function mentionQuery(textarea) {
     var caret = textarea.selectionStart;
     if (caret !== textarea.selectionEnd) return null;
@@ -611,9 +588,8 @@
   backdrop.addEventListener('click', closePanel);
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape' && !panel.hidden) return closePanel();
-    // ← / → jump to the previous/next chapter — but not while typing in a
-    // form field, holding a modifier (Alt+← is browser history), or reading
-    // the comment panel (navigating would silently discard it).
+    // ← / → change chapter, except in form fields, with modifiers (Alt+← is
+    // history) or with the comment panel open.
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     var url = event.key === 'ArrowLeft' ? R.prevUrl : event.key === 'ArrowRight' ? R.nextUrl : null;
     if (!url || !panel.hidden) return;
@@ -700,15 +676,12 @@
   /* ---------- reading position: resume + save topmost paragraph ---------- */
 
   var paraNodes = Array.prototype.slice.call(document.querySelectorAll('#chapter-content [data-p]'));
-  // Only push positions while the bookmark points at this chapter; the server
-  // re-checks, this just avoids useless requests (e.g. after Undo or in
-  // ?peek=1 pages opened from notifications).
+  // Positions are only saved while the bookmark is on this chapter (the server re-checks).
   var positionArmed = !!(R.user && R.bookmark
     && (R.bookmark.action === 'advanced' || R.bookmark.action === 'same') && paraNodes.length);
   var lastSavedPara = (R.bookmark && R.bookmark.action === 'same' && R.bookmark.para) || 0;
-  // A notification link (?panel= or #comments) jumps to a comment, not to
-  // where the reader is: saving that spot would move their place in the
-  // chapter. Saving starts once they scroll the page themselves.
+  // A notification link jumps to a comment, not to where the reader is:
+  // saving starts only once they scroll themselves.
   if (positionArmed && (params.has('panel') || location.hash)) {
     positionArmed = false;
     var holdForDeepLink = true;
@@ -730,10 +703,9 @@
     return Math.max(0, edge);
   }
 
-  // The topmost paragraph with at least READ_LINE px showing below the bars.
-  // A resumed paragraph is placed just under the bars, so the end of the one
-  // above still peeks out (hidden behind them, or in the gap); counting that
-  // one moved the saved position back a paragraph on every resume-and-leave.
+  // The topmost paragraph with READ_LINE px showing below the bars: the end of
+  // the one above a resumed paragraph peeks out, and counting it made the
+  // saved position creep back a paragraph per visit.
   var READ_LINE = 24;
   function currentPara() {
     var line = coveredTop() + READ_LINE;
@@ -789,9 +761,7 @@
     lato: '"Lato", ' + SYSTEM_SANS,
     montserrat: '"Montserrat", ' + SYSTEM_SANS,
   };
-  // Text size and line height match Wuxiaworld's reader as the owner uses
-  // it: 20 px text on 24 px lines (measured from a phone screenshot). `v`
-  // marks settings saved since then; see loadSettings.
+  // 20/24 px matches Wuxiaworld as the owner reads it; `v` marks settings saved since.
   var SETTINGS_VERSION = 2;
   var DEFAULTS = { font: 'opensans', size: 20, lh: 24, contrast: 'normal', badges: true, theme: 'dark', v: SETTINGS_VERSION };
   var OLD_DEFAULT_SIZE = 18;
@@ -806,9 +776,7 @@
     });
     var legacySize = Number(localStorage.getItem('bf-font-size'));
     if (stored.size === undefined && legacySize) merged.size = legacySize;
-    // Saved before the Wuxiaworld defaults: every visit stored the settings,
-    // so exactly the old 18/30 means "never changed" and gets the new
-    // defaults; any other pair was chosen by hand and stays as it was.
+    // Older saves: exactly the old 18/30 defaults means "never changed".
     if (stored.v === undefined) {
       var oldSize = stored.size !== undefined ? stored.size : (legacySize || OLD_DEFAULT_SIZE);
       var oldLh = stored.lh !== undefined ? stored.lh : OLD_DEFAULT_LH;
@@ -896,11 +864,9 @@
   /* ---------- immersive reading: hide top nav + bottom bar while scrolling down ---------- */
 
   var lastScrollY = Math.max(0, window.scrollY);
-  // Only the reader's own scrolling hides the bars. Before any touch, wheel
-  // or key, scrolls come from the page itself: the resume / search jump, or
-  // images above it arriving (instantly, from the offline cache) and scroll
-  // anchoring pushing the page down. Hiding the bars then made currentPara()
-  // count the paragraph above the resumed one, and the bookmark crept back.
+  // Only the reader's own scrolling hides the bars: before a touch/wheel/key,
+  // scrolls are the page's (jumps; cached images + scroll anchoring), and
+  // hiding the bars then made currentPara() save the paragraph above.
   var readerScrolled = false;
   ['wheel', 'touchstart', 'keydown', 'pointerdown'].forEach(function (evt) {
     window.addEventListener(evt, function () { readerScrolled = true; }, { passive: true, once: true });
@@ -916,17 +882,13 @@
     lastScrollY = y;
   }, { passive: true });
 
-  // Some mobile browsers (Samsung Internet's toolbar, Chrome's bottom address
-  // bar) overlay their UI on the page without reporting it via safe-area
-  // insets. The visualViewport API exposes how much of the layout viewport is
-  // actually visible, so lift the bottom bar by exactly the covered height.
+  // Mobile toolbars (Samsung Internet, Chrome's bottom bar) cover the page
+  // without safe-area insets: lift the bar by what visualViewport says is hidden.
   if (bottomBar && window.visualViewport) {
     var vv = window.visualViewport;
     var vvRaf = null;
-    // No browser toolbar is this tall. A bigger reading is the soft keyboard,
-    // or a frame where the toolbars are sliding back in (scrolling up) and the
-    // two viewports haven't caught up with each other yet; following those
-    // flung the bar halfway up the screen and back. Keep the last good lift.
+    // No toolbar is this tall: a bigger reading is the keyboard or toolbars
+    // mid-slide (it flung the bar up the screen). Keep the last good lift.
     var MAX_TOOLBAR = 150;
     var lastGap = 0;
     var applyViewportGap = function () {
@@ -938,13 +900,9 @@
         fontPanel.style.bottom = '';
         return;
       }
-      // While pinch-zoomed the visual viewport is a magnified slice; pinning
-      // to its bottom would fling the bar around, so fall back to bottom: 0.
-      // (offsetTop goes negative while overscrolling past the top of the page)
+      // pinch-zoomed: no lift; offsetTop goes negative while overscrolling
       var covered = vv.scale > 1.01 ? 0 : Math.max(0, window.innerHeight - (Math.max(0, vv.offsetTop) + vv.height));
-      // Browsers that report the overlay via safe-area-inset-bottom already
-      // lift the bar through its CSS padding (0.5rem base + inset); subtract
-      // that so the bar is never lifted twice.
+      // a safe-area inset already lifts it via the CSS padding: don't lift twice
       var rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       var envInset = Math.max(0, (parseFloat(getComputedStyle(bottomBar).paddingBottom) || 0) - 0.5 * rootFont);
       var gap = covered > MAX_TOOLBAR ? lastGap : Math.max(0, covered - envInset);
@@ -965,10 +923,8 @@
 
   /* ---------- where the chapter opens: a search result (?p=), else the saved paragraph ---------- */
 
-  // Puts `block` just under the bars, and again once images above it have
-  // loaded unless the reader scrolled meanwhile. Not a reader scroll:
-  // lastScrollY keeps the bars shown, so coveredTop() matches when saving.
-  // Runs after the reading settings, so it measures the final text size.
+  // `block` just under the bars, again after images load unless the reader
+  // moved; lastScrollY keeps the bars shown (coveredTop() then matches).
   function jumpTo(block) {
     var touched = false;
     ['wheel', 'touchstart', 'keydown'].forEach(function (evt) {
@@ -1001,9 +957,7 @@
     return ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
-  // Wraps the searched words in <mark>, touching only text nodes (never
-  // the comment-count button): whole words, plus words starting with the
-  // last search word, as the search itself matched them.
+  // <mark>s the searched words (text nodes only), as the search matched them.
   function markSearchTerms(block, query) {
     var words = (query.match(/[\p{L}\p{N}]+/gu) || []).map(function (w) {
       return Array.prototype.map.call(w, foldChar).join('');
@@ -1048,12 +1002,8 @@
 
   /* ---------- swipe left/right on touch screens: next/previous chapter ---------- */
 
-  // A clear horizontal flick turns the page, like an e-reader. Anything that
-  // could mean something else is left alone: listeners are passive (vertical
-  // scrolling is never blocked), and the gesture is ignored when it starts
-  // at a screen edge (Android's back gesture), on a link/button/form field/
-  // comment badge/the bars, inside something that scrolls sideways, while
-  // pinch-zoomed or selecting text, or with the comment or font panel open.
+  // A clear horizontal flick turns the page. Ignored at screen edges (Android
+  // back), on controls, in sideways scrollers, while zoomed/selecting or with a panel open.
   var SWIPE_MIN_X = 90;
   var SWIPE_RATIO = 2;
   var SWIPE_MAX_MS = 700;
