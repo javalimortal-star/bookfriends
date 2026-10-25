@@ -35,6 +35,9 @@
       <% } %>
     </div>
   </dl>
+  <% if (b.tokenWeak) { %>
+    <p class="form-error"><%= t('{name} is short, so it is easier to guess. Put a long random one in the server .env file (for example the output of {cmd}), restart the site, then run the setup command below again on the mini PC.', { name: 'BACKUP_TOKEN', cmd: 'openssl rand -hex 32' }) %></p>
+  <% } %>
 
   <% if (b.level === 'warning' || b.level === 'problem') { %>
     <div class="backup-help">

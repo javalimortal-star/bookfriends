@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const { BACKUP_DIR, listLocal } = require('./status');
 const backups = require('./index');
+const { backupLimiter } = require('../rate-limit');
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ function tokenOk(given) {
 // Serves the newest archive produced by scripts/backup.js so an off-site
 // machine can fetch it nightly. The token lives only in the server .env and
 // the downloader's script; a wrong token gets the same 404 as a random URL.
-router.get('/backup/download', (req, res, next) => {
+router.get('/backup/download', backupLimiter, (req, res, next) => {
   if (!tokenOk(req.query.token)) {
     return res.status(404).render('error', { title: req.t('Not found'), message: req.t('Page not found.') });
   }

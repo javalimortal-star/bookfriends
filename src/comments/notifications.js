@@ -53,8 +53,13 @@ function linkFor(n) {
   return n.para_index === null ? `${base}#comments` : `${base}&panel=${n.para_index}`;
 }
 
+// Old notifications nobody will scroll back to: keep the table small.
+function prune(maxAgeDays = 180) {
+  db.prepare('DELETE FROM notifications WHERE created_at < ?').run(Date.now() - maxAgeDays * 24 * 60 * 60 * 1000);
+}
+
 function markAllSeen(userId) {
   db.prepare('UPDATE notifications SET seen = 1 WHERE user_id = ? AND seen = 0').run(userId);
 }
 
-module.exports = { notify, notifyReply, recipientsOf, unseenCount, listForUser, linkFor, markAllSeen };
+module.exports = { notify, notifyReply, recipientsOf, unseenCount, listForUser, linkFor, markAllSeen, prune };

@@ -320,5 +320,7 @@
   "Test notification": "Notificação de teste",
   "If you can see this, phone notifications work on this device.": "Se você está vendo isto, as notificações funcionam neste aparelho.",
   "Too many test notifications. Wait a few minutes and try again.": "Testes demais. Espere alguns minutos e tente de novo.",
-  "“{title}” is still private. Make it public on the shelf first, then mark the request as uploaded.": "“{title}” ainda está privado. Primeiro torne o livro público na estante e depois marque o pedido como enviado."
+  "“{title}” is still private. Make it public on the shelf first, then mark the request as uploaded.": "“{title}” ainda está privado. Primeiro torne o livro público na estante e depois marque o pedido como enviado.",
+  "{name} is short, so it is easier to guess. Put a long random one in the server .env file (for example the output of {cmd}), restart the site, then run the setup command below again on the mini PC.": "{name} é curto, então é mais fácil de adivinhar. Coloque um longo e aleatório no arquivo .env do servidor (por exemplo, o resultado de {cmd}), reinicie o site e rode de novo no mini PC o comando de configuração abaixo.",
+  "Too many attempts. Try again in an hour.": "Tentativas demais. Tente de novo daqui a uma hora."
 }

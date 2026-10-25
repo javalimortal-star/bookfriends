@@ -54,6 +54,8 @@ function ownerView(req) {
   view.size = (bytes) => formatSize(bytes, LANGS[req.lang].locale);
   const command = setupCommand(`${req.protocol}://${req.get('host')}`, process.env.BACKUP_TOKEN);
   view.setup = command ? { command, site: req.get('host') } : null;
+  // anyone who guesses the token downloads every book and comment
+  view.tokenWeak = !!process.env.BACKUP_TOKEN && process.env.BACKUP_TOKEN.length < 24;
   return view;
 }
 

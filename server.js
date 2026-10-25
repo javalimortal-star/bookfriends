@@ -119,4 +119,7 @@ app.listen(PORT, () => {
   // Index books uploaded before search existed, in small background batches
   // (src/books/search.js), once the server is already answering requests.
   require('./src/books/search').startBackfill();
+  // drop notifications older than ~6 months: now, and once a day after that
+  notifications.prune();
+  setInterval(() => notifications.prune(), 24 * 60 * 60 * 1000).unref();
 });

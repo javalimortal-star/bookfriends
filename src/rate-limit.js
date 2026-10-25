@@ -60,6 +60,14 @@ module.exports = {
     limit: 30,
     message: (t) => t('Too many searches. Wait a minute and try again.'),
   }),
+  // wrong /backup/download tokens: a guesser gets 10 tries an hour (the
+  // mini PC's successful downloads don't count)
+  backupLimiter: makeLimiter({
+    windowMs: 60 * 60 * 1000,
+    limit: 10,
+    onlyFailures: true,
+    message: (t) => t('Too many attempts. Try again in an hour.'),
+  }),
   // each test makes the server call out to the push services
   pushTestLimiter: makeLimiter({
     windowMs: 10 * 60 * 1000,
