@@ -5,10 +5,8 @@ const express = require('express');
 
 const router = express.Router();
 
-// SW_DISABLED=1 in .env is the emergency brake: every browser that installed
-// the worker swaps it for one that deletes its caches and unregisters itself,
-// and pages stop registering it (footer.ejs). The site then behaves exactly as
-// it did before offline reading existed.
+// SW_DISABLED=1 in .env is the emergency brake: browsers get a worker that
+// deletes its caches and unregisters itself, and pages stop registering it.
 const DISABLED = process.env.SW_DISABLED === '1';
 
 const KILL_SWITCH = `// BookFriends: offline reading is switched off (SW_DISABLED=1).
@@ -46,10 +44,8 @@ router.get('/sw.js', (req, res) => {
   res.send(workerScript(req.app.locals.assetVersion));
 });
 
-// What the worker shows for a page it hasn't saved while there's no
-// connection. Precached at install, so it is rendered logged out (no name
-// or private books in it); Content-Language lets the worker refresh its copy
-// after a language switch.
+// Shown offline for pages that weren't saved; rendered logged out (it is
+// precached), Content-Language tells the worker when to refresh it.
 router.get('/offline', (req, res) => {
   res.locals.user = null;
   res.set('Content-Language', res.locals.htmlLang);

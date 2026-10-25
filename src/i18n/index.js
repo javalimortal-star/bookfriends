@@ -1,10 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// English is the source language: the English text itself is the key, so a
-// string without a translation still shows up (in English). Translations live
-// in <code>.json next to this file; test/i18n.test.js checks they cover every
-// string the code asks for.
+// The English text is the key (a missing translation shows English);
+// <code>.json holds the rest, and test/i18n.test.js checks they're complete.
 const LANGS = {
   en: { name: 'English', htmlLang: 'en', locale: 'en-GB' },
   pt: { name: 'Português', htmlLang: 'pt-BR', locale: 'pt-BR' },

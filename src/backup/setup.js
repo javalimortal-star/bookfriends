@@ -1,10 +1,6 @@
-// The one-line PowerShell command on the owner's /users page that sets up the
-// off-site copy on a Windows PC: it writes C:\bookfriends-backups\
-// download-backup.ps1, registers the "BookFriends backup" scheduled task and
-// runs the first download. It works in Windows PowerShell 5.1 (no && or ||,
-// TLS 1.2 forced) and in PowerShell 7. One line because a multi-line paste
-// can trigger warnings or run line by line in older consoles. Safe to run
-// twice: everything is overwritten in place.
+// The one-line PowerShell command (/users page) that sets up the off-site copy
+// on a Windows PC: download script, nightly task, first download. PowerShell
+// 5.1-safe (no && / ||, TLS 1.2); one line, as multi-line pastes misbehave; rerunnable.
 
 const DIR = 'C:\\bookfriends-backups';
 const TASK = 'BookFriends backup';

@@ -13,10 +13,8 @@ const WORD_CHAR = /[\p{L}\p{N}_]/u;
 
 const isWordChar = (ch) => ch !== '' && WORD_CHAR.test(ch);
 
-// Who `text` mentions, in order of appearance: [{ id, name }] where `name`
-// is the text as written after the "@". Case-insensitive; names may contain
-// spaces, so longer names win ("@Ana Maria" is Ana Maria, not Ana). Each
-// user once; at most MAX_MENTIONS (a comment can't page the whole site).
+// Who `text` mentions, in order: [{ id, name as written }]. Case-insensitive,
+// longest name wins ("@Ana Maria"), each user once, at most MAX_MENTIONS.
 function findMentions(text, users) {
   const body = String(text || '');
   const candidates = users

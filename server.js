@@ -19,10 +19,8 @@ if (PROD) app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Baseline security headers (media routes add a strict CSP of their own).
-// Runs before the body parsers: a request they reject (malformed JSON from a
-// scanner) jumps straight to the error handler, skipping loadUser, and the
-// error page's nav needs `user` to exist or rendering it crashes too.
+// Security headers, and `user` set early: a request the body parsers reject
+// skips loadUser, and the error page's nav still needs it.
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'DENY');

@@ -1,11 +1,7 @@
 /* BookFriends service worker: offline reading and phone notifications.
-   Served at /sw.js by src/offline/routes.js, which fills in the two versions
-   below. Every page registers it (views/partials/footer.ejs). Setting
-   SW_DISABLED=1 on the server replaces it with a worker that removes itself.
-
-   Rule of thumb: anything not listed here goes straight to the network as if
-   the worker didn't exist. Only chapters and the shelf are saved as pages,
-   and only GET requests are ever touched. */
+   Served by src/offline/routes.js (which fills in the versions below; with
+   SW_DISABLED=1 a self-removing worker instead). Only GETs are touched, only
+   chapters and the shelf are saved as pages; anything else goes to the network. */
 'use strict';
 
 var VERSION = 'dev';
@@ -94,9 +90,7 @@ self.addEventListener('fetch', function (event) {
   }
 });
 
-// Capped caches drop their oldest entries. Saved-at is stamped on each entry:
-// keys() order can't be trusted for that (Chrome sorts by a coarse
-// last-used time, so a just-saved chapter could go first).
+// Capped caches drop their oldest entries, by a saved-at stamp (keys() order lies).
 var SAVED_AT = 'X-BF-Saved-At';
 
 // (via a Blob: older Safari can't build a Response from another one's stream)
@@ -172,9 +166,8 @@ function isSavablePage(response) {
     && (response.headers.get('Content-Type') || '').indexOf('text/html') === 0;
 }
 
-// Chapters and the shelf: always the live page when the network answers (it
-// moves the bookmark, has new comments), keeping a copy; the saved copy when
-// it doesn't, or is too slow, or the server is down (5xx).
+// Chapters and the shelf: the live page (keeping a copy), else the saved copy
+// when offline, too slow or the server is down (5xx).
 function networkFirst(event, key) {
   var gen = generation;
   var network = fetch(event.request).then(function (response) {
@@ -212,9 +205,7 @@ function networkFirst(event, key) {
 function cacheFirst(event, cacheName, max, cors) {
   var request = event.request;
   var gen = generation;
-  // Google's font CSS is requested without CORS; asking with CORS gets a
-  // readable response, which (unlike an opaque one) the browser doesn't
-  // count as several MB of the phone's storage quota.
+  // fetched with CORS: an opaque response counts as several MB of storage quota
   var live = cors ? new Request(request.url, { mode: 'cors', credentials: 'omit' }) : request;
   var fromNetwork = function () {
     return fetch(live).then(function (response) {
@@ -251,10 +242,8 @@ self.addEventListener('message', function (event) {
   event.waitUntil(work.catch(noop));
 });
 
-// Logged out, or someone else logged in: the saved pages show the previous
-// account's name and private books, so they go. The device's notifications
-// were theirs too, but only go when another account logged in (dropPush):
-// an expired login shouldn't silently switch a reader's notifications off.
+// Logged out or another account: saved pages (names, private books) go. Push
+// only goes for another account (dropPush), not for an expired login.
 function purgePersonal(dropPush) {
   generation += 1;
   return Promise.all([caches.delete(PAGES_CACHE), caches.delete(MEDIA_CACHE)]).then(function () {
@@ -299,9 +288,7 @@ function imageBudget() {
   return PREFETCH_IMAGES;
 }
 
-// Save the chapter being read and the next few, so the story goes on when
-// the train enters a tunnel. Already-saved chapters are skipped (opening one
-// online refreshes it); stops at the end of the book (404).
+// Save this chapter and the next few (skipping saved ones; stops at a 404).
 function prefetchAfter(path) {
   var match = CHAPTER.exec(path || '');
   if (!match) return Promise.resolve();

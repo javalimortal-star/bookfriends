@@ -15,16 +15,9 @@ const HIT_END = '\u0002';
 // eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/g;
 
-// Plain text of each numbered paragraph (assignParagraphIndexes in
-// src/epub/parse.js puts data-p on them), as [{ para, text }].
-//
-// No HTML parser on purpose: chapters.content_html is our own serialized
-// cheerio output (double-quoted attributes, lowercase tags, only &amp; &lt;
-// &gt; &quot; &nbsp; escaped), and building a DOM per chapter made indexing
-// a 1852-chapter book churn ~170 MB of heap on a 1 GB server. This scan
-// gives the same text as cheerio's .text() for every paragraph of the local
-// books (test/search.test.js checks it against cheerio on the fixture EPUB)
-// while allocating little more than the text itself.
+// Plain text of each data-p paragraph, as [{ para, text }]. No HTML parser:
+// content_html is our own cheerio output, and a DOM per chapter churned
+// ~170 MB on a 1852-chapter book; test/search.test.js checks it matches cheerio.
 const ATTRS = '(?:[^>"\']|"[^"]*"|\'[^\']*\')*'; // a tag's insides, quotes may hold ">"
 const OPEN_PARA = new RegExp(`<(p|blockquote)\\b${ATTRS}?\\sdata-p="(\\d+)"${ATTRS}>`, 'gi');
 const SAME_TAG = { p: new RegExp(`<(/?)p\\b${ATTRS}>`, 'gi'), blockquote: new RegExp(`<(/?)blockquote\\b${ATTRS}>`, 'gi') };
@@ -74,13 +67,8 @@ function checkQuery(raw) {
   return 'ok';
 }
 
-// The reader's words as an FTS5 query that can never be a syntax error:
-// every word (or "quoted phrase") becomes a quoted FTS5 string, inside which
-// * - ( ) : ^ and friends are only separators, and the last word is a prefix
-// ("drac" already finds Dracula). Not when that word is under MIN_PREFIX
-// letters: "a*" expands to every a-word in every book (~160 ms here, far
-// more on the VM) to find what "a" alone finds. Returns null when nothing
-// searchable is left (only punctuation, say).
+// The words as an FTS5 query that can't be a syntax error (each word quoted);
+// the last one is a prefix if it has MIN_PREFIX+ letters ("a*" is costly). null if nothing is left.
 const MIN_PREFIX = 3;
 function buildMatchQuery(raw) {
   const items = [];

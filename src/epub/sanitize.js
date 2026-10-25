@@ -1,7 +1,7 @@
 const sanitizeHtml = require('sanitize-html');
 
-// Widened allowlist per approved plan: the fixture uses <span> small-caps,
-// <hr> scene breaks, internal <a> anchors and <div class="blockquot"> blocks.
+// Tags Gutenberg EPUBs use: <span> small-caps, <hr> scene breaks, internal
+// <a> anchors and <div class="blockquot"> blocks.
 const OPTIONS = {
   allowedTags: [
     'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',

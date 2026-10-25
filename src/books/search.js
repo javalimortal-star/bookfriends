@@ -1,15 +1,9 @@
 const { db } = require('../db');
 const { paragraphTexts, buildMatchQuery, snippetParts, MAX_PARA } = require('./search-text');
 
-// Search inside a book: SQLite FTS5 (table para_search in schema.sql).
-//
-// rowid = book_id * 2^40 + chapter_idx * 2^20 + para_index: a book's rows are
-// one rowid range, which FTS5 scans directly (no wading through matches from
-// other books), and rowid order is reading order, so "the first 50 matches"
-// stops after 50 rows instead of sorting every match of a common word.
-// Rowids are bound as BigInt: FTS5 ignores rowid bounds that arrive as
-// floating point (how better-sqlite3 binds plain JS numbers), and every
-// range query then silently scanned the whole table.
+// Search inside a book with SQLite FTS5 (para_search in schema.sql). rowid =
+// book * 2^40 + chapter * 2^20 + paragraph: one range per book, in reading
+// order. Bound as BigInt: FTS5 ignores float bounds and silently scans everything.
 const BOOK_SPAN = 2n ** 40n;
 const CHAPTER_SPAN = BigInt(MAX_PARA);
 const MAX_RESULTS = 50;
@@ -99,10 +93,8 @@ function searchBook(bookId, raw) {
 
 /* ---------- background work: index new books, purge deleted ones ---------- */
 
-// Each step works for about STEP_MS, then yields to the event loop
-// (setImmediate) so requests keep being served while a big book (one in
-// production has 1852 chapters) is indexed. One transaction per step keeps
-// the saved progress and the rows in step if the server stops midway.
+// Steps of ~STEP_MS, yielding between them so the site keeps answering;
+// one transaction per step keeps progress and rows in step across restarts.
 const STEP_MS = 20;
 const RETRY_MS = 60 * 1000;
 // a monotonic clock: Date.now() can jump (NTP), stretching a step for seconds

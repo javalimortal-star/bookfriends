@@ -1,10 +1,6 @@
 const net = require('net');
 
-// Checks a browser's PushSubscription.toJSON() before it is stored. The
-// server later POSTs to the endpoint, so a logged-in user must not be able to
-// aim it at the server's own network: production accepts only https URLs on
-// public host names (push services are fcm.googleapis.com,
-// updates.push.services.mozilla.com, web.push.apple.com, ...).
+// Checks a browser's PushSubscription.toJSON() before it is stored.
 
 const B64URL = /^[A-Za-z0-9_-]+={0,2}$/;
 
@@ -12,10 +8,8 @@ function decode(value) {
   return typeof value === 'string' && B64URL.test(value) ? Buffer.from(value, 'base64url') : null;
 }
 
-// The push services browsers actually use (Chrome, Edge, Samsung Internet,
-// Opera → FCM; Firefox → Mozilla; Safari → Apple; legacy Edge → WNS). Only
-// these, on the default port, in production: anything else would let a user
-// make the server probe hosts and ports of their choosing.
+// The server POSTs to the endpoint, so production allows only the real push
+// services on the default port: anything else lets a user aim it at any host.
 const PUSH_HOSTS = [
   /^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/,
   /(^|\.)push\.services\.mozilla\.com$/,

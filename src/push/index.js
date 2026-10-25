@@ -3,32 +3,23 @@ const path = require('path');
 const { db, DATA_DIR } = require('../db');
 const { notificationPayload } = require('./payload');
 
-// Web Push to a user's subscribed devices (phones, computers, the installed
-// app). The browser's push service (Google, Mozilla, Apple) holds the message
-// until the device is reachable; public/sw.js shows it.
-//
-// Sending is never part of a request: callers return at once and delivery
-// happens on a later tick, so a slow or failing push service can't slow down
-// or break posting a comment. Failures are only logged.
+// Web Push to a user's devices (public/sw.js shows it). Sent on a later tick,
+// never inside the request: a slow push service can't slow a comment down.
 
 const TTL_SECONDS = 24 * 60 * 60; // a reply a day late isn't worth a buzz any more
 const SEND_TIMEOUT_MS = 10 * 1000;
 const MAX_DEVICES_PER_USER = 10;
 const ICON = '/android-chrome-192x192.png';
 
-// Loaded on first use: boot stays quick, and a server whose node_modules
-// predate this dependency still runs (only push fails, with a logged error).
+// Loaded on first use (quick boot).
 let webpushLib = null;
 function webpush() {
   if (!webpushLib) webpushLib = require('web-push');
   return webpushLib;
 }
 
-// The site's VAPID key pair identifies it to the push services; every
-// subscription is tied to the public key, so it must stay the same. From the
-// environment if set, else generated once and kept next to the database
-// (scripts/backup.js archives it with the DB). If it is ever lost, new keys
-// are made and each device has to turn notifications on again in Settings.
+// The VAPID keys every subscription is tied to: from the environment, else
+// generated once into DATA_DIR/vapid.json (backed up with the DB).
 let vapid = null;
 function vapidKeys() {
   if (vapid) return vapid;
@@ -142,10 +133,8 @@ function sendToUser(userId, payload) {
     });
 }
 
-// A new row in `notifications` (reply, mention, ...): tell the recipient's devices.
-// At most one notification push per person per minute: a burst of replies
-// or mentions (or someone spamming edits) buzzes the phone once; every one
-// is still listed on /notifications.
+// A new notification row: push it, at most once a minute per person (a burst
+// buzzes the phone once; /notifications still lists every one).
 const PUSH_GAP_MS = 60 * 1000;
 const lastPushAt = new Map();
 
