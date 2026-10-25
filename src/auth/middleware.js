@@ -3,12 +3,17 @@ const { db } = require('../db');
 const userStmt = () => db.prepare('SELECT id, email, role, display_name, auth_provider, lang FROM users WHERE id = ?');
 
 function loadUser(req, res, next) {
-  res.locals.user = null;
-  if (req.session && req.session.userId) {
-    res.locals.user = userStmt().get(req.session.userId) || null;
-  }
-  req.user = res.locals.user;
+  req.user = res.locals.user = (req.session && req.session.userId && userStmt().get(req.session.userId)) || null;
   next();
+}
+
+// A fresh session id on every login (no session fixation).
+function logIn(req, res, userId) {
+  req.session.regenerate((err) => {
+    if (err) return res.status(500).render('error', { title: req.t('Error'), message: req.t('Session error.') });
+    req.session.userId = userId;
+    res.redirect('/');
+  });
 }
 
 function wantsJson(req) {
@@ -36,4 +41,15 @@ function canViewBook(book, user) {
   return !!(user && user.role === 'owner');
 }
 
-module.exports = { loadUser, requireAuth, requireOwner, canViewBook };
+function bookNotFound(req, res) {
+  res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
+}
+
+// The book if this request may see it; otherwise answers 404 and returns null.
+function viewableBook(req, res, book) {
+  if (canViewBook(book, req.user)) return book;
+  bookNotFound(req, res);
+  return null;
+}
+
+module.exports = { loadUser, logIn, requireAuth, requireOwner, canViewBook, bookNotFound, viewableBook };

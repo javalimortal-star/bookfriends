@@ -1,20 +1,10 @@
 const { db } = require('../db');
-const { findMentions } = require('./mentions');
-
-// The name a user goes by in comments and @mentions.
-function userName(row) {
-  return row.display_name || String(row.email).split('@')[0];
-}
+const { displayName, initialOf, avatarTone } = require('../users');
 
 // Everyone who can be @mentioned, with what canViewBook() needs (role).
 function mentionableUsers() {
   return db.prepare('SELECT id, email, display_name, role FROM users').all()
-    .map((row) => ({ id: row.id, name: userName(row), role: row.role }));
-}
-
-// Distinct mentioned names as written, for reader.js to highlight.
-function mentionNames(body, users) {
-  return [...new Set(findMentions(body, users).map((m) => m.name))];
+    .map((row) => ({ id: row.id, name: displayName(row), role: row.role }));
 }
 
 // Stored when the comment is saved: parsing every comment on every list
@@ -42,12 +32,15 @@ function chapterCommentCount(chapterId) {
 }
 
 function toJson(row, user, isOwner) {
+  const name = displayName(row);
   return {
     id: row.id,
     paraIndex: row.para_index,
     parentId: row.parent_id,
     userId: row.user_id,
-    userName: userName(row),
+    userName: name,
+    initial: initialOf(name),
+    tone: avatarTone(name),
     body: row.body,
     spoiler: !!row.spoiler,
     mentions: storedMentions(row),
@@ -66,7 +59,7 @@ function toJson(row, user, isOwner) {
 // Threaded comment list for one anchor: a paragraph (para=<n>) or the chapter
 // thread (para=null). Top-level sorted by `sort`; replies always oldest-first.
 function listComments({ chapterId, paraIndex, sort, user, bookOwnerId }) {
-  const anchorClause = paraIndex === null ? 'para_index IS NULL' : 'para_index = ?';
+  const anchorClause = paraIndex === null ? 'c.para_index IS NULL' : 'c.para_index = ?';
   const params = paraIndex === null ? [chapterId] : [chapterId, paraIndex];
   const rows = db.prepare(`
     SELECT c.*, u.email, u.display_name,
@@ -77,7 +70,7 @@ function listComments({ chapterId, paraIndex, sort, user, bookOwnerId }) {
     FROM comments c
     JOIN users u ON u.id = c.user_id
     LEFT JOIN votes v ON v.comment_id = c.id
-    WHERE c.chapter_id = ? AND ${anchorClause.replace('para_index', 'c.para_index')}
+    WHERE c.chapter_id = ? AND ${anchorClause}
     GROUP BY c.id
   `).all(user ? user.id : 0, ...params);
 
@@ -146,5 +139,5 @@ function vote(commentId, userId, value) {
 module.exports = {
   badgeCounts, chapterCommentCount, listComments, getComment,
   createComment, updateComment, deleteComment, vote,
-  mentionableUsers, mentionNames, setMentions,
+  mentionableUsers, setMentions,
 };

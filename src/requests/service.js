@@ -1,7 +1,7 @@
 const { db } = require('../db');
 const push = require('../push');
 const { LANGS, translator } = require('../i18n');
-const { friendName } = require('../friends/service');
+const { displayName } = require('../users');
 
 // Book requests: friends ask the owner to upload a book, others add a
 // "me too". Open requests are sorted by votes, then newest.
@@ -62,7 +62,7 @@ const LIST_SQL = `
   LEFT JOIN books b ON b.id = r.book_id`;
 
 function withNames(rows) {
-  return rows.map((row) => Object.assign(row, { requesterName: friendName(row), voted: row.voted === 1 }));
+  return rows.map((row) => Object.assign(row, { requesterName: displayName(row), voted: row.voted === 1 }));
 }
 
 function listOpen(viewerId) {

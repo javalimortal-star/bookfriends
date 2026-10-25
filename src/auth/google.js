@@ -1,6 +1,8 @@
 const express = require('express');
 const crypto = require('crypto');
 const { db } = require('../db');
+const { logIn } = require('./middleware');
+const { normalizeEmail, normalizeDisplayName, roleFor } = require('../users');
 
 const router = express.Router();
 
@@ -13,10 +15,6 @@ function configured() {
 // Must exactly match an Authorized redirect URI in the Google Cloud console.
 function redirectUri(req) {
   return `${req.protocol}://${req.get('host')}/auth/google/callback`;
-}
-
-function normalizeDisplayName(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 30) || null;
 }
 
 router.get('/auth/google', (req, res) => {
@@ -62,24 +60,18 @@ router.get('/auth/google/callback', async (req, res) => {
     if (!infoRes.ok || !info.email) throw new Error('userinfo failed');
     if (info.email_verified === false) throw new Error('Google email not verified');
 
-    const email = String(info.email).trim().toLowerCase();
+    const email = normalizeEmail(info.email);
     let user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (!user) {
-      const ownerEmail = String(process.env.OWNER_EMAIL || '').trim().toLowerCase();
-      const role = email === ownerEmail ? 'owner' : 'reader';
       // Not a bcrypt hash, so password login can never match for this account.
       const unusablePassword = `google:${crypto.randomBytes(32).toString('hex')}`;
       const inserted = db.prepare(
         'INSERT INTO users (email, password_hash, role, display_name, auth_provider, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(email, unusablePassword, role, normalizeDisplayName(info.name), 'google', Date.now());
+      ).run(email, unusablePassword, roleFor(email), normalizeDisplayName(info.name), 'google', Date.now());
       user = { id: inserted.lastInsertRowid };
     }
 
-    req.session.regenerate((err) => {
-      if (err) return res.status(500).render('error', { title: req.t('Error'), message: req.t('Session error.') });
-      req.session.userId = user.id;
-      res.redirect('/');
-    });
+    logIn(req, res, user.id);
   } catch (err) {
     console.error('google auth:', err.message);
     res.status(400).render('error', { title: req.t('Login failed'), message: req.t('Google sign-in did not complete. Try again, or log in with email and password.') });

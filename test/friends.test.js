@@ -32,16 +32,13 @@ mark.run(pedro.id, pub, 5, 2000);
 mark.run(owner.id, pub, 7, 1000);
 mark.run(ana.id, priv, 2, 4000); // from when it was public
 
-test('avatarTone matches the comment avatars in reader.js', () => {
-  // reader.js: tone = (tone * 31 + charCode) % 5 over the name
-  const src = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'reader.js'), 'utf8');
-  assert.match(src, /tone = \(tone \* 31 \+ \w+\.charCodeAt\(i\)\) % 5/);
-  assert.strictEqual(friends.avatarTone('A'), 65 % 5);
-  assert.strictEqual(friends.avatarTone('Ana'), 2); // 65 % 5 = 0, (0 + 110) % 5 = 0, (0 + 97) % 5 = 2
-  for (const name of ['Ana', 'Pedro', 'javalimortal', 'Zoë']) {
-    const tone = friends.avatarTone(name);
-    assert.ok(tone >= 0 && tone <= 4);
-  }
+test('avatar colour and initial come from the name', () => {
+  const { avatarTone, initialOf } = require('../src/users');
+  assert.strictEqual(avatarTone('A'), 65 % 5);
+  assert.strictEqual(avatarTone('Ana'), 2); // 65 % 5 = 0, (0 + 110) % 5 = 0, (0 + 97) % 5 = 2
+  for (const name of ['Ana', 'Pedro', 'javalimortal', 'Zoë']) assert.ok(avatarTone(name) >= 0 && avatarTone(name) <= 4);
+  assert.strictEqual(initialOf('ana'), 'A');
+  assert.strictEqual(initialOf('😀 Joy'), '😀'); // a whole emoji, not half of one
 });
 
 test('a reader sees the other readers on public books, newest first, never themself', () => {

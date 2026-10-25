@@ -7,7 +7,7 @@
     <% } %>
     <ul class="friend-chips">
       <% for (const f of friends) { %>
-        <li class="friend-chip<%= f.chapterIdx === hereIdx ? ' here' : '' %>" title="<%= f.when %>">
+        <li class="friend-chip<%= f.chapterIdx === hereIdx ? ' here' : '' %>" title="<%= ago(f.updatedAt) %>">
           <span class="friend-avatar avatar-<%= f.tone %>" aria-hidden="true"><%= f.initial %></span>
           <span class="friend-chip-name"><%= f.name %></span>
           <span class="friend-chip-ch"><%= f.chapterIdx === hereIdx ? t('this chapter') : t('ch. {n}', { n: f.chapter }) %></span>

@@ -1,5 +1,5 @@
 <%- include('partials/head') %>
-<% const firstName = user ? (user.display_name || user.email.split('@')[0]) : ''; %>
+<% const firstName = user ? displayName(user) : ''; %>
 <section class="hero">
   <div class="hero-main">
     <% if (user && current) { %>
@@ -102,7 +102,7 @@
                   <span class="friend-avatar avatar-<%= f.tone %>" aria-hidden="true"><%= f.initial %></span>
                   <span class="friends-list-text">
                     <span class="friends-list-name"><%= f.name %></span>
-                    <span class="friends-list-meta"><%= t('ch. {n}/{total}', { n: f.chapter, total: f.total }) %> · <%= f.when %></span>
+                    <span class="friends-list-meta"><%= t('ch. {n}/{total}', { n: f.chapter, total: f.total }) %> · <%= ago(f.updatedAt) %></span>
                   </span>
                 </li>
               <% } %>

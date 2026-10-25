@@ -68,6 +68,7 @@ function middleware(req, res, next) {
   Object.assign(res.locals, {
     lang,
     t: req.t,
+    ago: (ts) => relTime(ts, lang),
     htmlLang: LANGS[lang].htmlLang,
     locale: LANGS[lang].locale,
     languages: CODES.map((code) => ({ code, name: LANGS[code].name })),

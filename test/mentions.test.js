@@ -85,7 +85,8 @@ test('suggest: prefix matches first, then later words, then anywhere; accent-bli
 test('suggest: empty query lists everyone alphabetically, capped', () => {
   assert.strictEqual(suggest(users, '').length, users.length);
   assert.strictEqual(suggest(users, '', 3).length, 3);
-  assert.deepStrictEqual(suggest(users, '', 2), [{ id: 2, name: 'Ana' }, { id: 4, name: 'Ana Maria' }]);
+  assert.deepStrictEqual(suggest(users, '', 2).map(({ id, name }) => ({ id, name })), [{ id: 2, name: 'Ana' }, { id: 4, name: 'Ana Maria' }]);
+  assert.deepStrictEqual(Object.keys(suggest(users, 'ana')[0]).sort(), ['id', 'initial', 'name', 'tone']); // avatar ready for reader.js
 });
 
 test('a hostile body full of "@" is cheap to scan', () => {

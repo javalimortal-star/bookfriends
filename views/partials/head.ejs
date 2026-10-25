@@ -27,7 +27,7 @@
   <meta name="theme-color" content="#050505">
 </head>
 <body<% if (typeof bodyClass !== 'undefined') { %> class="<%= bodyClass %>"<% } %>>
-<% const navName = user ? (user.display_name || user.email.split('@')[0]) : ''; %>
+<% const navName = user ? displayName(user) : ''; %>
 <nav class="nav">
   <a class="nav-brand" href="/"><img class="nav-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">BookFriends</a>
   <div class="nav-right">

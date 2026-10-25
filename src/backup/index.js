@@ -1,5 +1,5 @@
 const { db } = require('../db');
-const { LANGS, relTime } = require('../i18n');
+const { LANGS } = require('../i18n');
 const { listLocal, summarize, healthReport, checkDb, formatSize } = require('./status');
 const { setupCommand } = require('./setup');
 
@@ -50,7 +50,6 @@ function needsAttention() {
 // the page is owner-only and sent with no-store).
 function ownerView(req) {
   const view = currentStatus();
-  view.ago = (ts) => relTime(ts, req.lang);
   view.size = (bytes) => formatSize(bytes, LANGS[req.lang].locale);
   const command = setupCommand(`${req.protocol}://${req.get('host')}`, process.env.BACKUP_TOKEN);
   view.setup = command ? { command, site: req.get('host') } : null;

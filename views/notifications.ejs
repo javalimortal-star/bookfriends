@@ -9,7 +9,7 @@
   <% for (const n of items) { %>
     <a class="notif<%= n.seen ? '' : ' unseen' %>" href="<%= n.link %>">
       <div class="notif-title"><strong><%= n.replierName %></strong> <%= n.kind === 'reply' ? t('replied to your comment') : n.kind === 'mention' ? t('mentioned you') : t('left a comment') %></div>
-      <div class="notif-meta"><%= n.book_title %> — <%= n.chapter_title %><%= n.para_index === null ? '' : ' · ' + t('paragraph {n}', { n: n.para_index + 1 }) %> · <%= n.when %></div>
+      <div class="notif-meta"><%= n.book_title %> — <%= n.chapter_title %><%= n.para_index === null ? '' : ' · ' + t('paragraph {n}', { n: n.para_index + 1 }) %> · <%= ago(n.created_at) %></div>
       <% if (n.spoiler) { %>
         <div class="notif-excerpt notif-spoiler"><%= t('Spoiler — open it to read') %></div>
       <% } else { %>

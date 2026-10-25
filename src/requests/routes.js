@@ -1,9 +1,8 @@
 const express = require('express');
 const { requireAuth, requireOwner, canViewBook } = require('../auth/middleware');
 const { bookRequestLimiter } = require('../rate-limit');
-const { relTime } = require('../i18n');
 const books = require('../books/service');
-const { friendName } = require('../friends/service');
+const { displayName } = require('../users');
 const requests = require('./service');
 
 const router = express.Router();
@@ -13,12 +12,10 @@ function renderPage(req, res, { form = {}, error = null } = {}) {
   // Newest first: a book just uploaded for a request is at the top.
   const shelf = isOwner ? books.getShelf(req.user, 'added') : [];
   const open = requests.listOpen(req.user.id).map((r) => Object.assign(r, {
-    when: relTime(r.created_at, req.lang),
     wanters: r.votes + 1, // the asker wants it too
     suggestedBookId: isOwner ? (requests.suggestBook(r.title, shelf) || {}).id : null,
   }));
   const finished = requests.listFinished(req.user.id).map((r) => Object.assign(r, {
-    when: relTime(r.updated_at, req.lang),
     // a request may point at a book this viewer can't open (private)
     bookLink: r.book_slug && canViewBook({ visibility: r.book_visibility }, req.user) ? `/book/${r.book_slug}/0` : null,
   }));
@@ -62,7 +59,7 @@ router.post('/requests', requireAuth, bookRequestLimiter, (req, res) => {
     });
   }
   const request = requests.createRequest(req.user.id, values);
-  requests.notifyCreated(request, friendName(req.user));
+  requests.notifyCreated(request, displayName(req.user));
   res.redirect('/requests?sent=1');
 });
 

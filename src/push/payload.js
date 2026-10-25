@@ -1,3 +1,4 @@
+const { displayName } = require('../users');
 const { translator } = require('../i18n');
 
 // What a phone notification says. Pure (no DB), so it is unit-tested on its
@@ -17,7 +18,7 @@ function excerpt(text, max = EXCERPT_CHARS) {
 // tap leads (notifications.linkFor).
 function notificationPayload(n, lang, url) {
   const t = translator(lang || 'en');
-  const name = n.author_name || String(n.author_email || '').split('@')[0];
+  const name = displayName({ display_name: n.author_name, email: n.author_email });
   let title;
   if (n.kind === 'reply') title = t('{name} replied to your comment', { name });
   else if (n.kind === 'mention') title = t('{name} mentioned you', { name });

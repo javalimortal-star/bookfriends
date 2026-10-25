@@ -46,6 +46,7 @@ app.locals.assetVersion = crypto.createHash('md5')
 // Offline reading + phone notifications (public/sw.js); SW_DISABLED=1 turns it off.
 app.locals.swEnabled = process.env.SW_DISABLED !== '1';
 // Covers are cached for 30 days as immutable: the URL changes with each edit.
+app.locals.displayName = require('./src/users').displayName;
 app.locals.coverUrl = (book) => `/media/book/${book.id}/cover?v=${book.updated_at || book.created_at}`;
 // "★★★★☆" for a 1-5 rating (averages rounded to the nearest star)
 app.locals.stars = (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));

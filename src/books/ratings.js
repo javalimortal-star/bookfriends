@@ -1,5 +1,5 @@
 const { db } = require('../db');
-const { friendName, avatarTone } = require('../friends/service');
+const { displayName, initialOf, avatarTone } = require('../users');
 
 // Finished books and their ratings: one row per reader and book, created by
 // "Mark as finished"; stars and a review are optional and editable.
@@ -40,8 +40,8 @@ function forBook(bookId) {
     WHERE r.book_id = ? ORDER BY r.updated_at DESC
   `).all(bookId);
   const list = rows.map((row) => {
-    const name = friendName(row);
-    return { userId: row.user_id, name, initial: name.charAt(0).toUpperCase(), tone: avatarTone(name),
+    const name = displayName(row);
+    return { userId: row.user_id, name, initial: initialOf(name), tone: avatarTone(name),
       stars: row.stars, review: row.review, finishedAt: row.finished_at, updatedAt: row.updated_at };
   });
   return Object.assign({ list }, average(list.map((r) => r.stars)));

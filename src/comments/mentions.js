@@ -1,6 +1,8 @@
 // @mentions: pure text logic, no database. `users` are { id, name } with
 // the same name comments show (display name, else the email's prefix).
 
+const { initialOf, avatarTone } = require('../users');
+
 const MAX_MENTIONS = 10;
 // Bounds the work on a hostile body like "@@@@…": only an "@" followed by a
 // letter/digit can start a name, and at most this many are looked at.
@@ -70,7 +72,7 @@ function suggest(users, query, limit = 8) {
     ranked.push({ rank, user });
   }
   ranked.sort((a, b) => (a.rank - b.rank) || a.user.name.localeCompare(b.user.name));
-  return ranked.slice(0, limit).map((r) => ({ id: r.user.id, name: r.user.name }));
+  return ranked.slice(0, limit).map((r) => ({ id: r.user.id, name: r.user.name, initial: initialOf(r.user.name), tone: avatarTone(r.user.name) }));
 }
 
 module.exports = { findMentions, suggest, MAX_MENTIONS };

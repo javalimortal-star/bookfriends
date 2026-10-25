@@ -39,7 +39,7 @@
           </div>
         </div>
         <% if (r.note) { %><p class="request-note"><%= r.note %></p><% } %>
-        <div class="request-meta"><%= t('Asked by {name}', { name: r.requesterName }) %> · <%= r.when %></div>
+        <div class="request-meta"><%= t('Asked by {name}', { name: r.requesterName }) %> · <%= ago(r.created_at) %></div>
         <% if (isOwner) { %>
           <div class="request-actions">
             <details class="request-fulfil">
@@ -87,7 +87,7 @@
               </div>
               <span class="request-status status-<%= r.status %>"><%= r.status === 'done' ? t('Uploaded') : t('Declined') %></span>
             </div>
-            <div class="request-meta"><%= t('Asked by {name}', { name: r.requesterName }) %> · <%= r.when %><% if (r.bookLink) { %> · <a href="<%= r.bookLink %>"><%= t('Read it') %> →</a><% } %></div>
+            <div class="request-meta"><%= t('Asked by {name}', { name: r.requesterName }) %> · <%= ago(r.updated_at) %><% if (r.bookLink) { %> · <a href="<%= r.bookLink %>"><%= t('Read it') %> →</a><% } %></div>
             <% if (isOwner) { %>
               <div class="request-actions">
                 <form method="post" action="/requests/<%= r.id %>/delete" class="inline-form" onsubmit="return confirm(<%= JSON.stringify(t('Delete this request?')) %>)">

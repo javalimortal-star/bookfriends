@@ -2,21 +2,13 @@ const crypto = require('crypto');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { db } = require('../db');
-const { requireAuth, requireOwner } = require('./middleware');
+const { requireAuth, requireOwner, logIn } = require('./middleware');
+const { normalizeEmail, normalizeDisplayName, roleFor } = require('../users');
 const { loginLimiter, passwordLimiter, registerLimiter } = require('../rate-limit');
 const backups = require('../backup');
 
 const router = express.Router();
 const BCRYPT_COST = 12;
-
-function normalizeEmail(email) {
-  return String(email || '').trim().toLowerCase();
-}
-
-// Optional nickname shown on comments; empty means "fall back to email prefix".
-function normalizeDisplayName(value) {
-  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, 30) || null;
-}
 
 router.get('/register', (req, res) => {
   if (req.user) return res.redirect('/');
@@ -36,17 +28,11 @@ router.post('/register', registerLimiter, (req, res) => {
   if (exists) {
     return res.status(400).render('auth-register', { title: req.t('Register'), error: req.t('That email is already registered.') });
   }
-  const ownerEmail = normalizeEmail(process.env.OWNER_EMAIL);
-  const role = email === ownerEmail ? 'owner' : 'reader';
   const hash = bcrypt.hashSync(password, BCRYPT_COST);
   const info = db.prepare(
     'INSERT INTO users (email, password_hash, role, display_name, created_at) VALUES (?, ?, ?, ?, ?)'
-  ).run(email, hash, role, normalizeDisplayName(req.body.display_name), Date.now());
-  req.session.regenerate((err) => {
-    if (err) return res.status(500).render('error', { title: req.t('Error'), message: req.t('Session error.') });
-    req.session.userId = info.lastInsertRowid;
-    res.redirect('/');
-  });
+  ).run(email, hash, roleFor(email), normalizeDisplayName(req.body.display_name), Date.now());
+  logIn(req, res, info.lastInsertRowid);
 });
 
 router.get('/login', (req, res) => {
@@ -61,11 +47,7 @@ router.post('/login', loginLimiter, (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).render('auth-login', { title: req.t('Log in'), error: req.t('Wrong email or password.') });
   }
-  req.session.regenerate((err) => {
-    if (err) return res.status(500).render('error', { title: req.t('Error'), message: req.t('Session error.') });
-    req.session.userId = user.id;
-    res.redirect('/');
-  });
+  logIn(req, res, user.id);
 });
 
 router.post('/logout', (req, res) => {

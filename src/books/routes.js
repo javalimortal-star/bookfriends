@@ -3,7 +3,7 @@ const os = require('os');
 const nodePath = require('path');
 const express = require('express');
 const multer = require('multer');
-const { requireAuth, requireOwner, canViewBook } = require('../auth/middleware');
+const { requireAuth, requireOwner, canViewBook, viewableBook } = require('../auth/middleware');
 const books = require('./service');
 const bookmarks = require('./bookmarks');
 const ratings = require('./ratings');
@@ -15,6 +15,8 @@ const { LANGS } = require('../i18n');
 const { searchLimiter } = require('../rate-limit');
 
 const router = express.Router();
+
+const bookFromSlug = (req, res) => viewableBook(req, res, books.getBookBySlug(req.params.slug));
 
 const MAX_EPUB_MB = Number(process.env.MAX_EPUB_MB) || 200;
 const UPLOAD_TMP = nodePath.join(os.tmpdir(), 'bookfriends-uploads');
@@ -55,7 +57,7 @@ router.get('/', (req, res) => {
   }
   const currentChapter = current ? books.chapterTitle(current.id, current.bookmarkIdx) : null;
   // Friends' bookmarks for every card in one query, grouped per book.
-  const friendsByBook = friends.groupByBook(friends.friendsProgress(req.user, { lang: req.lang }));
+  const friendsByBook = friends.groupByBook(friends.friendsProgress(req.user));
   const currentFriend = current ? friends.closestFriend(current.bookmarkIdx, friendsByBook.get(current.id)) : null;
   res.render('shelf', {
     title: 'BookFriends', books: shelf, sort, current, currentChapter, friendsByBook, currentFriend,
@@ -92,25 +94,23 @@ router.post('/upload', requireOwner, (req, res) => {
 });
 
 router.post('/book/:slug/visibility', requireOwner, (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!book) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   const next = book.visibility === 'public' ? 'private' : 'public';
   require('../db').db.prepare('UPDATE books SET visibility = ? WHERE id = ?').run(next, book.id);
   res.redirect('/');
 });
 
 router.post('/book/:slug/delete', requireOwner, (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!book) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   books.deleteBook(book.id);
   res.redirect('/');
 });
 
 router.get('/book/:slug/download', (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
-  }
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   const file = nodePath.join(books.bookDir(book.id), 'book.epub');
   if (!fs.existsSync(file)) {
     return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No EPUB stored for this book.') });
@@ -121,10 +121,8 @@ router.get('/book/:slug/download', (req, res) => {
 // Search inside a book. Registered before /book/:slug/:idx, which would
 // otherwise read "search" as a chapter number (and 404).
 router.get('/book/:slug/search', searchLimiter, (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
-  }
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const check = q ? checkQuery(q) : 'empty';
   // "Back" returns to the chapter the search was opened from (?from=),
@@ -147,15 +145,10 @@ router.get('/book/:slug/search', searchLimiter, (req, res) => {
 });
 
 router.get('/book/:slug/:idx', (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
-  }
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   const idx = Number.parseInt(req.params.idx, 10);
-  if (!Number.isInteger(idx) || idx < 0) {
-    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such chapter.') });
-  }
-  const chapter = books.getChapter(book.id, idx);
+  const chapter = Number.isInteger(idx) && idx >= 0 ? books.getChapter(book.id, idx) : null;
   if (!chapter) return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such chapter.') });
   const total = books.chapterCount(book.id);
 
@@ -200,7 +193,7 @@ router.get('/book/:slug/:idx', (req, res) => {
 // The "Friends reading this book" strip above the chapter comments; friends
 // on this very chapter come first and get a sentence of their own.
 function readerFriends(req, book, idx) {
-  const list = friends.friendsProgress(req.user, { bookId: book.id, lang: req.lang });
+  const list = friends.friendsProgress(req.user, { bookId: book.id });
   const here = list.filter((f) => f.chapterIdx === idx);
   const others = list.filter((f) => f.chapterIdx !== idx);
   const names = here.length
@@ -252,10 +245,8 @@ router.delete('/api/book/:bookId/bookmark', requireAuth, (req, res) => {
 
 // Plain-form variant for the shelf's ✕ button (no JS on that page).
 router.post('/book/:slug/bookmark/remove', requireAuth, (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!canViewBook(book, req.user)) {
-    return res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
-  }
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   bookmarks.removeBookmark(req.user.id, book.id);
   res.redirect('/');
 });

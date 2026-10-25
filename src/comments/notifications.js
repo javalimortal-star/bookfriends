@@ -11,10 +11,6 @@ function notify(recipientId, commentId, kind) {
   push.notificationCreated(Number(info.lastInsertRowid));
 }
 
-function notifyReply(recipientId, replyCommentId) {
-  notify(recipientId, replyCommentId, 'reply');
-}
-
 // Who already has a notification for this comment (any kind): someone
 // replied to and mentioned in it hears about it once, and so does someone
 // mentioned again after an edit removed and re-added their name.
@@ -62,4 +58,4 @@ function markAllSeen(userId) {
   db.prepare('UPDATE notifications SET seen = 1 WHERE user_id = ? AND seen = 0').run(userId);
 }
 
-module.exports = { notify, notifyReply, recipientsOf, unseenCount, listForUser, linkFor, markAllSeen, prune };
+module.exports = { notify, recipientsOf, unseenCount, listForUser, linkFor, markAllSeen, prune };

@@ -5,22 +5,26 @@ const comments = require('./service');
 const notifications = require('./notifications');
 const { findMentions, suggest } = require('./mentions');
 const books = require('../books/service');
-const { relTime } = require('../i18n');
+const { displayName } = require('../users');
 
 const router = express.Router();
 
 function loadViewableChapter(req, res) {
   const chapter = books.getChapterById(Number(req.params.chapterId));
-  if (!chapter) {
-    res.status(404).json({ error: 'not found' });
-    return null;
-  }
-  const book = books.getBookById(chapter.book_id);
+  const book = chapter && books.getBookById(chapter.book_id);
   if (!canViewBook(book, req.user)) {
     res.status(404).json({ error: 'not found' });
     return null;
   }
   return { chapter, book };
+}
+
+// The comment text, or null after answering 400.
+function commentBody(req, res) {
+  const body = String(req.body.body || '').trim();
+  if (body && body.length <= 10000) return body;
+  res.status(400).json({ error: 'comment body required (max 10000 chars)' });
+  return null;
 }
 
 // JSON clients send true/false; a plain form post would send "on".
@@ -77,8 +81,8 @@ router.get('/api/chapter/:chapterId/comments', (req, res) => {
 router.post('/api/chapter/:chapterId/comments', requireAuth, commentLimiter, (req, res) => {
   const ctx = loadViewableChapter(req, res);
   if (!ctx) return;
-  const body = String(req.body.body || '').trim();
-  if (!body || body.length > 10000) return res.status(400).json({ error: 'comment body required (max 10000 chars)' });
+  const body = commentBody(req, res);
+  if (!body) return;
 
   let paraIndex = null;
   if (req.body.para_index !== null && req.body.para_index !== undefined && req.body.para_index !== '') {
@@ -106,7 +110,7 @@ router.post('/api/chapter/:chapterId/comments', requireAuth, commentLimiter, (re
     spoiler: isOn(req.body.spoiler),
   });
   if (parentAuthorId !== null && parentAuthorId !== req.user.id) {
-    notifications.notifyReply(parentAuthorId, created.id);
+    notifications.notify(parentAuthorId, created.id, 'reply');
   }
   const mentions = notifyMentions(created, ctx.book);
   res.status(201).json({ id: created.id, spoiler: !!created.spoiler, mentions });
@@ -116,10 +120,9 @@ router.get('/notifications', requireAuth, (req, res) => {
   const items = notifications.listForUser(req.user.id).map((n) => {
     return Object.assign(n, {
       link: notifications.linkFor(n),
-      replierName: n.replier_name || n.replier_email.split('@')[0],
+      replierName: displayName({ display_name: n.replier_name, email: n.replier_email }),
       // a spoiler stays hidden here too; the reader blurs it until tapped
       excerpt: n.spoiler ? null : n.body.length > 140 ? `${n.body.slice(0, 140)}…` : n.body,
-      when: relTime(n.created_at, req.lang),
     });
   });
   notifications.markAllSeen(req.user.id);
@@ -146,8 +149,8 @@ function loadEditableComment(req, res, { ownerMayDelete = false } = {}) {
 router.patch('/api/comments/:id', requireAuth, commentLimiter, (req, res) => {
   const comment = loadEditableComment(req, res);
   if (!comment) return;
-  const body = String(req.body.body || '').trim();
-  if (!body || body.length > 10000) return res.status(400).json({ error: 'comment body required (max 10000 chars)' });
+  const body = commentBody(req, res);
+  if (!body) return;
   // left out = unchanged, so an older client's edit can't drop the flag
   const spoiler = req.body.spoiler === undefined ? !!comment.spoiler : isOn(req.body.spoiler);
   const updated = comments.updateComment(comment.id, body, spoiler);

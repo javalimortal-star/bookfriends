@@ -3,12 +3,11 @@ const nodePath = require('path');
 const express = require('express');
 const multer = require('multer');
 const { db } = require('../db');
-const { requireAuth, requireOwner, canViewBook } = require('../auth/middleware');
+const { requireAuth, requireOwner, viewableBook } = require('../auth/middleware');
 const books = require('./service');
 const bookmarks = require('./bookmarks');
 const ratings = require('./ratings');
 const friends = require('../friends/service');
-const { relTime } = require('../i18n');
 
 // The book page (cover, description, ratings, finished) and the owner's
 // "Edit details" form. Mounted before src/books/routes.js, whose
@@ -29,21 +28,10 @@ function imageExt(buf) {
   return null;
 }
 
-function notFound(req, res) {
-  res.status(404).render('error', { title: req.t('Not found'), message: req.t('No such book.') });
-}
-
-function viewableBook(req, res) {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!canViewBook(book, req.user)) {
-    notFound(req, res);
-    return null;
-  }
-  return book;
-}
+const bookFromSlug = (req, res) => viewableBook(req, res, books.getBookBySlug(req.params.slug));
 
 router.get('/book/:slug', (req, res) => {
-  const book = viewableBook(req, res);
+  const book = bookFromSlug(req, res);
   if (!book) return;
   const mark = req.user ? bookmarks.getBookmark(req.user.id, book.id) : null;
   res.render('book', {
@@ -54,27 +42,26 @@ router.get('/book/:slug', (req, res) => {
     markTitle: mark ? books.chapterTitle(book.id, mark.chapter_idx) : null,
     ratings: ratings.forBook(book.id),
     mine: req.user ? ratings.mine(req.user.id, book.id) : null,
-    friends: friends.friendsProgress(req.user, { bookId: book.id, lang: req.lang }),
-    ago: (ts) => relTime(ts, req.lang),
+    friends: friends.friendsProgress(req.user, { bookId: book.id }),
   });
 });
 
 router.post('/book/:slug/finish', requireAuth, (req, res) => {
-  const book = viewableBook(req, res);
+  const book = bookFromSlug(req, res);
   if (!book) return;
   ratings.finish(req.user.id, book.id);
   res.redirect(`/book/${book.slug}#rate`);
 });
 
 router.post('/book/:slug/unfinish', requireAuth, (req, res) => {
-  const book = viewableBook(req, res);
+  const book = bookFromSlug(req, res);
   if (!book) return;
   ratings.unfinish(req.user.id, book.id);
   res.redirect(`/book/${book.slug}#rate`);
 });
 
 router.post('/book/:slug/rate', requireAuth, (req, res) => {
-  const book = viewableBook(req, res);
+  const book = bookFromSlug(req, res);
   if (!book) return;
   const parsed = ratings.parseRating(req.body);
   if (parsed.error) return res.status(400).render('error', { title: req.t('Error'), message: req.t('Reviews can be up to {max} characters.', { max: ratings.REVIEW_MAX }) });
@@ -111,14 +98,14 @@ function renderEdit(req, res, book, { values = book, error = null } = {}) {
 }
 
 router.get('/book/:slug/edit', requireOwner, (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!book) return notFound(req, res);
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   renderEdit(req, res, book);
 });
 
 router.post('/book/:slug/edit', requireOwner, (req, res) => {
-  const book = books.getBookBySlug(req.params.slug);
-  if (!book) return notFound(req, res);
+  const book = bookFromSlug(req, res);
+  if (!book) return;
   cover.single('cover')(req, res, (uploadErr) => {
     if (uploadErr) {
       const message = uploadErr.code === 'LIMIT_FILE_SIZE'

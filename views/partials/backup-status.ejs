@@ -6,7 +6,7 @@
     <span class="backup-pill"><%= b.level === 'ok' ? t('OK') : b.level === 'warning' ? t('Warning') : b.level === 'problem' ? t('Problem') : t('Not set up') %></span>
   </div>
   <% if (b.level === 'ok') { %>
-    <p class="backup-lead"><%= t('All good: the mini PC downloaded a copy {ago}.', { ago: b.ago(off.last.created_at) }) %></p>
+    <p class="backup-lead"><%= t('All good: the mini PC downloaded a copy {ago}.', { ago: ago(off.last.created_at) }) %></p>
   <% } else if (b.level === 'none') { %>
     <p class="backup-lead"><%= t('No backups on this server yet.') %></p>
     <p class="hint"><%= t('That is normal on a test computer. On the real server a job makes one every night (README, "Backups").') %></p>
@@ -16,7 +16,7 @@
     <div class="backup-fact">
       <dt><%= t('Newest backup on this server') %></dt>
       <% if (loc.newest) { %>
-        <dd class="backup-when"><%= b.ago(loc.newest.mtime) %></dd>
+        <dd class="backup-when"><%= ago(loc.newest.mtime) %></dd>
         <dd class="backup-detail"><%= loc.newest.name %> · <%= b.size(loc.newest.size) %> · <%= t.n('{count} backup kept', '{count} backups kept', loc.count) %></dd>
       <% } else { %>
         <dd class="backup-when"><%= t('None yet') %></dd>
@@ -28,7 +28,7 @@
         <dd class="backup-when"><%= t('Turned off') %></dd>
         <dd class="backup-detail"><%= t('{name} is not set on the server.', { name: 'BACKUP_TOKEN' }) %></dd>
       <% } else if (off.last) { %>
-        <dd class="backup-when"><%= b.ago(off.last.created_at) %></dd>
+        <dd class="backup-when"><%= ago(off.last.created_at) %></dd>
         <dd class="backup-detail"><%= off.last.file_name %> · <%= b.size(off.last.size) %><% if (off.last.ip) { %> · <%= t('from {ip}', { ip: off.last.ip }) %><% } %></dd>
       <% } else { %>
         <dd class="backup-when"><%= t('Never') %></dd>
@@ -45,7 +45,7 @@
         <p><%= t('There are no backups on this server, so the mini PC has nothing to download: the nightly backup job has never run here, or its folder is missing.') %>
           <%= t('On the server, check that the job is still scheduled ({cmd}) and look for errors in {log}.', { cmd: 'crontab -l', log: '~/backup.log' }) %></p>
       <% } else if (loc.level !== 'ok') { %>
-        <p><%= t('The newest backup on this server was made {ago}: the nightly backup job (03:30 UTC) seems to have stopped.', { ago: b.ago(loc.newest.mtime) }) %>
+        <p><%= t('The newest backup on this server was made {ago}: the nightly backup job (03:30 UTC) seems to have stopped.', { ago: ago(loc.newest.mtime) }) %>
           <%= t('On the server, check that the job is still scheduled ({cmd}) and look for errors in {log}.', { cmd: 'crontab -l', log: '~/backup.log' }) %></p>
       <% } %>
       <% if (off.level === 'disabled') { %>
