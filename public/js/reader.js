@@ -2,6 +2,7 @@
   'use strict';
 
   var R = window.__READER__;
+  var params = new URLSearchParams(location.search);
 
   /* ---------- translations (English text is the key; reader.ejs embeds the rest) ---------- */
 
@@ -128,12 +129,6 @@
     return para === null ? 'chapter' : String(para);
   }
 
-  // same name, same avatar colour (comments and the @ suggestions)
-  function avatarTone(name) {
-    var tone = 0;
-    for (var i = 0; i < name.length; i++) tone = (tone * 31 + name.charCodeAt(i)) % 5;
-    return tone;
-  }
 
   /* ---------- comment text: @mention highlights + spoiler blur ---------- */
 
@@ -237,7 +232,7 @@
 
   function renderComment(comment, ctx) {
     var card = el('div', 'comment');
-    var avatar = el('div', 'comment-avatar avatar-' + avatarTone(comment.userName), comment.userName.charAt(0).toUpperCase());
+    var avatar = el('div', 'comment-avatar avatar-' + comment.tone, comment.initial);
     var main = el('div', 'comment-main');
 
     var head = el('div', 'comment-head');
@@ -311,10 +306,9 @@
 
     if (comment.replies.length > 0) {
       var replyCount = { count: comment.replies.length };
-      var toggle = el('button', 'link-btn view-replies', t('View replies ({count})', replyCount) + ' ▾');
+      var toggle = el('button', 'link-btn view-replies', t('Hide replies ({count})', replyCount) + ' ▴');
       toggle.type = 'button';
       var repliesBox = el('div', 'comment-replies');
-      repliesBox.hidden = true;
       comment.replies.forEach(function (child) { repliesBox.appendChild(renderComment(child, ctx)); });
       toggle.addEventListener('click', function () {
         repliesBox.hidden = !repliesBox.hidden;
@@ -467,7 +461,7 @@
         var item = el('li', 'mention-option');
         item.id = list.id + '-' + i;
         item.setAttribute('role', 'option');
-        item.appendChild(el('span', 'comment-avatar avatar-' + avatarTone(person.name), person.name.charAt(0).toUpperCase()));
+        item.appendChild(el('span', 'comment-avatar avatar-' + person.tone, person.initial));
         item.appendChild(el('span', 'mention-name', person.name));
         item.addEventListener('click', function () { pick(person); });
         list.appendChild(item);
@@ -715,7 +709,7 @@
   // A notification link (?panel= or #comments) jumps to a comment, not to
   // where the reader is: saving that spot would move their place in the
   // chapter. Saving starts once they scroll the page themselves.
-  if (positionArmed && (new URLSearchParams(location.search).has('panel') || location.hash)) {
+  if (positionArmed && (params.has('panel') || location.hash)) {
     positionArmed = false;
     var holdForDeepLink = true;
     ['wheel', 'touchmove', 'keydown'].forEach(function (evt) {
@@ -775,34 +769,11 @@
   });
 
   // Deep link from a notification: open the right paragraph's comment panel.
-  var panelParam = new URLSearchParams(location.search).get('panel');
+  var panelParam = params.get('panel');
   if (panelParam !== null && Number.isInteger(Number(panelParam)) && Number(panelParam) >= 0) {
     var panelBlock = document.querySelector('#chapter-content [data-p="' + Number(panelParam) + '"]');
     if (panelBlock) panelBlock.scrollIntoView();
     openPanel(Number(panelParam));
-  }
-
-  // Deep links (comment panel, #comments anchor, a search result's ?p=)
-  // win over position resume.
-  if (panelParam === null && !location.hash && !new URLSearchParams(location.search).has('p')
-      && R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
-    var resumeTarget = document.querySelector('#chapter-content [data-p="' + R.bookmark.para + '"]');
-    if (resumeTarget) {
-      var resumeInteracted = false;
-      ['wheel', 'touchstart', 'keydown'].forEach(function (evt) {
-        window.addEventListener(evt, function () { resumeInteracted = true; }, { passive: true, once: true });
-      });
-      var jumpToResume = function () {
-        window.scrollTo(0, resumeTarget.getBoundingClientRect().top + window.scrollY - coveredTop() - 8);
-        // Not a reader scroll: keep the bars shown, so coveredTop() still
-        // matches what was measured here when the position is saved.
-        lastScrollY = Math.max(0, window.scrollY);
-      };
-      jumpToResume();
-      // Images above the target can shift the layout as they load; re-align
-      // once everything has loaded, unless the reader already scrolled away.
-      window.addEventListener('load', function () { if (!resumeInteracted) jumpToResume(); });
-    }
   }
 
   /* ---------- reading settings: P badge toggle + tT font panel ---------- */
@@ -992,32 +963,36 @@
     queueViewportGap();
   }
 
-  /* ---------- search result links: ?p=<paragraph>&q=<words> ---------- */
+  /* ---------- where the chapter opens: a search result (?p=), else the saved paragraph ---------- */
 
-  // Opened from the book's search page: put that paragraph just under the
-  // bars (like the resume jump above, which ?p= overrides), flash it, and
-  // mark the searched words in it. Runs after the reading settings are
-  // applied, so the jump measures the final text size.
-  var searchParams = new URLSearchParams(location.search);
-  var searchPara = searchParams.get('p');
+  // Puts `block` just under the bars, and again once images above it have
+  // loaded unless the reader scrolled meanwhile. Not a reader scroll:
+  // lastScrollY keeps the bars shown, so coveredTop() matches when saving.
+  // Runs after the reading settings, so it measures the final text size.
+  function jumpTo(block) {
+    var touched = false;
+    ['wheel', 'touchstart', 'keydown'].forEach(function (evt) {
+      window.addEventListener(evt, function () { touched = true; }, { passive: true, once: true });
+    });
+    var jump = function () {
+      window.scrollTo(0, block.getBoundingClientRect().top + window.scrollY - coveredTop() - 8);
+      lastScrollY = Math.max(0, window.scrollY);
+    };
+    jump();
+    window.addEventListener('load', function () { if (!touched) jump(); });
+  }
+
+  var searchPara = params.get('p');
   var searchBlock = searchPara !== null && /^\d+$/.test(searchPara)
     ? document.querySelector('#chapter-content [data-p="' + Number(searchPara) + '"]') : null;
   if (searchBlock) {
-    // a look at a search result is not reading progress (?peek=1 already
-    // keeps the bookmark's chapter; this keeps its paragraph too)
-    positionArmed = false;
-    markSearchTerms(searchBlock, searchParams.get('q') || '');
-    var searchInteracted = false;
-    ['wheel', 'touchstart', 'keydown'].forEach(function (evt) {
-      window.addEventListener(evt, function () { searchInteracted = true; }, { passive: true, once: true });
-    });
-    var jumpToSearchHit = function () {
-      window.scrollTo(0, searchBlock.getBoundingClientRect().top + window.scrollY - coveredTop() - 8);
-      lastScrollY = Math.max(0, window.scrollY); // not a reader scroll: keep the bars
-    };
-    jumpToSearchHit();
-    window.addEventListener('load', function () { if (!searchInteracted) jumpToSearchHit(); });
+    positionArmed = false; // looking at a search result is not reading progress
+    markSearchTerms(searchBlock, params.get('q') || '');
+    jumpTo(searchBlock);
     searchBlock.classList.add('search-target');
+  } else if (panelParam === null && !location.hash && R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
+    var resumeTarget = document.querySelector('#chapter-content [data-p="' + R.bookmark.para + '"]');
+    if (resumeTarget) jumpTo(resumeTarget);
   }
 
   // Lower-case and drop accents, so "joao" marks "João" as the search

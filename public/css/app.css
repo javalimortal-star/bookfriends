@@ -497,6 +497,7 @@ a:hover { text-decoration: underline; }
 .link-btn.danger:hover { color: var(--danger); }
 .view-replies { color: var(--link); }
 .comment-replies { margin-top: 0.7rem; padding-left: 1rem; border-left: 2px solid var(--border); display: flex; flex-direction: column; gap: 0.9rem; }
+.comment-replies[hidden] { display: none; }
 
 /* ---------- slide-out panel ---------- */
 .panel-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); z-index: 40; }
