@@ -25,6 +25,7 @@ app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('X-Frame-Options', 'DENY');
   res.locals.user = null;
+  res.locals.origin = `${req.protocol}://${req.get('host')}`; // absolute URLs for link previews
   next();
 });
 // gzip pages, CSS, JS and JSON (~4x smaller on mobile data); images, EPUBs
@@ -43,6 +44,7 @@ app.locals.assetVersion = crypto.createHash('md5')
   .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'reader.js')))
   .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'push.js')))
   .update(fs.readFileSync(path.join(__dirname, 'public', 'logo.webp')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'og-image.jpg')))
   .digest('hex').slice(0, 10);
 // Offline reading + phone notifications (public/sw.js); SW_DISABLED=1 turns it off.
 app.locals.swEnabled = process.env.SW_DISABLED !== '1';

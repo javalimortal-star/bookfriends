@@ -178,3 +178,6 @@ CREATE TABLE IF NOT EXISTS book_ratings (
 );
 
 CREATE INDEX IF NOT EXISTS idx_book_ratings_book ON book_ratings(book_id);
+
+-- "What's new" on the shelf reads the latest comments first.
+CREATE INDEX IF NOT EXISTS idx_comments_created ON comments(created_at);

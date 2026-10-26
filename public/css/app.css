@@ -1097,6 +1097,29 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
 .cover-edit-preview { width: 72px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 3px 6px 6px 3px; box-shadow: var(--cover-shadow); }
 .cover-edit-controls { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 
+/* ---------- What's new on the shelf ---------- */
+.feed { margin: -0.6rem 0 2rem; padding: 0.9rem 1rem 0.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; }
+.feed-title { margin: 0 0 0.3rem; color: var(--muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.feed-list { list-style: none; margin: 0; padding: 0; }
+.feed-list li + li, .feed-more .feed-list li:first-child { border-top: 1px solid var(--border); }
+.feed-item {
+  display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.6rem 0; color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+.feed-item:hover { text-decoration: none; }
+.feed-item .friend-avatar { width: 30px; height: 30px; font-size: 0.85rem; margin-top: 0.1rem; }
+.feed-cover { flex: 0 0 auto; width: 30px; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 2px 4px 4px 2px; box-shadow: var(--cover-shadow); }
+.feed-cover-blank { display: block; background: linear-gradient(155deg, #2d4c7e, #24606a); }
+.feed-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; line-height: 1.4; }
+.feed-line { font-size: 0.9rem; }
+.feed-line strong { color: var(--text-strong); }
+.feed-line em { color: var(--text-strong); font-style: normal; font-weight: 600; }
+.feed-excerpt { color: var(--muted); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-hidden { font-style: italic; }
+.feed-when { flex: 0 0 auto; color: var(--muted); font-size: 0.75rem; margin-top: 0.15rem; white-space: nowrap; }
+.feed-more summary { cursor: pointer; color: var(--link); font-weight: 700; font-size: 0.85rem; padding: 0.5rem 0; list-style: none; -webkit-tap-highlight-color: transparent; }
+.feed-more summary::-webkit-details-marker { display: none; }
+.feed-more[open] summary { display: none; }
 /* ---------- screen-size and preference adjustments (last, so they win) ---------- */
 @media (max-width: 640px) {
   .comment-panel { width: 100vw; border-left: 0; }
@@ -1131,6 +1154,7 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
   .spoiler-reveal:hover .spoiler-label { border-color: var(--accent); }
   .mention-option:hover { background: var(--accent-soft); color: var(--text-strong); }
   .star-picker label:hover, .star-picker label:hover ~ label { color: var(--accent-strong); }
+  .feed-item:hover .feed-line em { color: var(--link); }
 }
 @media (prefers-reduced-motion: reduce) {
   .btn, .book-cover-link, .continue-card, .next-chapter-btn, .notif { transition: none; }

@@ -1,0 +1,42 @@
+<%# Friends' recent activity (src/friends/feed.js); the first few, the rest folded. %>
+<% if (typeof feed !== 'undefined' && feed.length > 0) { %>
+  <% const SHOWN = 4; %>
+  <% const row = (e) => { %>
+    <li>
+      <a class="feed-item" href="<%= e.link %>">
+        <% if (e.kind === 'book') { %>
+          <% if (e.book.cover_path) { %><img class="feed-cover" src="<%= coverUrl(e.book) %>" alt="" loading="lazy"><% } else { %><span class="feed-cover feed-cover-blank" aria-hidden="true"></span><% } %>
+        <% } else { %>
+          <span class="friend-avatar avatar-<%= e.tone %>" aria-hidden="true"><%= e.initial %></span>
+        <% } %>
+        <span class="feed-main">
+          <span class="feed-line">
+            <% if (e.kind === 'comment') { %>
+              <strong><%= e.name %></strong> <%= e.count === 1 ? t('commented on') : t('left {count} comments on', { count: e.count }) %> <em><%= e.bookTitle %></em> · <%= t('ch. {n}', { n: e.chapter }) %>
+            <% } else if (e.kind === 'finished') { %>
+              <strong><%= e.name %></strong> <%= e.stars ? t('rated') : t('finished') %> <em><%= e.bookTitle %></em><% if (e.stars) { %> <span class="stars" aria-label="<%= t.n('{count} star', '{count} stars', e.stars) %>"><%= stars(e.stars) %></span><% } %>
+            <% } else if (e.kind === 'book') { %>
+              <%= t('New book:') %> <em><%= e.bookTitle %></em>
+            <% } else { %>
+              <strong><%= e.name %></strong> <%= t('asked for') %> <em><%= e.bookTitle %></em>
+            <% } %>
+          </span>
+          <% if (e.kind === 'comment' && e.excerpt) { %><span class="feed-excerpt">“<%= e.excerpt %>”</span>
+          <% } else if (e.kind === 'comment' && e.spoiler) { %><span class="feed-excerpt feed-hidden"><%= t('Spoiler') %></span>
+          <% } else if (e.kind === 'comment' && e.ahead) { %><span class="feed-excerpt feed-hidden"><%= t('In a chapter you haven’t read yet') %></span><% } %>
+        </span>
+        <span class="feed-when"><%= ago(e.at) %></span>
+      </a>
+    </li>
+  <% } %>
+  <section class="feed" aria-labelledby="feed-title">
+    <h2 class="feed-title" id="feed-title"><%= t("What's new") %></h2>
+    <ul class="feed-list"><% feed.slice(0, SHOWN).forEach(row) %></ul>
+    <% if (feed.length > SHOWN) { %>
+      <details class="feed-more">
+        <summary><%= t('Show {count} more', { count: feed.length - SHOWN }) %></summary>
+        <ul class="feed-list"><% feed.slice(SHOWN).forEach(row) %></ul>
+      </details>
+    <% } %>
+  </section>
+<% } %>

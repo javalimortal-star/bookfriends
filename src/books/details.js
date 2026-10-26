@@ -35,8 +35,15 @@ router.get('/book/:slug', (req, res) => {
   const book = bookFromSlug(req, res);
   if (!book) return;
   const mark = req.user ? bookmarks.getBookmark(req.user.id, book.id) : null;
+  const about = book.description ? book.description.split('\n\n')[0] : '';
   res.render('book', {
     title: book.title,
+    og: {
+      type: 'book',
+      title: book.author ? `${book.title} — ${book.author}` : book.title,
+      description: about.length > 200 ? `${about.slice(0, 200)}…` : about || req.t('Read it with your friends on BookFriends.'),
+      image: book.cover_path ? req.app.locals.coverUrl(book) : null,
+    },
     book,
     chapterTotal: books.chapterCount(book.id),
     mark,

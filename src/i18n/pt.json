@@ -364,5 +364,15 @@
   "Enter a title.": "Digite um título.",
   "The number in the series must be a number, like 2 or 2.5.": "O número na série precisa ser um número, como 2 ou 2.5.",
   "That image is too large — the limit is {mb} MB.": "Essa imagem é grande demais — o limite é {mb} MB.",
-  "The cover must be a JPEG, PNG, WebP or GIF image.": "A capa precisa ser uma imagem JPEG, PNG, WebP ou GIF."
+  "The cover must be a JPEG, PNG, WebP or GIF image.": "A capa precisa ser uma imagem JPEG, PNG, WebP ou GIF.",
+  "What's new": "Novidades",
+  "commented on": "comentou em",
+  "left {count} comments on": "deixou {count} comentários em",
+  "rated": "avaliou",
+  "finished": "terminou",
+  "New book:": "Livro novo:",
+  "asked for": "pediu",
+  "In a chapter you haven’t read yet": "Num capítulo que você ainda não leu",
+  "Show {count} more": "Mostrar mais {count}",
+  "Read it with your friends on BookFriends.": "Leia com seus amigos no BookFriends."
 }

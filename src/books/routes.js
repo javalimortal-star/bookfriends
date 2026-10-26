@@ -11,6 +11,7 @@ const search = require('./search');
 const { checkQuery } = require('./search-text');
 const commentsService = require('../comments/service');
 const friends = require('../friends/service');
+const feed = require('../friends/feed');
 const { LANGS } = require('../i18n');
 const { searchLimiter } = require('../rate-limit');
 
@@ -62,6 +63,7 @@ router.get('/', (req, res) => {
   res.render('shelf', {
     title: 'BookFriends', books: shelf, sort, current, currentChapter, friendsByBook, currentFriend,
     ratingsByBook: ratings.shelfSummary(req.user && req.user.id),
+    feed: feed.feedFor(req.user),
   });
 });
 
@@ -97,7 +99,9 @@ router.post('/book/:slug/visibility', requireOwner, (req, res) => {
   const book = bookFromSlug(req, res);
   if (!book) return;
   const next = book.visibility === 'public' ? 'private' : 'public';
-  require('../db').db.prepare('UPDATE books SET visibility = ? WHERE id = ?').run(next, book.id);
+  // published_at: when friends' What's new announces it
+  require('../db').db.prepare('UPDATE books SET visibility = ?, published_at = COALESCE(?, published_at) WHERE id = ?')
+    .run(next, next === 'public' ? Date.now() : null, book.id);
   res.redirect('/');
 });
 
@@ -178,6 +182,7 @@ router.get('/book/:slug/:idx', (req, res) => {
   res.render('reader', {
     finished: req.user ? !!ratings.mine(req.user.id, book.id) : false,
     title: `${chapter.title} — ${book.title}`,
+    og: { title: `${chapter.title} — ${book.title}`, description: req.t('Read it with your friends on BookFriends.'), image: book.cover_path ? req.app.locals.coverUrl(book) : null },
     book,
     chapter,
     prevIdx: idx > 0 ? idx - 1 : null,

@@ -13,6 +13,7 @@ Live at **[bookfriends.com.br](https://bookfriends.com.br)** · English · Portu
 - Your place is saved down to the paragraph. Swipe (or press ← →) to change chapters.
 - Search inside a book, accent-insensitive ("joao" finds "João").
 - Reads offline: the next chapters are saved on the phone automatically. Installable as an app.
+- Light on mobile data: small covers and compressed pages, about 150 KB for a first visit.
 
 **Together**
 - Comments on any paragraph (a small count bubble after its last word) or on the whole chapter, with replies, likes, @mentions and a spoiler blur.
@@ -20,6 +21,8 @@ Live at **[bookfriends.com.br](https://bookfriends.com.br)** · English · Portu
 - See where each friend is in a book, on the shelf and in the reader.
 - Finished books, 1–5 star ratings and reviews; reviews stay hidden until you finish the book yourself.
 - Book requests with "me too" votes.
+- "What's new" on the bookshelf: friends' comments, ratings, requests and new books, without spoilers (comments from chapters you haven't reached show without their text).
+- Link previews with the book's cover when you share a link on WhatsApp.
 
 **For the owner**
 - Upload EPUBs, keep books private or public, and edit a book's title, author, series, description and cover.
@@ -63,6 +66,7 @@ Register with the exact `OWNER_EMAIL` address to get the owner account, then use
 ```sh
 npm test         # unit tests (EPUB parsing against the Dracula fixture, search, mentions, push, ...)
 npm run lint
+npm run e2e      # browser tests on a throwaway server (first: npx playwright-core install chromium-headless-shell)
 ```
 
 ## Deploy on a small server

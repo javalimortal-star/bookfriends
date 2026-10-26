@@ -25,6 +25,8 @@ function migrate() {
   ensureColumn('books', 'series_index', 'series_index REAL');
   ensureColumn('books', 'updated_at', 'updated_at INTEGER');
   ensureColumn('books', 'cover_thumb', 'cover_thumb TEXT'); // src/books/covers.js
+  // when the book was last made public: "New book" in friends' What's new
+  ensureColumn('books', 'published_at', 'published_at INTEGER');
   // 0 hides the user's bookmarks from the friends' progress on shelf and reader
   ensureColumn('users', 'share_progress', 'share_progress INTEGER NOT NULL DEFAULT 1');
   // last language the user browsed in, so push notifications can use it

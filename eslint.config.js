@@ -14,6 +14,11 @@ module.exports = [
     },
   },
   {
+    // browser tests: page.evaluate() callbacks run in the page
+    files: ['test/e2e/**/*.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ['public/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 2023,

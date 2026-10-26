@@ -48,6 +48,7 @@
   </div>
   <img class="hero-logo" src="/logo.webp?v=<%= assetVersion %>" alt="">
 </section>
+<%- include('partials/feed') %>
 
 <div class="shelf-header">
   <h2 class="section-title"><%= t('Bookshelf') %><% if (books.length > 0) { %> <span class="section-count"><%= t.n('{count} book', '{count} books', books.length) %></span><% } %></h2>
