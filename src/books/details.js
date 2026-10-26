@@ -8,6 +8,7 @@ const books = require('./service');
 const bookmarks = require('./bookmarks');
 const ratings = require('./ratings');
 const friends = require('../friends/service');
+const covers = require('./covers');
 
 // The book page (cover, description, ratings, finished) and the owner's
 // "Edit details" form. Mounted before src/books/routes.js, whose
@@ -127,13 +128,17 @@ router.post('/book/:slug/edit', requireOwner, (req, res) => {
     } else if (req.body.remove_cover === '1') {
       coverPath = null;
     }
+    const coverChanged = coverPath !== book.cover_path;
     db.prepare(`
-      UPDATE books SET title = ?, author = ?, series = ?, series_index = ?, description = ?, cover_path = ?, updated_at = ?
+      UPDATE books SET title = ?, author = ?, series = ?, series_index = ?, description = ?, cover_path = ?, cover_thumb = ?, updated_at = ?
       WHERE id = ?
-    `).run(values.title, values.author, values.series, values.series_index, values.description, coverPath, Date.now(), book.id);
-    // the old cover file goes once the new one is in place
-    if (book.cover_path && book.cover_path !== coverPath) {
-      fs.rmSync(nodePath.join(dir, nodePath.basename(book.cover_path)), { force: true });
+    `).run(values.title, values.author, values.series, values.series_index, values.description, coverPath,
+      coverChanged ? null : book.cover_thumb, Date.now(), book.id);
+    // the old cover (and its thumbnail) go once the new one is in place
+    if (coverChanged) {
+      covers.dropThumb(book);
+      if (book.cover_path) fs.rmSync(nodePath.join(dir, nodePath.basename(book.cover_path)), { force: true });
+      if (coverPath) covers.queueThumb(book.id);
     }
     res.redirect(`/book/${book.slug}`);
   });

@@ -3,6 +3,7 @@ const nodePath = require('path');
 const { db, DATA_DIR } = require('../db');
 const { parseEpub, MEDIA_BASE_PLACEHOLDER } = require('../epub/parse');
 const search = require('./search');
+const covers = require('./covers');
 
 function slugify(title) {
   const base = String(title).toLowerCase().normalize('NFKD')
@@ -58,6 +59,7 @@ function createBookFromEpub(epubPath, ownerId) {
       const coverFile = `cover${parsed.cover.ext}`;
       fs.writeFileSync(nodePath.join(bookDir(bookId), coverFile), data);
       db.prepare('UPDATE books SET cover_path = ? WHERE id = ?').run(coverFile, bookId);
+      covers.queueThumb(bookId);
     }
   }
   // Search index: built in small background batches, so a 2000-chapter

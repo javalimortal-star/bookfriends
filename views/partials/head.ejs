@@ -29,7 +29,7 @@
 <body<% if (typeof bodyClass !== 'undefined') { %> class="<%= bodyClass %>"<% } %>>
 <% const navName = user ? displayName(user) : ''; %>
 <nav class="nav">
-  <a class="nav-brand" href="/"><img class="nav-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">BookFriends</a>
+  <a class="nav-brand" href="/"><img class="nav-logo" src="/logo.webp?v=<%= assetVersion %>" alt="">BookFriends</a>
   <div class="nav-right">
     <% if (user) { %>
       <% if (user.role === 'owner') { %>

@@ -29,7 +29,7 @@ var ICON = '/android-chrome-192x192.png';
 var PASS_THROUGH = /^\/(?:api|auth|lang)(?:\/|$)|^\/backup|^\/(?:healthz|logout|sw\.js)$|^\/book\/[^/]+\/download$/;
 var CHAPTER = /^\/book\/([^/]+)\/(\d+)$/;
 var MEDIA = /^\/media\/book\/\d+\/(?:cover|img\/[^/]+)$/;
-var ICON_FILE = /^\/(?:favicon[^/]*|android-chrome-[^/]+|apple-touch-icon[^/]*)$/;
+var ICON_FILE = /^\/(?:favicon[^/]*|android-chrome-[^/]+|apple-touch-icon[^/]*|logo\.webp)$/;
 var FINGERPRINTED = /^\/(?:css|js)\//; // with ?v=<hash> they never change
 var FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
@@ -51,6 +51,7 @@ self.addEventListener('install', function (event) {
       '/css/app.css?v=' + ASSET_VERSION,
       '/js/reader.js?v=' + ASSET_VERSION,
       ICON + '?v=' + ASSET_VERSION,
+      '/logo.webp?v=' + ASSET_VERSION,
     ].map(function (url) { return cache.add(url).catch(noop); }));
   }));
 });

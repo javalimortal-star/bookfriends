@@ -27,6 +27,9 @@ app.use((req, res, next) => {
   res.locals.user = null;
   next();
 });
+// gzip pages, CSS, JS and JSON (~4x smaller on mobile data); images, EPUBs
+// and backup archives are already compressed and pass through as they are
+app.use(require('compression')());
 // Uptime probe: before sessions and parsers, a monitor needs neither.
 app.use(require('./src/backup/health'));
 // Language before the body parsers too: their errors render the error page.
@@ -39,13 +42,15 @@ app.locals.assetVersion = crypto.createHash('md5')
   .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'app.css')))
   .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'reader.js')))
   .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'push.js')))
+  .update(fs.readFileSync(path.join(__dirname, 'public', 'logo.webp')))
   .digest('hex').slice(0, 10);
 // Offline reading + phone notifications (public/sw.js); SW_DISABLED=1 turns it off.
 app.locals.swEnabled = process.env.SW_DISABLED !== '1';
 app.locals.googleEnabled = require('./src/auth/google').enabled;
-// Covers are cached for 30 days as immutable: the URL changes with each edit.
 app.locals.displayName = require('./src/users').displayName;
-app.locals.coverUrl = (book) => `/media/book/${book.id}/cover?v=${book.updated_at || book.created_at}`;
+// Covers are cached for 30 days as immutable: the URL changes with each edit,
+// and once more when the small version replaces the original.
+app.locals.coverUrl = (book) => `/media/book/${book.id}/cover?v=${book.updated_at || book.created_at}${book.cover_thumb ? 't' : ''}`;
 // "★★★★☆" for a 1-5 rating (averages rounded to the nearest star)
 app.locals.stars = (n) => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
 // /sw.js before express.static: it needs no-cache, never the 30-day caching
@@ -117,6 +122,8 @@ app.listen(PORT, () => {
   // Index books uploaded before search existed, in small background batches
   // (src/books/search.js), once the server is already answering requests.
   require('./src/books/search').startBackfill();
+  // small versions of covers uploaded before thumbnails existed
+  require('./src/books/covers').backfillThumbs();
   // drop notifications older than ~6 months: now, and once a day after that
   notifications.prune();
   setInterval(() => notifications.prune(), 24 * 60 * 60 * 1000).unref();

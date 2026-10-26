@@ -46,7 +46,7 @@
       </div>
     <% } %>
   </div>
-  <img class="hero-logo" src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
+  <img class="hero-logo" src="/logo.webp?v=<%= assetVersion %>" alt="">
 </section>
 
 <div class="shelf-header">
@@ -62,7 +62,7 @@
 </div>
 <% if (books.length === 0) { %>
   <div class="empty-shelf">
-    <img src="/android-chrome-192x192.png?v=<%= assetVersion %>" alt="">
+    <img src="/logo.webp?v=<%= assetVersion %>" alt="">
     <p><%= t('No books here yet.') %><% if (user && user.role === 'owner') { %> <a href="/upload"><%= t('Upload your first EPUB') %></a><% } %></p>
   </div>
 <% } %>

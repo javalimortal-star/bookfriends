@@ -41,7 +41,8 @@ router.get('/media/book/:id/img/:name', (req, res) => {
 router.get('/media/book/:id/cover', (req, res) => {
   const book = books.getBookById(Number(req.params.id));
   if (!book || !book.cover_path) return res.status(404).end();
-  sendBookFile(req, res, book, nodePath.join(books.bookDir(book.id), nodePath.basename(book.cover_path)));
+  // the small version once src/books/covers.js has made it
+  sendBookFile(req, res, book, nodePath.join(books.bookDir(book.id), nodePath.basename(book.cover_thumb || book.cover_path)));
 });
 
 module.exports = router;
