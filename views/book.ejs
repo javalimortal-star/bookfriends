@@ -20,9 +20,20 @@
       <div class="book-page-actions">
         <% if (read !== null) { %>
           <a class="btn" href="/book/<%= book.slug %>/<%= read %>"><%= t('Continue reading') %></a>
-          <span class="hint"><%= markTitle || t('Chapter {n}', { n: read + 1 }) %> · <%= read + 1 %>/<%= chapterTotal %></span>
         <% } else { %>
           <a class="btn" href="/book/<%= book.slug %>/0"><%= t('Start reading') %></a>
+        <% } %>
+        <%# a private book's link would show friends "not found" %>
+        <% if (book.visibility === 'public') { %>
+          <button type="button" class="btn btn-ghost share-btn" data-share
+            data-text="<%= t('Read {title} with me on BookFriends', { title: book.title }) %>"
+            data-copied="<%= t('Link copied!') %>" data-prompt="<%= t('Copy this link:') %>">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
+            <span><%= t('Share') %></span>
+          </button>
+        <% } %>
+        <% if (read !== null) { %>
+          <span class="hint book-page-progress"><%= markTitle || t('Chapter {n}', { n: read + 1 }) %> · <%= read + 1 %>/<%= chapterTotal %></span>
         <% } %>
       </div>
       <div class="book-page-links">
@@ -103,4 +114,32 @@
     <% } %>
   </section>
 </article>
+<script>
+  // Share: the phone's own share menu where there is one (the installed app
+  // has no address bar to copy from), else the link goes to the clipboard.
+  (function () {
+    var btn = document.querySelector('[data-share]');
+    if (!btn) return;
+    var label = btn.querySelector('span');
+    var url = location.origin + location.pathname;
+    function copy() {
+      var shown = function () {
+        var was = label.textContent;
+        label.textContent = btn.dataset.copied;
+        setTimeout(function () { label.textContent = was; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(shown, function () { window.prompt(btn.dataset.prompt, url); });
+      } else {
+        window.prompt(btn.dataset.prompt, url);
+      }
+    }
+    btn.addEventListener('click', function () {
+      if (!navigator.share) return copy();
+      navigator.share({ title: document.title, text: btn.dataset.text, url: url }).catch(function (err) {
+        if (err && err.name !== 'AbortError') copy(); // cancelled on purpose: nothing to do
+      });
+    });
+  })();
+</script>
 <%- include('partials/footer') %>

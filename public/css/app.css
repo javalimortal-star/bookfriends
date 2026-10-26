@@ -1058,6 +1058,8 @@ body.is-offline .comment-form .btn { opacity: 0.45; }
 .book-page-meta { margin: 0.6rem 0 0; color: var(--muted); font-size: 0.9rem; }
 .book-page-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; margin-top: 1.1rem; }
 .book-page-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-top: 0.8rem; }
+.share-btn { display: inline-flex; align-items: center; gap: 0.45rem; }
+.book-page-progress { flex-basis: 100%; }
 .book-description { color: var(--text); margin-bottom: 1.6rem; }
 .book-description p { margin: 0 0 0.8rem; }
 .book-section { margin-top: 2rem; }

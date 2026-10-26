@@ -1,4 +1,4 @@
-// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books backups offline)
+// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books share backups offline)
 // A throwaway server and headless Chromium; screenshots go to $E2E_SHOTS if set.
 const fs = require('fs');
 const os = require('os');
@@ -246,6 +246,37 @@ const sections = {
     const served = Buffer.from(await (await fetch(srv.url + after)).arrayBuffer());
     check(after !== before && /t$/.test(after) && served.length < big.length / 4, `books: new cover ${before} -> ${after}, served ${Math.round(served.length / 1024)} KB`);
     await octx.close();
+  },
+
+  // Share on the book page: the phone's share menu, else the clipboard; none for private books
+  async share() {
+    const { pub, priv } = seed;
+    const bookUrl = `${srv.url}/book/${pub}`;
+    const phone = await browser.newContext({ ...lib.PHONE, locale: 'pt-BR', serviceWorkers: 'block' });
+    await phone.addInitScript(() => { navigator.share = (data) => { window.__shared = data; return Promise.resolve(); }; });
+    let page = await phone.newPage();
+    await page.goto(bookUrl);
+    await page.click('.share-btn');
+    const shared = await page.evaluate(() => window.__shared);
+    check(shared && shared.url === bookUrl && shared.text === 'Leia Dracula comigo no BookFriends',
+      `share: the share menu gets the book link and a message (${JSON.stringify(shared)})`);
+    await shot(page, 'share-phone');
+    await phone.close();
+    const desk = await browser.newContext({ ...lib.DESKTOP, serviceWorkers: 'block' });
+    await desk.addInitScript(() => { delete Navigator.prototype.share; delete navigator.share; });
+    await desk.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: srv.url });
+    page = await desk.newPage();
+    await page.goto(bookUrl + '?from=search#ratings');
+    await page.click('.share-btn');
+    await page.waitForTimeout(200);
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    check(copied === bookUrl && (await page.textContent('.share-btn')).includes('Link copied!'),
+      `share: without a share menu the link is copied, without ?query or #hash (${copied})`);
+    await desk.close();
+    const { ctx, page: owner } = await context(lib.DESKTOP, lib.OWNER);
+    await owner.goto(`${srv.url}/book/${priv}`);
+    check(!(await owner.locator('.share-btn').count()), 'share: no button on a private book');
+    await ctx.close();
   },
 
   // the mini PC's nightly download: the exact bytes, never re-compressed, and recorded
