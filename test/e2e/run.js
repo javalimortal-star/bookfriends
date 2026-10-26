@@ -155,6 +155,16 @@ const sections = {
     const chapter = metas(await (await fetch(`${srv.url}/book/${pub}/3`)).text());
     check(/Dracula/.test(chapter.title) && chapter.image === book.image, `previews: chapter ${chapter.title}`);
     check((await fetch(`${srv.url}/book/${priv}`)).status === 404, 'previews: a private book shows nothing');
+    // WhatsApp & co. get the owner's language; people still get their own
+    await seed.owner.get('/lang/pt?next=/');
+    await seed.owner.get('/'); // records the owner's language
+    const asWhatsApp = await (await fetch(`${srv.url}/book/${pub}`, { headers: { 'User-Agent': 'WhatsApp/2.24.1.0 A', 'Accept-Language': 'en-US' } })).text();
+    check(metas(asWhatsApp).description === 'Leia com seus amigos no BookFriends.' && /<html lang="pt-BR"/.test(asWhatsApp),
+      `previews: WhatsApp gets the owner's Portuguese (${metas(asWhatsApp).description})`);
+    const asReader = metas(await (await fetch(`${srv.url}/book/${pub}`, { headers: { 'Accept-Language': 'es-ES' } })).text());
+    check(asReader.description === 'Léelo con tus amigos en BookFriends.', `previews: a Spanish browser still gets Spanish (${asReader.description})`);
+    await seed.owner.get('/lang/en?next=/');
+    await seed.owner.get('/');
   },
 
   // reading position, the bar, replies

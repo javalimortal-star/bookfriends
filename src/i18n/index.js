@@ -50,11 +50,22 @@ for (const code of CODES) {
   clientStrings[code] = JSON.stringify({ lang: LANGS[code].htmlLang, strings }).replace(/</g, '\\u003c');
 }
 
+// Apps that fetch a shared link to build its preview: they carry no cookie
+// and no reader's language, so they get the owner's (the site's own).
+const PREVIEW_BOT = /WhatsApp|facebookexternalhit|Facebot|TelegramBot|Twitterbot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview/i;
+
+function ownerLang() {
+  // required here, not at the top: the i18n tests load this file without a DB
+  const row = require('../db').db.prepare("SELECT lang FROM users WHERE role = 'owner' ORDER BY id LIMIT 1").get();
+  return row && LANGS[row.lang] ? row.lang : 'en';
+}
+
 // A chosen language (cookie, set by /lang/:code) wins; otherwise the best
 // match for the browser's Accept-Language, falling back to English.
 function pickLang(req) {
   const chosen = new RegExp(`(?:^|;\\s*)${COOKIE}=(\\w+)`).exec(req.headers.cookie || '');
   if (chosen && LANGS[chosen[1]]) return chosen[1];
+  if (PREVIEW_BOT.test(req.get('user-agent') || '')) return ownerLang();
   return req.acceptsLanguages(...CODES) || 'en';
 }
 
@@ -82,7 +93,6 @@ function middleware(req, res, next) {
 // above runs before the session is read); writes only when it changed.
 function rememberUserLang(req, res, next) {
   if (req.user && req.user.lang !== req.lang) {
-    // required here, not at the top: the i18n tests load this file without a DB
     require('../db').db.prepare('UPDATE users SET lang = ? WHERE id = ?').run(req.lang, req.user.id);
     req.user.lang = req.lang;
   }

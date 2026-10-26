@@ -38,25 +38,29 @@ async function startServer(env = {}) {
   };
 }
 
-// A cookie-keeping HTTP client for one user.
+// A cookie-keeping HTTP client for one user (the session and the language cookie).
 function client(url) {
-  let cookie = '';
+  const jar = new Map();
+  const cookie = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
   async function request(method, p, { form, json, body, headers = {}, redirect = 'manual' } = {}) {
     const h = { ...headers };
-    if (cookie) h.Cookie = cookie;
+    if (jar.size) h.Cookie = cookie();
     let payload = body;
     if (form) { h['Content-Type'] = 'application/x-www-form-urlencoded'; payload = new URLSearchParams(form).toString(); }
     if (json) { h['Content-Type'] = 'application/json'; h.Accept = 'application/json'; payload = JSON.stringify(json); }
     const res = await fetch(url + p, { method, headers: h, body: payload, redirect });
-    const set = res.headers.get('set-cookie');
-    if (set) cookie = set.split(';')[0];
+    for (const set of res.headers.getSetCookie()) {
+      const [pair] = set.split(';');
+      const eq = pair.indexOf('=');
+      jar.set(pair.slice(0, eq), pair.slice(eq + 1));
+    }
     return res;
   }
   return {
     get: (p, o) => request('GET', p, o),
     post: (p, o) => request('POST', p, o),
     patch: (p, o) => request('PATCH', p, o),
-    cookie: () => cookie,
+    cookie,
   };
 }
 
