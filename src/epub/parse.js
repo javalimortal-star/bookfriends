@@ -36,6 +36,23 @@ function metaText($opf, localName) {
   return value;
 }
 
+// The author: a dc:creator marked as one (opf:role="aut", or an EPUB 3
+// <meta refines> role) wins over the others, such as whoever made the file
+// ("ePub created by ..."); without roles, the first one.
+function authorOf($opf) {
+  const creators = $opf('metadata').children().toArray()
+    .filter((el) => /(^|:)creator$/.test(el.tagName || ''))
+    .map((el) => {
+      const attr = Object.keys(el.attribs || {}).find((name) => /(^|:)role$/.test(name));
+      const id = el.attribs && el.attribs.id;
+      const refined = id ? $opf('metadata meta').filter((_, m) => m.attribs.refines === `#${id}` && m.attribs.property === 'role').first().text() : '';
+      return { name: $opf(el).text().trim(), role: (attr ? el.attribs[attr] : refined).trim() };
+    })
+    .filter((c) => c.name);
+  const author = creators.find((c) => c.role === 'aut') || creators[0];
+  return author ? author.name : null;
+}
+
 function findOpfPath(zip) {
   const container = zipEntryText(zip, 'META-INF/container.xml');
   const $ = cheerio.load(container, { xmlMode: true });
@@ -98,34 +115,62 @@ function parseNavPoints(ncxXml, ncxDir) {
   return points;
 }
 
-// Slice a chapter out of a spine file: from the navPoint's anchor (lifted to its
-// top-level ancestor under <body>) up to the next same-file anchor, else end of
-// body. Handles multiple navPoints sharing one file via fragment anchors.
-function sliceChapters(fileXhtml, anchors) {
-  const $ = cheerio.load(fileXhtml);
-  const bodyChildren = $('body').children().toArray();
-  if (bodyChildren.length === 0) return anchors.map(() => '');
+// Wrappers a file may be split inside. Project Gutenberg puts a whole part
+// (dozens of chapters) in one <div class="chapter">, and a self-closed
+// <a id="..."/>, read as HTML, swallows everything after it; a <p> or a
+// heading holding an anchor stays whole.
+const CONTAINERS = new Set(['body', 'div', 'section', 'article', 'main', 'a', 'span']);
 
-  const startIndexes = anchors.map(({ fragment }) => {
-    if (!fragment) return 0;
-    const el = $(`[id="${fragment}"]`).first();
-    if (el.length === 0) return 0;
-    let node = el[0];
-    while (node.parent && node.parent.tagName !== 'body' && node.parent.type === 'tag') {
-      node = node.parent;
+const contains = (outer, node) => {
+  for (let n = node; n; n = n.parent) if (n === outer) return true;
+  return false;
+};
+
+// The file's content as blocks in reading order, with every wrapper that holds
+// an anchor opened up, so chapters can start between its children.
+function blocksOf(node, anchorEls) {
+  const blocks = [];
+  for (const child of node.children || []) {
+    if (child.type === 'text') {
+      if (child.data.trim()) blocks.push(child);
+    } else if (child.type === 'tag') {
+      const opens = CONTAINERS.has(child.tagName) && anchorEls.some((el) => el !== child && contains(child, el));
+      if (opens) blocks.push(...blocksOf(child, anchorEls));
+      else blocks.push(child);
     }
-    const idx = bodyChildren.indexOf(node);
+  }
+  return blocks;
+}
+
+// Cut one spine file at its navPoints' anchors: `lead` is what comes before
+// the first anchor, `slices[i]` runs from anchor i to the next one (or the end
+// of the file), `last` is the anchor whose chapter is still open at the end.
+function sliceFile(fileXhtml, anchors) {
+  const $ = cheerio.load(fileXhtml);
+  const body = $('body')[0];
+  const anchorEls = anchors.map(({ fragment }) => (fragment && $(`[id="${fragment}"]`)[0]) || null);
+  const blocks = body ? blocksOf(body, anchorEls.filter(Boolean)) : [];
+  const html = (from, to) => blocks.slice(from, to).map((node) => $.html(node)).join('\n');
+
+  // an opened wrapper's chapter starts at its first block
+  const starts = anchorEls.map((el) => {
+    if (!el) return 0;
+    const idx = blocks.findIndex((block) => contains(block, el) || contains(el, block));
     return idx === -1 ? 0 : idx;
   });
+  const first = anchors.length ? Math.min(...starts) : blocks.length;
+  let last = -1;
+  starts.forEach((start, i) => { if (last === -1 || start >= starts[last]) last = i; });
 
-  return anchors.map((_, i) => {
-    const start = startIndexes[i];
-    let end = bodyChildren.length;
-    if (i + 1 < anchors.length) {
-      end = startIndexes[i + 1] > start ? startIndexes[i + 1] : start + 1;
-    }
-    return bodyChildren.slice(start, end).map((node) => $.html(node)).join('\n');
-  });
+  return {
+    lead: html(0, first),
+    slices: starts.map((start, i) => {
+      let end = blocks.length;
+      if (i + 1 < anchors.length) end = starts[i + 1] > start ? starts[i + 1] : start + 1;
+      return html(start, end);
+    }),
+    last,
+  };
 }
 
 // Rewrite img srcs to the media placeholder and collect image zip paths.
@@ -188,7 +233,7 @@ function parseEpub(epubPath) {
 
   const manifest = parseManifest($opf);
   const title = metaText($opf, 'title') || path.basename(epubPath, '.epub');
-  const author = metaText($opf, 'creator') || null;
+  const author = authorOf($opf);
 
   const coverItem = findCoverItem($opf, manifest);
   const cover = coverItem
@@ -208,21 +253,32 @@ function parseEpub(epubPath) {
     byFile.get(point.file).push({ ...point, order });
   });
 
+  // Chapters follow the reading order (the spine), from one anchor to the next
+  // even across files: what comes before a file's first anchor, or a whole file
+  // with none, continues the chapter before it. Before the first chapter
+  // (a cover page, say) it is left out, except in the first chapter's own file.
+  const spine = $opf('spine itemref').toArray()
+    .map((el) => manifest.get($opf(el).attr('idref')))
+    .filter(Boolean)
+    .map((item) => path.normalize(path.join(opfDir, item.href)));
+  const files = [...new Set([...spine, ...byFile.keys()])];
   const images = new Map();
-  const chapters = new Array(navPoints.length);
-  for (const [file, anchors] of byFile) {
-    if (!zipEntry(zip, file)) {
-      anchors.forEach((a) => { chapters[a.order] = { title: a.title, contentHtml: '', paraCount: 0 }; });
-      continue;
-    }
-    const slices = sliceChapters(zipEntryText(zip, file), anchors);
-    anchors.forEach((anchor, i) => {
-      const withMedia = rewriteImages(slices[i], path.dirname(file), images);
-      const sanitized = unwrapNonLinks(sanitizeChapterHtml(withMedia));
-      const { html, paraCount } = assignParagraphIndexes(sanitized);
-      chapters[anchor.order] = { title: anchor.title, contentHtml: html, paraCount };
-    });
+  const parts = navPoints.map(() => []);
+  let open = -1;
+  for (const file of files) {
+    const anchors = byFile.get(file) || [];
+    if (!zipEntry(zip, file) || (!anchors.length && open === -1)) continue;
+    const { lead, slices, last } = sliceFile(zipEntryText(zip, file), anchors);
+    const media = (html) => rewriteImages(html, path.dirname(file), images);
+    if (lead.trim()) parts[open !== -1 ? open : anchors[0].order].push(media(lead));
+    anchors.forEach((anchor, i) => parts[anchor.order].push(media(slices[i])));
+    if (anchors.length) open = anchors[last].order;
   }
+  const chapters = navPoints.map((point, i) => {
+    const sanitized = unwrapNonLinks(sanitizeChapterHtml(parts[i].join('\n')));
+    const { html, paraCount } = assignParagraphIndexes(sanitized);
+    return { title: point.title, contentHtml: html, paraCount };
+  });
 
   return {
     title,

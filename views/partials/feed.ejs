@@ -1,6 +1,6 @@
 <%# Friends' recent activity (src/friends/feed.js); the first few, the rest folded. %>
 <% if (typeof feed !== 'undefined' && feed.length > 0) { %>
-  <% const SHOWN = 4; %>
+  <% const SHOWN = 3; %>
   <% const row = (e) => { %>
     <li>
       <a class="feed-item" href="<%= e.link %>">

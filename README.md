@@ -34,7 +34,7 @@ The site speaks English, Brazilian Portuguese and Spanish, picked from the brows
 
 ## How it was built
 
-BookFriends is the first project in a portfolio of AI-built software. Its owner isn't a programmer: every line was written by [Claude Code](https://claude.com/claude-code) from plain-language requests ("make the dark theme look like this screenshot", "the bar jumps when I scroll up on my phone").
+BookFriends is the first project in a portfolio of AI-built software: every line was written by [Claude Code](https://claude.com/claude-code) from plain-language requests ("make the dark theme look like this screenshot", "the bar jumps when I scroll up on my phone").
 
 - **Features in parallel.** Big batches were split across several AI agents, each working in its own git worktree, then merged and integrated.
 - **Independent checks before every release.** A separate reviewer agent read the merged code, and an integration-test agent re-ran every feature's test suite against it. Between them they caught a denial-of-service in @mention parsing, notifications that silently switched themselves off, and a scroll-anchoring bug that moved readers' bookmarks.

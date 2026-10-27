@@ -14,6 +14,8 @@ const friends = require('../friends/service');
 const feed = require('../friends/feed');
 const { LANGS } = require('../i18n');
 const { searchLimiter } = require('../rate-limit');
+const { initialOf, avatarTone } = require('../users');
+const samples = require('../about/samples');
 
 const router = express.Router();
 
@@ -64,8 +66,23 @@ router.get('/', (req, res) => {
     title: 'BookFriends', books: shelf, sort, current, currentChapter, friendsByBook, currentFriend,
     ratingsByBook: ratings.shelfSummary(req.user && req.user.id),
     feed: feed.feedFor(req.user),
+    demo: req.user ? null : welcomeDemo(req.lang),
   });
 });
+
+// For visitors, the welcome shows what the margins look like: the last
+// paragraph of /about's sample passage and its first comment.
+function welcomeDemo(lang) {
+  const sample = samples[lang];
+  const first = sample.comments[0];
+  return {
+    book: sample.book,
+    chapter: sample.chapterTitle,
+    paragraph: sample.paragraphs[sample.paragraphs.length - 1],
+    count: sample.comments.length,
+    comment: { name: first.name, initial: initialOf(first.name), tone: avatarTone(first.name), text: first.text, at: Date.now() - first.hours * 60 * 60 * 1000 },
+  };
+}
 
 router.get('/upload', requireOwner, (req, res) => {
   res.render('upload', { title: req.t('Upload a book'), error: null });

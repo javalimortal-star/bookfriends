@@ -1,4 +1,4 @@
-// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books share about backups offline)
+// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books layout share about backups offline)
 // A throwaway server and headless Chromium; screenshots go to $E2E_SHOTS if set.
 const fs = require('fs');
 const os = require('os');
@@ -277,6 +277,34 @@ const sections = {
     await owner.goto(`${srv.url}/book/${priv}`);
     check(!(await owner.locator('.share-btn').count()), 'share: no button on a private book');
     await ctx.close();
+  },
+
+  // the shelf and book page on a computer: books on the first screen, one orange button
+  async layout() {
+    const { pub } = seed;
+    const { ctx, page } = await context(lib.DESKTOP, 'ana@example.com');
+    await page.goto(srv.url + '/');
+    const top = await page.evaluate(() => document.querySelector('.shelf .book-card').getBoundingClientRect().top);
+    check(top < 800 - 150, `layout: the shelf's books start on the first screen (y=${Math.round(top)} of 800)`);
+    check((await page.locator('.book-card .btn').count()) === 0 && (await page.locator('.book-card .progress-label[href]').count()) > 0,
+      'layout: book cards carry no buttons; "You have read" continues the book');
+    await ctx.close();
+    // the owner hasn't finished the book: only "Start reading" is orange, not "Mark as finished"
+    const owner = await context(lib.DESKTOP, lib.OWNER);
+    await owner.page.goto(`${srv.url}/book/${pub}`);
+    const cover = await owner.page.locator('.book-hero-cover').boundingBox();
+    const body = await owner.page.locator('.book-body').boundingBox();
+    const orange = await owner.page.locator('.book-page .btn:not(.btn-ghost)').count();
+    check(cover.x + cover.width < body.x && orange === 1, `layout: book page has the cover beside the text, ${orange} orange button`);
+    await owner.ctx.close();
+    const visitor = await context(lib.SMALL_PHONE);
+    await visitor.page.goto(srv.url + '/');
+    check((await visitor.page.isVisible('.hero-demo .para-badge')) && (await visitor.page.getAttribute('.hero-more', 'href')) === '/about',
+      'layout: visitors see a paragraph with its comments and a link to /about');
+    await visitor.page.goto(`${srv.url}/book/${pub}`);
+    check(!(await visitor.page.locator('#rate').count()) && (await visitor.page.textContent('#ratings')).includes('Log in'),
+      'layout: visitors get one line about rating, not an empty section');
+    await visitor.ctx.close();
   },
 
   // the project's page: the paragraph to try, the phone screens, sharing and the invitation

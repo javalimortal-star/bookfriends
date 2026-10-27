@@ -6,7 +6,7 @@
 // indexes BookFriends gives that EPUB (idx and data-p).
 module.exports = {
   pt: {
-    epub: 55752, chapter: 2, para: 4,
+    epub: 55752, chapter: 2, para: 3,
     book: 'Dom Casmurro', chapterTitle: 'Do titulo.',
     paragraphs: ['—Continue, disse eu accordando.', '—Já acabei, murmurou elle.', '—São muito bonitos.'],
     comments: [
@@ -31,7 +31,7 @@ module.exports = {
     ],
   },
   es: {
-    epub: 2000, chapter: 9, para: 68,
+    epub: 2000, chapter: 9, para: 8,
     book: 'Don Quijote de la Mancha', chapterTitle: 'Capítulo primero',
     paragraphs: [
       'Limpias, pues, sus armas, hecho del morrión celada, puesto nombre a su rocín y confirmándose a sí mismo, se dio a entender que no le faltaba otra cosa sino buscar una dama de quien enamorarse; porque el caballero andante sin amores era árbol sin hojas y sin fruto y cuerpo sin alma. Decíase él a sí:',

@@ -1,9 +1,10 @@
 <%- include('partials/head') %>
 <% const firstName = user ? displayName(user) : ''; %>
-<section class="hero">
+<%# on computers What's new sits beside the welcome, so the books start on the first screen %>
+<div class="shelf-top<%= feed.length ? ' with-feed' : '' %>">
+<section class="hero<%= user ? '' : ' hero-visitor' %>">
   <div class="hero-main">
     <% if (user && current) { %>
-      <p class="hero-kicker"><%= t('Welcome back, {name}', { name: firstName }) %></p>
       <h1 class="hero-title"><%= t('Pick up where you left off') %></h1>
       <a class="continue-card<%= currentFriend ? ' with-friend' : '' %>" href="/book/<%= current.slug %>/<%= current.bookmarkIdx %>">
         <% if (current.cover_path) { %>
@@ -12,7 +13,6 @@
           <div class="continue-cover book-cover-placeholder"><%= current.title %></div>
         <% } %>
         <div class="continue-info">
-          <span class="continue-label"><%= t('Continue reading') %></span>
           <span class="continue-title"><%= current.title %></span>
           <span class="continue-chapter"><%= currentChapter || t('Chapter {n}', { n: current.bookmarkIdx + 1 }) %></span>
           <span class="continue-progress">
@@ -44,11 +44,23 @@
         <a class="btn" href="/register"><%= t('Join BookFriends') %></a>
         <a class="btn btn-ghost" href="/login"><%= t('Log in') %></a>
       </div>
+      <a class="hero-more" href="/about"><%= t('See how it works') %> →</a>
     <% } %>
   </div>
-  <img class="hero-logo" src="/logo.webp?v=<%= assetVersion %>" alt="">
+  <% if (demo) { %>
+    <%# what the margins look like: a paragraph and a friend's comment, as the reader draws them %>
+    <figure class="hero-demo" aria-label="<%= t('A paragraph of {book} and what friends said about it', { book: demo.book }) %>">
+      <p class="hero-demo-book"><%= demo.book %> · <%= demo.chapter %></p>
+      <p class="hero-demo-p"><%= demo.paragraph %> <span class="para-badge has-comments" aria-hidden="true"><%= demo.count %></span></p>
+      <div class="hero-demo-comment">
+        <span class="comment-avatar avatar-<%= demo.comment.tone %>" aria-hidden="true"><%= demo.comment.initial %></span>
+        <p><strong><%= demo.comment.name %></strong> <span class="hint"><%= ago(demo.comment.at) %></span><br><%= demo.comment.text %></p>
+      </div>
+    </figure>
+  <% } %>
 </section>
 <%- include('partials/feed') %>
+</div>
 
 <div class="shelf-header">
   <h2 class="section-title"><%= t('Bookshelf') %><% if (books.length > 0) { %> <span class="section-count"><%= t.n('{count} book', '{count} books', books.length) %></span><% } %></h2>
@@ -113,16 +125,14 @@
         <% if (book.bookmarkIdx !== undefined) { %>
           <div class="book-progress">
             <div class="progress-top">
-              <span class="progress-label"><%= t('You have read {done}/{total}', { done: book.bookmarkIdx + 1, total: book.chapterTotal }) %></span>
+              <a class="progress-label" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>" title="<%= t('Continue reading') %>"><%= t('You have read {done}/{total}', { done: book.bookmarkIdx + 1, total: book.chapterTotal }) %> →</a>
               <form method="post" action="/book/<%= book.slug %>/bookmark/remove" class="inline-form">
                 <button class="progress-remove" type="submit" title="<%= t('Remove bookmark') %>" aria-label="<%= t('Remove bookmark') %>">✕</button>
               </form>
             </div>
             <div class="progress-track"><div class="progress-fill" style="width: <%= Math.round(((book.bookmarkIdx + 1) / book.chapterTotal) * 100) %>%"></div></div>
-            <a class="btn btn-small" href="/book/<%= book.slug %>/<%= book.bookmarkIdx %>"><%= t('Continue reading') %></a>
           </div>
         <% } %>
-        <a class="download-link" href="/book/<%= book.slug %>/download" title="<%= t('Download the EPUB (works with Send to Kindle)') %>">⤓ <%= t('Download EPUB') %></a>
         <% if (user && user.role === 'owner') { %>
           <details class="book-manage">
             <summary><%= t('Manage') %></summary>

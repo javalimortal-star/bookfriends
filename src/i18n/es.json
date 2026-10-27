@@ -73,7 +73,6 @@
   "Current password": "Contraseña actual",
   "New password (at least 8 characters)": "Contraseña nueva (mínimo 8 caracteres)",
   "You sign in with Google, so there is no password to change here.": "Entras con Google, así que aquí no hay ninguna contraseña que cambiar.",
-  "Welcome back, {name}": "Hola de nuevo, {name}",
   "Pick up where you left off": "Sigue donde lo dejaste",
   "Continue reading": "Seguir leyendo",
   "Chapter {n}": "Capítulo {n}",
@@ -404,10 +403,10 @@
   "to open the shelf for the first time on mobile data. It was 1.7 MB before small covers and compressed pages.": "para abrir la estantería por primera vez con datos móviles. Eran 1,7 MB antes de las portadas pequeñas y las páginas comprimidas.",
   "automatic checks before every release: unit tests, and a real browser at phone and computer sizes.": "comprobaciones automáticas antes de cada versión: pruebas unitarias y un navegador real en tamaño de teléfono y de computadora.",
   "languages, picked from the browser: Português, Español and English.": "idiomas, elegidos según el navegador: Português, Español y English.",
-  "A beginner and an AI": "Un principiante y una IA",
+  "Built with an AI": "Hecho con una IA",
   "Two Women Reading, a Japanese woodblock print by Yashima Gakutei: two women in kimonos read the same page, one pointing at a line": "Dos mujeres leyendo, grabado japonés de Yashima Gakutei: dos mujeres en kimono leen la misma página y una señala una línea",
   "Asked for in plain words": "Pedido con palabras sencillas",
-  "Its owner isn’t a programmer. Every line was written by Claude Code from requests like “the bar jumps when I scroll up on my phone”.": "Su dueño no es programador. Cada línea la escribió Claude Code a partir de pedidos como “la barra salta cuando subo en el teléfono”.",
+  "Every line of code was written by Claude Code, from requests like “the bar jumps when I scroll up on my phone” or “make the dark theme look like this screenshot”.": "Cada línea de código la escribió Claude Code, a partir de pedidos como “la barra salta cuando subo en el teléfono” o “haz que el tema oscuro se vea como esta captura”.",
   "Small, cheap and backed up": "Pequeño, barato y con copias de seguridad",
   "Node.js, Express and SQLite on a free 1 GB server. Everything is copied every night to a PC at home, and GitHub sends an email if the site goes down.": "Node.js, Express y SQLite en un servidor gratuito de 1 GB. Todo se copia cada noche a una computadora en casa, y GitHub manda un correo si el sitio se cae.",
   "Read the code": "Leer el código",
@@ -426,5 +425,6 @@
   "Books and covers from Project Gutenberg, public domain.": "Libros y portadas de Project Gutenberg, dominio público.",
   "Back to top": "Volver arriba",
   "About BookFriends": "Sobre BookFriends",
-  "BookFriends: your friends, in the margins": "BookFriends: tus amigos, en los márgenes"
+  "BookFriends: your friends, in the margins": "BookFriends: tus amigos, en los márgenes",
+  "See how it works": "Mira cómo funciona"
 }
