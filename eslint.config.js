@@ -14,8 +14,8 @@ module.exports = [
     },
   },
   {
-    // browser tests: page.evaluate() callbacks run in the page
-    files: ['test/e2e/**/*.js'],
+    // browser tests and the /about screenshots: page.evaluate() callbacks run in the page
+    files: ['test/e2e/**/*.js', 'scripts/about-shots.js'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

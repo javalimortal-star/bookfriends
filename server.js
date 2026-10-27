@@ -39,13 +39,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 // Templates fingerprint static assets as ?v=<content hash>, so production can
 // cache them long-term and a deploy still busts the cache (new hash, new URL).
-app.locals.assetVersion = crypto.createHash('md5')
-  .update(fs.readFileSync(path.join(__dirname, 'public', 'css', 'app.css')))
-  .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'reader.js')))
-  .update(fs.readFileSync(path.join(__dirname, 'public', 'js', 'push.js')))
-  .update(fs.readFileSync(path.join(__dirname, 'public', 'logo.webp')))
-  .update(fs.readFileSync(path.join(__dirname, 'public', 'og-image.jpg')))
-  .digest('hex').slice(0, 10);
+const fingerprinted = ['css/app.css', 'css/about.css', 'js/reader.js', 'js/push.js', 'js/about.js', 'logo.webp', 'og-image.jpg',
+  ...fs.readdirSync(path.join(__dirname, 'public', 'img', 'about')).sort().map((name) => `img/about/${name}`)];
+const assetHash = crypto.createHash('md5');
+for (const file of fingerprinted) assetHash.update(fs.readFileSync(path.join(__dirname, 'public', file)));
+app.locals.assetVersion = assetHash.digest('hex').slice(0, 10);
 // Offline reading + phone notifications (public/sw.js); SW_DISABLED=1 turns it off.
 app.locals.swEnabled = process.env.SW_DISABLED !== '1';
 app.locals.googleEnabled = require('./src/auth/google').enabled;
@@ -101,6 +99,7 @@ app.use(require('./src/media/routes'));
 app.use(require('./src/comments/routes'));
 app.use(require('./src/requests/routes'));
 app.use(require('./src/push/routes'));
+app.use(require('./src/about/routes'));
 app.use(require('./src/books/details'));
 app.use(require('./src/books/routes'));
 

@@ -666,6 +666,9 @@ html.theme-sepia body.high-contrast .chapter-content { color: #000; }
 .lang-switch a { color: var(--muted); }
 .lang-switch a:hover { color: var(--link); }
 .lang-current { color: var(--text-strong); font-weight: 700; }
+.footer-about { margin: 0.9rem 0 0; text-align: center; }
+.footer-about a { color: var(--muted); }
+.footer-about a:hover { color: var(--link); }
 
 /* ---------- comments: spoiler toggle + blur, @mentions ---------- */
 .comment-form-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }

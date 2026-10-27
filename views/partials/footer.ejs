@@ -6,6 +6,7 @@
       <% if (l.code === lang) { %><span class="lang-current" aria-current="true"><%= l.name %></span><% } else { %><a href="/lang/<%= l.code %>?next=<%= encodeURIComponent(currentUrl) %>" hreflang="<%= l.code %>" lang="<%= l.code %>"><%= l.name %></a><% } %>
     <% } %>
   </nav>
+  <p class="footer-about"><a href="/about"><%= t('About BookFriends') %></a></p>
 </footer>
 <script>
   // The account menu is a <details>: also close it on outside clicks and Escape

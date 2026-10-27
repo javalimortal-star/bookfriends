@@ -1,4 +1,4 @@
-// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books share backups offline)
+// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books share about backups offline)
 // A throwaway server and headless Chromium; screenshots go to $E2E_SHOTS if set.
 const fs = require('fs');
 const os = require('os');
@@ -39,7 +39,7 @@ const sections = {
   async pages() {
     const { pub, priv } = seed;
     const pages = ['/', `/book/${pub}`, `/book/${pub}/3`, `/book/${pub}/31`, `/book/${pub}/search?q=wolves`,
-      '/settings', '/requests', '/notifications', '/users', '/upload', `/book/${pub}/edit`, `/book/${priv}`, '/nope'];
+      '/settings', '/requests', '/notifications', '/users', '/upload', `/book/${pub}/edit`, `/book/${priv}`, '/about', '/nope'];
     const expect = (who, p) => {
       if (p === '/nope') return 404;
       if (p === `/book/${priv}`) return who === 'owner' ? 200 : 404;
@@ -277,6 +277,57 @@ const sections = {
     await owner.goto(`${srv.url}/book/${priv}`);
     check(!(await owner.locator('.share-btn').count()), 'share: no button on a private book');
     await ctx.close();
+  },
+
+  // the project's page: the paragraph to try, the phone screens, sharing and the invitation
+  async about() {
+    const phone = await browser.newContext({ ...lib.PHONE, locale: 'pt-BR', serviceWorkers: 'block' });
+    await phone.addInitScript(() => { navigator.share = (data) => { window.__shared = data; return Promise.resolve(); }; });
+    const page = await phone.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(srv.url + '/');
+    await page.click('.footer-about a');
+    check(new URL(page.url()).pathname === '/about', 'about: linked from the footer of every page');
+    check((await page.textContent('h1')).trim() === 'Seus amigos, nas margens' && (await page.textContent('.reader-book')).includes('Dom Casmurro'),
+      'about: in Portuguese, with a paragraph of Dom Casmurro');
+    const bubble = page.locator('[data-thread-toggle]');
+    await bubble.click();
+    const closed = (await bubble.getAttribute('aria-expanded')) === 'false' && (await page.$eval('#thread', (el) => el.classList.contains('is-closed')));
+    await bubble.click();
+    check(closed && (await bubble.getAttribute('aria-expanded')) === 'true', 'about: the bubble closes and opens the comments');
+    await page.click('[data-spoiler]');
+    check(await page.$eval('[data-spoiler]', (el) => el.classList.contains('is-shown')), 'about: a tap shows the spoiler');
+    await page.click('[data-tab="news"]');
+    check(await page.$eval('[data-shot="news"]', (el) => el.classList.contains('is-on')) && (await page.isVisible('#panel-news')) && !(await page.isVisible('#panel-reading')),
+      'about: the tabs switch the phone screen and its text');
+    await page.fill('.invite-name', 'Ana');
+    await page.click('.invite-send');
+    let shared = await page.evaluate(() => window.__shared);
+    check(shared && shared.text === 'Ana, vem ler comigo no BookFriends!' && shared.url === srv.url + '/',
+      `about: the invitation shares a message with the friend's name (${JSON.stringify(shared)})`);
+    await page.click('[data-share]');
+    shared = await page.evaluate(() => window.__shared);
+    check(shared && shared.url === srv.url + '/about', 'about: "Share this page" shares the page');
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 500) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 80)); }
+    });
+    await page.waitForLoadState('networkidle');
+    const broken = await page.evaluate(() => [...document.images].filter((img) => !img.complete || !img.naturalWidth).map((img) => img.src));
+    check(!broken.length, `about: every picture loads (${broken.join(' ') || 'all'})`);
+    check((await noSideways(page)) && !errors.length, `about: no sideways scroll, no script errors (${errors.join('; ')})`);
+    await shot(page, 'about-phone', { fullPage: true });
+    await phone.close();
+    // without motion, nothing waits for a scroll to appear
+    const still = await browser.newContext({ ...lib.DESKTOP, reducedMotion: 'reduce', serviceWorkers: 'block' });
+    const desk = await still.newPage();
+    await desk.goto(srv.url + '/about');
+    const hidden = await desk.evaluate(() => [...document.querySelectorAll('[data-reveal]')]
+      .filter((el) => getComputedStyle(el).opacity === '0' && !el.matches('.plate-shot:not(.is-on)')).length);
+    check(hidden === 0 && (await desk.textContent('h1')).trim() === 'Your friends, in the margins' && (await noSideways(desk)),
+      `about: in English on a computer, everything shown at once with reduced motion (${hidden} hidden)`);
+    await shot(desk, 'about-desktop', { fullPage: true });
+    await still.close();
   },
 
   // the mini PC's nightly download: the exact bytes, never re-compressed, and recorded

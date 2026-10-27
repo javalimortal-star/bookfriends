@@ -1,0 +1,18 @@
+<%# Link previews (WhatsApp, Telegram, ...): a page may pass og = { title, description, image, type } %>
+<% const og = locals.og || {}; const ogText = og.description || t('Read the same books as your friends and talk about them right in the margins, paragraph by paragraph.'); %>
+<meta name="description" content="<%= ogText %>">
+<meta property="og:site_name" content="BookFriends">
+<meta property="og:type" content="<%= og.type || 'website' %>">
+<meta property="og:title" content="<%= og.title || title %>">
+<meta property="og:description" content="<%= ogText %>">
+<meta property="og:url" content="<%= origin + currentUrl %>">
+<meta property="og:locale" content="<%= htmlLang.replace('-', '_') %>">
+<% if (og.image) { %>
+<meta property="og:image" content="<%= origin + og.image %>">
+<meta name="twitter:card" content="summary">
+<% } else { %>
+<meta property="og:image" content="<%= origin %>/og-image.jpg?v=<%= assetVersion %>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<% } %>

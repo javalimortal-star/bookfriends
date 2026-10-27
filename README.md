@@ -2,7 +2,7 @@
 
 **A little online library for friends: read the same books and talk about them right in the margins, paragraph by paragraph.**
 
-Live at **[bookfriends.com.br](https://bookfriends.com.br)** · English · Português · Español
+Live at **[bookfriends.com.br](https://bookfriends.com.br)** · English · Português · Español · [the project's own page](https://bookfriends.com.br/about)
 
 ![BookFriends on a phone: the bookshelf, the reader, paragraph comments with a spoiler and an @mention, and a book page with ratings](docs/screenshots/phones.png)
 
@@ -46,11 +46,12 @@ Node.js and Express with server-rendered EJS pages; SQLite through better-sqlite
 
 ```
 server.js           app setup, middleware order, routers
-src/                one folder per area: auth, books, comments, friends, requests, push, offline, backup, i18n, db
+src/                one folder per area: auth, books, comments, friends, requests, push, offline, backup, i18n, db, about
 views/              EJS pages and partials
 public/             reader.js (the reading page), push.js, sw.js, app.css, icons
 test/               node --test suites (npm test)
 scripts/backup.js   nightly backup
+scripts/about-shots.js  the phone pictures on /about, retaken from a throwaway copy of the site
 ```
 
 ## Run it locally

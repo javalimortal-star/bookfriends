@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="<%= htmlLang %>" class="about-page">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title><%= title %></title>
+  <%- include('partials/meta') %>
+  <script>document.documentElement.classList.add('js');</script>
+  <noscript><style>.ui-spoiler-text { filter: none; }</style></noscript>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/about.css?v=<%= assetVersion %>">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=<%= assetVersion %>">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=<%= assetVersion %>">
+  <meta name="theme-color" content="#050505">
+</head>
+<body id="top">
+<%
+  const GITHUB = 'https://github.com/javalimortal-star/bookfriends';
+  const v = '?v=' + assetVersion;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  // a translated sentence with {slots} -> [{ text } | { html }] in order, so a
+  // translation may move the slots around its words
+  const parts = (text, slots) => text.split(/(\{\w+\})/).filter(Boolean).map((part) => {
+    const m = /^\{(\w+)\}$/.exec(part);
+    return m && slots[m[1]] !== undefined ? { html: slots[m[1]] } : { text: part };
+  });
+  const screens = [
+    { id: 'reading', tab: t('Reading'), alt: t('BookFriends on a phone: a chapter of {book} with a comment bubble after each paragraph', { book: sample.book }),
+      text: t('Swipe to the next chapter, choose dark, light or sepia, and tap the bubble after any paragraph to see what your friends said.') },
+    { id: 'news', tab: t("What's new"), alt: t('BookFriends on a phone: the card to pick up where you left off and what friends did lately'),
+      text: t('The shelf opens on what happened while you were away. Comments from chapters you haven’t reached show up without their text.') },
+    { id: 'shelf', tab: t('Bookshelf'), alt: t('BookFriends on a phone: the bookshelf, with the initials of the friends reading each book'),
+      text: t('Every cover shows which friends are reading it and where. Installed on the home screen, it saves the next chapters to read offline.') },
+  ];
+  const MARK = 'BookFriends'.split('');
+  const HEIGHTS = [100, 74, 86, 66, 96, 70, 84, 62, 80, 92, 76];
+  const TONES = ['accent', 'teal', 'ink', 'mid'];
+  // one block of the footer's wordmark: the bubble, three round corners and a square one
+  const block = (x, w, h, base, r) => `M${x} ${base}V${base - h + r}A${r} ${r} 0 0 1 ${x + r} ${base - h}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${base - h + r}V${base - r}A${r} ${r} 0 0 1 ${x + w - r} ${base}Z`;
+%>
+
+<header class="hero">
+  <div class="hero-card">
+    <a class="wordmark" href="/" data-load="1"><img src="/logo.webp<%= v %>" alt="" width="48" height="48">BookFriends</a>
+    <h1 class="hero-title" data-load="2"><%= t('Your friends, in the margins') %></h1>
+    <p class="hero-text" data-load="3"><%= t('BookFriends is a little online library where friends read the same books and talk about them paragraph by paragraph.') %></p>
+    <a class="btn" href="/" data-load="4"><%= t('Open the library') %></a>
+    <nav class="hero-links" aria-label="<%= t('On this page') %>">
+      <a href="#features"><%= t('What it does') %></a>
+      <a href="#built"><%= t('How it was built') %></a>
+      <a href="<%= GITHUB %>"><%= t('Code on GitHub') %></a>
+    </nav>
+  </div>
+
+  <div class="stage">
+    <div class="stage-shape" aria-hidden="true"></div>
+    <figure class="reader" data-ui aria-label="<%= t('A paragraph of {book} and what friends said about it', { book: sample.book }) %>">
+      <p class="reader-book"><%= sample.book %> · <%= sample.chapterTitle %></p>
+      <% sample.paragraphs.forEach((text, i) => { %>
+        <p class="reader-p"><%= text %><% if (i === sample.paragraphs.length - 1) { %> <button type="button" class="ui-badge is-hot" aria-expanded="true" aria-controls="thread" aria-label="<%= t.n('{count} comment', '{count} comments', commentCount) %>" data-thread-toggle><%= commentCount %></button><% } else { %> <span class="ui-badge" aria-hidden="true">0</span><% } %></p>
+      <% }) %>
+      <div class="thread" id="thread"><div class="thread-inner">
+        <p class="thread-head"><%= t('Paragraph {n}', { n: sample.para + 1 }) %> · <%= t.n('{count} comment', '{count} comments', commentCount) %></p>
+        <% const comment = (c) => { %>
+          <div class="ui-comment">
+            <span class="ui-avatar tone-<%= c.tone %>" aria-hidden="true"><%= c.initial %></span>
+            <div class="ui-comment-main">
+              <p class="ui-comment-head"><b><%= c.name %></b> <span><%= ago(c.at) %></span><% if (c.spoiler) { %> <span class="ui-tag"><%= t('Spoiler') %></span><% } %></p>
+              <% if (c.spoiler) { %>
+                <button type="button" class="ui-spoiler" data-spoiler aria-label="<%= t('Spoiler — tap to show') %>"><span class="ui-spoiler-text"><%= c.text %></span></button>
+              <% } else { %>
+                <p class="ui-comment-body"><%= c.text %></p>
+              <% } %>
+              <% if (c.replies && c.replies.length) { %><div class="ui-replies"><% c.replies.forEach(comment) %></div><% } %>
+            </div>
+          </div>
+        <% }; thread.forEach(comment); %>
+      </div></div>
+    </figure>
+  </div>
+</header>
+
+<main>
+  <section class="showcase" aria-labelledby="phones-title">
+    <div class="plate">
+      <% screens.forEach((s, i) => { const src = `/img/about/${lang}-${s.id}.webp${v}`; %>
+        <%# the hidden screens load when the plate comes into view (about.js), not with the page %>
+        <img class="plate-shot<%= i === 0 ? ' is-on' : '' %>" data-reveal <% if (i === 0) { %>src="<%= src %>" loading="lazy"<% } else { %>src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-src="<%= src %>"<% } %> width="780" height="1400" alt="<%= s.alt %>" decoding="async" data-shot="<%= s.id %>">
+      <% }) %>
+    </div>
+    <div class="showcase-text">
+      <div class="tabs" role="tablist" aria-label="<%= t('Screens') %>" data-reveal>
+        <% screens.forEach((s, i) => { %>
+          <button type="button" role="tab" id="tab-<%= s.id %>" aria-controls="panel-<%= s.id %>" aria-selected="<%= i === 0 %>" tabindex="<%= i === 0 ? 0 : -1 %>" data-tab="<%= s.id %>"><%= s.tab %></button>
+        <% }) %>
+      </div>
+      <div class="showcase-copy">
+        <h2 class="h-section" id="phones-title" data-reveal><%= t('Made for phones') %></h2>
+        <% screens.forEach((s, i) => { %>
+          <div class="showcase-panel<%= i === 0 ? ' is-on' : '' %>" role="tabpanel" id="panel-<%= s.id %>" aria-labelledby="tab-<%= s.id %>" data-reveal style="--d: 1">
+            <p class="no-js-label"><%= s.tab %></p>
+            <p><%= s.text %></p>
+          </div>
+        <% }) %>
+      </div>
+      <div class="cells" data-reveal style="--d: 2">
+        <a class="cell cell-ink" href="/"><%= t('Open the library') %></a>
+        <button type="button" class="cell cell-tone" data-share data-copied="<%= t('Link copied!') %>" data-prompt="<%= t('Copy this link:') %>"><%= t('Share this page') %></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features" aria-labelledby="features-title">
+    <h2 class="sr-only" id="features-title"><%= t('What it does') %></h2>
+    <p class="statement" data-reveal><% for (const p of parts(t('Every paragraph gets its own bubble {badge}, spoilers stay blurred {blur} until you get there, your bookmark follows you {mark}, and the next chapters wait offline {cover} for the subway.'), {
+      badge: '<span class="slot" data-ui aria-hidden="true"><span class="ui-badge is-hot">3</span></span>',
+      blur: '<span class="slot" data-ui aria-hidden="true"><span class="slot-blur">Capitu</span></span>',
+      mark: '<span class="slot" data-ui aria-hidden="true"><span class="slot-bar"><span></span></span></span>',
+      cover: `<span class="slot slot-pic"><img src="/img/about/${lang}-covers.webp${v}" alt="" width="372" height="180" loading="lazy" decoding="async"></span>`,
+    })) { %><% if (p.html) { %><%- p.html %><% } else { %><%= p.text %><% } %><% } %></p>
+    <div class="features-more" data-reveal style="--d: 1">
+      <p><%= t('Also @mentions, phone notifications, search inside a book, ratings and reviews, book requests and three languages.') %></p>
+      <a class="arrow-link" href="<%= GITHUB %>#what-it-does"><%= t('Every feature, in the README') %></a>
+    </div>
+  </section>
+
+  <section class="stats" aria-labelledby="stats-title">
+    <h2 class="h-section stats-title" id="stats-title" data-reveal><%= t('The numbers') %></h2>
+    <div class="tile tile-a" data-reveal>
+      <p class="tile-fig">151&nbsp;KB</p>
+      <p class="tile-cap"><%= t('to open the shelf for the first time on mobile data. It was 1.7 MB before small covers and compressed pages.') %></p>
+    </div>
+    <div class="tile tile-b" data-reveal style="--d: 1">
+      <p class="tile-fig">157</p>
+      <p class="tile-cap"><%= t('automatic checks before every release: unit tests, and a real browser at phone and computer sizes.') %></p>
+    </div>
+    <div class="tile tile-c" data-reveal style="--d: 2">
+      <p class="tile-fig">3</p>
+      <p class="tile-cap"><%= t('languages, picked from the browser: Português, Español and English.') %></p>
+    </div>
+  </section>
+
+  <section class="built" id="built" aria-labelledby="built-title">
+    <h2 class="built-title" id="built-title" data-reveal><%= t('A beginner and an AI') %></h2>
+    <div class="built-pic" data-reveal style="--d: 1">
+      <img src="/img/about/two-women-reading-1000.webp<%= v %>" srcset="/img/about/two-women-reading-600.webp<%= v %> 600w, /img/about/two-women-reading-1000.webp<%= v %> 1000w" sizes="(max-width: 700px) 86vw, 38vw" width="1000" height="1000" alt="<%= t('Two Women Reading, a Japanese woodblock print by Yashima Gakutei: two women in kimonos read the same page, one pointing at a line') %>" loading="lazy" decoding="async">
+    </div>
+    <div class="built-text">
+      <div data-reveal>
+        <h3><%= t('Asked for in plain words') %></h3>
+        <p><%= t('Its owner isn’t a programmer. Every line was written by Claude Code from requests like “the bar jumps when I scroll up on my phone”.') %></p>
+      </div>
+      <div data-reveal style="--d: 1">
+        <h3><%= t('Small, cheap and backed up') %></h3>
+        <p><%= t('Node.js, Express and SQLite on a free 1 GB server. Everything is copied every night to a PC at home, and GitHub sends an email if the site goes down.') %></p>
+      </div>
+      <a class="btn" href="<%= GITHUB %>" data-reveal style="--d: 2"><%= t('Read the code') %></a>
+    </div>
+  </section>
+
+  <section class="invite" aria-labelledby="invite-title">
+    <form class="invite-form" action="https://wa.me/" method="get" target="_blank" rel="noopener" data-invite
+      data-text="<%= t('Come read with me on BookFriends!') %>" data-text-named="<%= t('{name}, come read with me on BookFriends!') %>">
+      <h2 class="invite-line" id="invite-title" data-reveal><% for (const p of parts(t('Send {friend} an {invite}'), {
+        friend: `<label class="sr-only" for="friend">${esc(t('Your friend’s name'))}</label><input class="invite-name" id="friend" type="text" maxlength="40" autocomplete="off" placeholder="${esc(t('a friend'))}">`,
+        invite: `<button class="invite-send" type="submit" aria-label="${esc(t('Send the invite'))}">${esc(t('invite.'))}</button>`,
+      })) { %><% if (p.html) { %><%- p.html %><% } else { %><%= p.text %><% } %><% } %></h2>
+      <input type="hidden" name="text" value="<%= t('Come read with me on BookFriends!') %> <%= origin %>/">
+    </form>
+    <p class="invite-note" data-reveal style="--d: 1"><%= t('Opens WhatsApp, or your phone’s share menu, with the invitation and the link ready to send.') %></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <a class="mark" href="/" aria-label="BookFriends">
+    <% for (const [cls, rows] of [['mark-wide', [MARK]], ['mark-stacked', [MARK.slice(0, 4), MARK.slice(4)]]]) { %>
+      <% const W = 100, GAP = 4, H = 320, cols = Math.max(...rows.map((r) => r.length)), width = cols * W + (cols - 1) * GAP; %>
+      <svg class="<%= cls %>" viewBox="0 0 <%= width %> <%= rows.length * H + (rows.length - 1) * 12 %>" aria-hidden="true">
+        <% let k = 0; rows.forEach((row, ri) => { const base = (ri + 1) * H + ri * 12; row.forEach((ch, i) => { const h = H * HEIGHTS[k] / 100, x = i * (W + GAP); %>
+          <path class="mk-<%= TONES[k % TONES.length] %>" d="<%= block(x, W, h, base, 22) %>"/>
+          <text x="<%= x + W / 2 %>" y="<%= base - 34 %>" text-anchor="middle"><%= ch %></text>
+        <% k += 1; }); }); %>
+      </svg>
+    <% } %>
+  </a>
+  <div class="foot-grid">
+  <div class="foot-links">
+    <nav aria-label="BookFriends">
+      <h3>BookFriends</h3>
+      <a href="/"><%= t('Open the library') %></a>
+      <a href="/register"><%= t('Create an account') %></a>
+      <a href="/login"><%= t('Log in') %></a>
+    </nav>
+    <nav aria-label="<%= t('The project') %>">
+      <h3><%= t('The project') %></h3>
+      <a href="<%= GITHUB %>"><%= t('Code on GitHub') %></a>
+      <a href="#built"><%= t('How it was built') %></a>
+    </nav>
+    <nav aria-label="<%= t('Language') %>">
+      <h3><%= t('Language') %></h3>
+      <% for (const l of languages) { %>
+        <% if (l.code === lang) { %><span aria-current="true"><%= l.name %></span><% } else { %><a href="/lang/<%= l.code %>?next=/about" hreflang="<%= l.code %>" lang="<%= l.code %>"><%= l.name %></a><% } %>
+      <% } %>
+    </nav>
+    <div>
+      <h3><%= t('Pictures') %></h3>
+      <p><a href="https://www.artic.edu/artworks/80933"><%= t('“Two Women Reading” by Yashima Gakutei, 19th century, public domain, Art Institute of Chicago.') %></a> <%= t('Books and covers from Project Gutenberg, public domain.') %></p>
+    </div>
+  </div>
+  <div class="foot-contact">
+    <p>bookfriends.com.br</p>
+    <p><a href="https://github.com/javalimortal-star">github.com/javalimortal-star</a></p>
+  </div>
+  </div>
+  <div class="foot-last">
+    <p>© 2026 BookFriends</p>
+    <a class="btn btn-small" href="#top"><%= t('Back to top') %></a>
+  </div>
+</footer>
+<script src="/js/about.js<%= v %>" defer></script>
+</body>
+</html>
