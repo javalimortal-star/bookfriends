@@ -171,6 +171,17 @@ function startBackfill() {
   }
 }
 
+// A chapter that gained paragraphs at its end (scripts/reparse.js): index
+// those, unless the indexer hasn't reached the chapter yet (it will).
+function indexAddedParagraphs(bookId, chapterIdx, html, fromPara) {
+  const progress = S().progress.get(bookId);
+  if (!progress || (!progress.done && progress.next_idx <= chapterIdx)) return;
+  S().removeRange.run(rowidOf(bookId, chapterIdx, fromPara), rowidOf(bookId, chapterIdx, 0) + CHAPTER_SPAN - 1n);
+  for (const { para, text } of paragraphTexts(html)) {
+    if (para >= fromPara) S().insert.run(rowidOf(bookId, chapterIdx, para), text, BigInt(bookId), BigInt(chapterIdx), BigInt(para));
+  }
+}
+
 // Part of deleteBook's transaction; the rows themselves go in the background.
 function removeBook(bookId) {
   S().removeProgress.run(bookId);
@@ -178,4 +189,4 @@ function removeBook(bookId) {
   kick();
 }
 
-module.exports = { MAX_RESULTS, bookRange, indexStatus, searchBook, queueBook, startBackfill, removeBook };
+module.exports = { MAX_RESULTS, bookRange, indexStatus, searchBook, queueBook, startBackfill, removeBook, indexAddedParagraphs };

@@ -389,6 +389,13 @@ a:hover { text-decoration: underline; }
    paragraphs a browser re-wraps when the source had an unclosed <a> */
 .chapter-content a:not([href]) { color: inherit; cursor: inherit; }
 .chapter-content a:not([href]):hover { text-decoration: none; }
+/* footnotes: a small raised number to tap (a wider target than it looks), and
+   the note it jumps to, or the way back, lit up below the bars */
+.chapter-content sup, .chapter-content sub { font-size: 0.68em; line-height: 0; }
+.chapter-content sup a { position: relative; font-weight: 700; text-decoration: none; }
+.chapter-content sup a::after { content: ''; position: absolute; inset: -0.9em -0.7em; }
+.chapter-content [id^="bf-"] { scroll-margin-top: 6rem; }
+.chapter-content :target { background: var(--accent-soft); border-radius: 4px; }
 .chapter-content .blockquot { margin-left: 1.5rem; color: var(--muted); }
 
 /* the comment count sits after the paragraph's last word (Wuxiaworld-style),

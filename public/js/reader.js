@@ -921,7 +921,7 @@
     queueViewportGap();
   }
 
-  /* ---------- where the chapter opens: a search result (?p=), else the saved paragraph ---------- */
+  /* ---------- where the chapter opens: a search result (?p=), a linked note (#bf-...), else the saved paragraph ---------- */
 
   // `block` just under the bars, again after images load unless the reader
   // moved; lastScrollY keeps the bars shown (coveredTop() then matches).
@@ -946,6 +946,9 @@
     markSearchTerms(searchBlock, params.get('q') || '');
     jumpTo(searchBlock);
     searchBlock.classList.add('search-target');
+  } else if (/^#bf-[\w-]+$/.test(location.hash) && document.getElementById(location.hash.slice(1))) {
+    // a footnote (or the book's own link) from another chapter: the note, clear of the bars
+    jumpTo(document.getElementById(location.hash.slice(1)));
   } else if (panelParam === null && !location.hash && R.bookmark && R.bookmark.action === 'same' && R.bookmark.para > 0) {
     var resumeTarget = document.querySelector('#chapter-content [data-p="' + R.bookmark.para + '"]');
     if (resumeTarget) jumpTo(resumeTarget);

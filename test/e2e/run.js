@@ -1,4 +1,4 @@
-// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books layout share about backups offline)
+// Browser tests: npm run e2e [section ...]  (sections: pages speed feed previews reader books layout notes share about backups offline)
 // A throwaway server and headless Chromium; screenshots go to $E2E_SHOTS if set.
 const fs = require('fs');
 const os = require('os');
@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const Database = require('better-sqlite3');
 const sharp = require('sharp');
 const lib = require('./lib');
+const { writeMadeUpEpub } = require('../made-up-epub');
 
 const check = lib.checker();
 const SHOTS = process.env.E2E_SHOTS;
@@ -305,6 +306,34 @@ const sections = {
     check(!(await visitor.page.locator('#rate').count()) && (await visitor.page.textContent('#ratings')).includes('Log in'),
       'layout: visitors get one line about rating, not an empty section');
     await visitor.ctx.close();
+  },
+
+  // footnotes: the number jumps to its note and back, in the chapter or at the back of the book
+  async notes() {
+    const form = new FormData();
+    form.append('epub', new Blob([fs.readFileSync(writeMadeUpEpub())]), 'split-test.epub');
+    const slug = ((await seed.owner.post('/upload', { body: form })).headers.get('location') || '').split('/')[2];
+    await seed.owner.post(`/book/${slug}/visibility`);
+    const { ctx, page } = await context(lib.PHONE, 'ana@example.com');
+    const inView = (sel) => page.evaluate((s) => {
+      const r = document.querySelector(s).getBoundingClientRect();
+      return r.top >= 40 && r.bottom <= window.innerHeight;
+    }, sel);
+    await page.goto(`${srv.url}/book/${slug}/3`);
+    await page.click('#chapter-content sup a');
+    await page.waitForTimeout(300);
+    check(new URL(page.url()).hash === '#bf-2-n2' && (await inView('#bf-2-n2')), 'notes: the number jumps to its note, clear of the bars');
+    await page.click('#bf-2-n2 a');
+    await page.waitForTimeout(300);
+    check(new URL(page.url()).hash === '#bf-1-r2' && (await inView('#bf-1-r2')), "notes: the note's own number jumps back");
+    const mark = () => query("SELECT m.chapter_idx FROM bookmarks m JOIN users u ON u.id = m.user_id JOIN books b ON b.id = m.book_id WHERE u.email = 'ana@example.com' AND b.slug = ?", slug).chapter_idx;
+    await page.goto(`${srv.url}/book/${slug}/1`);
+    await Promise.all([page.waitForNavigation(), page.click('#chapter-content sup a')]);
+    await page.waitForTimeout(500);
+    check(new URL(page.url()).pathname === `/book/${slug}/4` && (await inView('#bf-4-n1')) && mark() === 3,
+      `notes: a note at the back of the book opens there, the bookmark stays on chapter 3 (${mark()})`);
+    check(page.errors.length === 0, `notes: no page errors ${page.errors.join('; ')}`);
+    await ctx.close();
   },
 
   // the project's page: the paragraph to try, the phone screens, sharing and the invitation

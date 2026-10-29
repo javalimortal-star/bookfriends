@@ -142,11 +142,18 @@ function blocksOf(node, anchorEls) {
   return blocks;
 }
 
+// XHTML writes empty elements as <a id="x"/>. Read as HTML (as below), that
+// opens an <a> which swallows the rest of the file, and the next link inside
+// it is torn out of its <sup>: spell them out, <a id="x"></a>.
+const VOID = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr';
+const SELF_CLOSED = new RegExp(`<(?!(?:${VOID})\\b)([a-zA-Z][\\w:.-]*)(\\s[^<>]*?)?\\s*/>`, 'g');
+const expandSelfClosed = (xhtml) => xhtml.replace(SELF_CLOSED, (_, tag, attrs = '') => `<${tag}${attrs}></${tag}>`);
+
 // Cut one spine file at its navPoints' anchors: `lead` is what comes before
 // the first anchor, `slices[i]` runs from anchor i to the next one (or the end
 // of the file), `last` is the anchor whose chapter is still open at the end.
 function sliceFile(fileXhtml, anchors) {
-  const $ = cheerio.load(fileXhtml);
+  const $ = cheerio.load(expandSelfClosed(fileXhtml));
   const body = $('body')[0];
   const anchorEls = anchors.map(({ fragment }) => (fragment && $(`[id="${fragment}"]`)[0]) || null);
   const blocks = body ? blocksOf(body, anchorEls.filter(Boolean)) : [];
@@ -194,16 +201,76 @@ function rewriteImages(chapterHtml, fileDir, images) {
   return $.html();
 }
 
-// Unwrap anchors that aren't real external links. EPUB-internal anchors lose
-// their attributes to sanitization; a leftover unclosed <a> makes the browser
-// re-wrap every following paragraph in the link (all text renders link-blue).
+// ---------- links inside the book: footnotes and their way back, mostly ----------
+
+// `href` as written in `file` -> { file, fragment, key: "file#fragment" } in
+// the book, or null for an external link (http:, mailto:, ...).
+function linkTarget(file, href) {
+  if (!href || /^[a-z][a-z0-9+.-]*:/i.test(href)) return null;
+  const [rel, fragment = ''] = decodeHref(href).split('#');
+  const target = rel ? path.normalize(path.join(path.dirname(file), rel.split('?')[0])) : file;
+  return { file: target, fragment, key: `${target}#${fragment}` };
+}
+
+const unescapeAttr = (value) => value.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+// Where every id ended up (its chapter), where each file starts, and which
+// ids some link points at; `pieces` are the files' parts, in reading order.
+function bookLinks(pieces, fileIndex) {
+  const at = new Map();
+  const starts = new Map();
+  const wanted = new Set();
+  for (const piece of pieces) {
+    if (!starts.has(piece.file)) starts.set(piece.file, piece.chapter);
+    for (const m of piece.html.matchAll(/\sid="([^"]*)"/g)) {
+      const key = `${piece.file}#${unescapeAttr(m[1])}`;
+      if (!at.has(key)) at.set(key, piece.chapter);
+    }
+    for (const m of piece.html.matchAll(/<a\s[^>]*?href="([^"]*)"/g)) {
+      const target = linkTarget(piece.file, unescapeAttr(m[1]));
+      if (target && target.fragment) wanted.add(target.key);
+    }
+  }
+  return { at, starts, wanted, fileIndex };
+}
+
+// Point a piece's links at the BookFriends chapter holding their target:
+// "#bf-..." in the same chapter, "<idx>?peek=1#bf-..." in another (a peek
+// never moves the reader's bookmark). Targets get ids unique in the book
+// ("bf-<file>-<id>"), other ids go; a link to nowhere loses its href.
+function rewriteLinks(piece, { at, starts, wanted, fileIndex }) {
+  const $ = cheerio.load(piece.html, null, false);
+  const idFor = (file, id) => `bf-${fileIndex.get(file)}-${id.replace(/[^\w-]/g, '_')}`;
+  $('a[href]').each((_, el) => {
+    const target = linkTarget(piece.file, $(el).attr('href'));
+    if (!target) return;
+    const chapter = target.fragment ? at.get(target.key) : starts.get(target.file);
+    const hash = target.fragment ? `#${idFor(target.file, target.fragment)}` : '';
+    if (chapter === undefined || (chapter === piece.chapter && !hash)) $(el).removeAttr('href');
+    else $(el).attr('href', chapter === piece.chapter ? hash : `${chapter}?peek=1${hash}`);
+  });
+  $('[id]').each((_, el) => {
+    const id = $(el).attr('id');
+    if (wanted.has(`${piece.file}#${id}`)) $(el).attr('id', idFor(piece.file, id));
+    else $(el).removeAttr('id');
+  });
+  return $.html();
+}
+
+// A link rewriteLinks made: "#bf-...", "12?peek=1#bf-..." or "12?peek=1".
+const BOOK_LINK = /^(?:\d+\?peek=1)?#bf-[\w-]+$|^\d+\?peek=1$/;
+
+// Unwrap anchors that aren't real links (external, or inside the book). A
+// leftover unclosed <a> makes the browser re-wrap every following paragraph
+// in the link (all text renders link-blue). A link target keeps its id.
 function unwrapNonLinks(chapterHtml) {
   const $ = cheerio.load(chapterHtml, null, false);
   $('a').each((_, el) => {
     const href = ($(el).attr('href') || '').trim();
-    if (!/^https?:\/\//i.test(href)) {
-      $(el).replaceWith($(el).contents());
-    }
+    if (/^https?:\/\//i.test(href) || BOOK_LINK.test(href)) return;
+    const id = $(el).attr('id');
+    if (id) $(el).before(`<span id="${id}"></span>`);
+    $(el).replaceWith($(el).contents());
   });
   return $.html();
 }
@@ -262,17 +329,26 @@ function parseEpub(epubPath) {
     .filter(Boolean)
     .map((item) => path.normalize(path.join(opfDir, item.href)));
   const files = [...new Set([...spine, ...byFile.keys()])];
-  const images = new Map();
-  const parts = navPoints.map(() => []);
+  // the EPUB 3 contents page is for reading apps; the reader has its own
+  const navDocs = new Set([...manifest.values()]
+    .filter((item) => item.properties.split(/\s+/).includes('nav'))
+    .map((item) => path.normalize(path.join(opfDir, item.href))));
+  const pieces = [];
   let open = -1;
   for (const file of files) {
     const anchors = byFile.get(file) || [];
-    if (!zipEntry(zip, file) || (!anchors.length && open === -1)) continue;
+    if (!zipEntry(zip, file) || (!anchors.length && (open === -1 || navDocs.has(file)))) continue;
     const { lead, slices, last } = sliceFile(zipEntryText(zip, file), anchors);
-    const media = (html) => rewriteImages(html, path.dirname(file), images);
-    if (lead.trim()) parts[open !== -1 ? open : anchors[0].order].push(media(lead));
-    anchors.forEach((anchor, i) => parts[anchor.order].push(media(slices[i])));
+    if (lead.trim()) pieces.push({ file, chapter: open !== -1 ? open : anchors[0].order, html: lead });
+    anchors.forEach((anchor, i) => pieces.push({ file, chapter: anchor.order, html: slices[i] }));
     if (anchors.length) open = anchors[last].order;
+  }
+  // with every piece placed, links can point at the chapter of their target
+  const links = bookLinks(pieces, new Map(files.map((file, i) => [file, i])));
+  const images = new Map();
+  const parts = navPoints.map(() => []);
+  for (const piece of pieces) {
+    parts[piece.chapter].push(rewriteImages(rewriteLinks(piece, links), path.dirname(piece.file), images));
   }
   const chapters = navPoints.map((point, i) => {
     const sanitized = unwrapNonLinks(sanitizeChapterHtml(parts[i].join('\n')));
